@@ -1220,5 +1220,10 @@ nav {
 .brand-mark img { display: block; width: 100%; height: auto; }
 @media (max-width: 700px) { .brand-mark { width: 36px; height: 30px; } }
 
-.reader .floor-reading-controls { height: min(var(--reading-height, 560px), calc(100% - 180px)); background: rgba(255,251,237,var(--reading-opacity,.58)); backdrop-filter: blur(var(--reading-blur,14px)); -webkit-backdrop-filter: blur(var(--reading-blur,14px)); }
-@media(max-width:700px) { .reader .floor-reading-controls { height: min(var(--reading-height,560px), 520px, calc(100% - 210px)); } }
+.reader .floor-reading-controls { height: min(560px, calc(100% - 180px)); background: rgba(255,251,237,.58); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+@media(max-width:700px) { .reader .floor-reading-controls { height: min(560px, 520px, calc(100% - 210px)); } }
+
+[data-draft-preview] .is-exploring { min-height: 0; }
+
+
+.mini-cover:has(.uploaded-cover){padding:0;overflow:hidden}.mini-cover .uploaded-cover{width:100%;height:100%;object-fit:cover}

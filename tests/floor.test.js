@@ -10,8 +10,8 @@ test("floor pagination retains the complete chapter, including emoji and paragra
   assert.equal(pages.join(""), text);
   assert.ok(pages.every(page => Array.from(page).length <= 112));
 });
-test("floor route connects chapter edges and each model in spatial order", () => {
-  assert.deepEqual(routePoints({ width: 80, placements: [{x:12,z:8},{x:-10,z:-4}] }), [{x:-40,z:0},{x:-10,z:-4},{x:12,z:8},{x:40,z:0}]);
+test("floor route connects chapter edges and only the main model", () => {
+  assert.deepEqual(routePoints({ width: 80, mainPlacementId:'main',placements: [{id:'support',x:12,z:8},{id:'main',x:-10,z:-4}] }), [{x:-40,z:0},{x:-10,z:-4},{x:40,z:0}]);
 });
 test("floor options accept disabled effects and reject invalid camera settings", () => {
   const chapter = {...seed.books[0].chapters[0], floorEnabled:false, floorArrows:false, floorDecor:"none", floorZoom:1.3};

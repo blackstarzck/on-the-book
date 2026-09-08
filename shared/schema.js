@@ -19,6 +19,8 @@ export const modelSchema = z
     id,
     name: text,
     kind: z.enum(kinds),
+    rigged: z.boolean().default(false),
+    clips: z.array(z.string().max(200)).max(100).default([]),
     url: z
       .string()
       .regex(/^\/uploads\/[a-f0-9-]+\.glb$/)
@@ -33,6 +35,7 @@ export const placementSchema = z.object({
   id,
   modelId: id,
   x: z.number().min(-59).max(59),
+  y: z.number().min(0).max(40).default(0),
   z: z.number().min(-49).max(49),
   scale: z.number().min(0.1).max(8),
   rotation: z.number().min(-360).max(360),
@@ -45,6 +48,7 @@ export const placementSchema = z.object({
   story: z.string().max(4000),
 });
 export const chapterSchema = z.object({
+  mainPlacementId: id.nullable().optional(),
   id,
   title: text,
   subtitle: z.string().max(250),
@@ -53,6 +57,16 @@ export const chapterSchema = z.object({
   width: z.number().min(40).max(120).default(64),
   depth: z.number().min(40).max(100).default(56),
   floorArrows: z.boolean().default(true),
+  floorRoute: z.array(z.object({ x: z.number().min(-59).max(59), z: z.number().min(-49).max(49) })).max(40).nullable().default(null),
+  floorArrowSpacing: z.number().min(2).max(12).default(4.5),
+  floorArrowScale: z.number().min(.3).max(3).default(1),
+  floorDecals: z.array(z.object({
+    id, asset: z.string().regex(/^(leaves|pocket-watch|tea-cup|open-book|arrow|\/uploads\/[a-f0-9-]+\.png)$/),
+    y: z.number().min(0).max(40).default(0),
+    x: z.number().min(-59).max(59), z: z.number().min(-49).max(49),
+    width: z.number().min(.2).max(30), height: z.number().min(.2).max(30),
+    rotation: z.number().min(-360).max(360),
+  })).max(100).nullable().default(null),
   floorDecor: z.enum(["auto", "none", "leaves", "pocket-watch", "tea-cup", "open-book"]).default("auto"),
   floorEnabled: z.boolean().default(true),
   floorText: z.string().max(15000).default(""),
@@ -60,18 +74,19 @@ export const chapterSchema = z.object({
   floorOffsetZ: z.number().min(-16).max(16).default(-9),
   reactionMultiplier: z.number().min(1).max(4).default(2),
   floorPageSize: z.number().int().min(40).max(400).default(112),
-  floorPanelHeight: z.number().int().min(360).max(720).default(560),
-  floorOpacity: z.number().min(.2).max(.95).default(.58),
-  floorBlur: z.number().int().min(0).max(30).default(14),
   floorStagger: z.boolean().default(true),
   floorZoom: z.number().min(1).max(1.8).default(1.1),
   placements: z.array(placementSchema).max(60),
-}).refine(c => c.placements.every(p => Math.abs(p.x) <= c.width / 2 - 1 && Math.abs(p.z) <= c.depth / 2 - 1), { message: "모델을 챕터 공간 안에 배치해 주세요." });
+}).transform(c=>({...c,mainPlacementId:c.mainPlacementId===undefined?(c.placements[0]?.id??null):c.mainPlacementId}))
+.refine(c=>c.placements.length?c.placements.some(p=>p.id===c.mainPlacementId):c.mainPlacementId===null,{message:'챕터에 배치된 메인 모델을 하나 지정해 주세요.'})
+.refine(c => [...c.placements, ...(c.floorRoute || []), ...(c.floorDecals || [])].every(p => Math.abs(p.x) <= c.width / 2 - 1 && Math.abs(p.z) <= c.depth / 2 - 1), { message: "모델과 바닥 배치의 중심을 챕터 공간 안에 놓아 주세요." });
 export const bookSchema = z.object({
   id,
   title: text,
   englishTitle: text,
-  author: text,
+  author: z.string().max(200),
+  cover: z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).or(z.literal('')).default(''),
+  floorAssets: z.array(z.object({asset:z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/),name:text})).max(300).optional(),
   year: z.number().int().min(1).max(2026),
   description: z.string().max(1000),
   source: z.url().refine((s) => /^https?:/.test(s)),

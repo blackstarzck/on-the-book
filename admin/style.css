@@ -1214,3 +1214,16 @@
     height: 260px;
   }
 }
+
+.client-preview-dialog { width: min(1500px, 96vw); max-width: 96vw; padding: 24px; }
+.client-preview-dialog iframe { display:block; width:100%; height: min(820px, 75vh); border:1px solid #d5d9cd; border-radius:12px; margin:16px auto 0; background:#f7f5ed; }
+.client-preview-dialog.mobile-preview iframe { width:min(390px,100%); }
+.preview-size-controls { display:flex; gap:8px; }
+.preview-toolbar > div { display:flex; flex-wrap:wrap; justify-content:flex-end; }
+.client-preview-dialog[open] { display:flex; flex-direction:column; height:94vh; max-height:94vh; overflow:hidden; box-sizing:border-box; }
+.client-preview-dialog > h2, .client-preview-dialog > p, .client-preview-dialog > .preview-size-controls { flex-shrink:0; }
+.client-preview-dialog iframe { flex:1 1 0; min-height:0; height:auto; }
+.leave-editor-dialog { width: min(560px, calc(100vw - 32px)); }
+.leave-editor-dialog .leave-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+.leave-editor-dialog .leave-error { color: #a34c40; }
+.leave-editor-dialog .leave-error:empty { display: none; }

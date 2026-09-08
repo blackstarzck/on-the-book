@@ -1,0 +1,71 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { list, del, BlobPreconditionFailedError } from '@vercel/blob';
+import { sampleGLB } from './helpers.js';
+
+if (!process.env.BLOB_READ_WRITE_TOKEN) throw Error('Set a dedicated Blob credential before running this integration test.');
+process.env.VERCEL = '1';
+process.env.DEPLOYMENT_APP = 'admin';
+process.env.ADMIN_PASSWORD = randomUUID();
+const prefix = `verification/${randomUUID()}/`;
+process.env.BLOB_NAMESPACE = prefix;
+const { default: app } = await import('../server/index.js');
+const { readLibrary, persist } = await import('../server/storage.js');
+const server = app.listen(0, '127.0.0.1');
+await new Promise(resolve => server.once('listening', resolve));
+const base = `http://127.0.0.1:${server.address().port}`;
+let cookie = '';
+const request = (url, options = {}) => fetch(base + url, { ...options, redirect: 'manual', headers: { 'X-On-The-Book': 'studio', 'Content-Type': 'application/json', Cookie: cookie, ...options.headers } });
+try {
+  assert.equal((await request('/api/studio')).status, 401);
+  assert.equal((await request('/api/login', { method: 'POST', body: JSON.stringify({ password: 'incorrect' }) })).status, 401);
+  const login = await request('/api/login', { method: 'POST', body: JSON.stringify({ password: process.env.ADMIN_PASSWORD }) });
+  assert.equal(login.status, 200);
+  cookie = login.headers.get('set-cookie').split(';')[0];
+  const studio = await (await request('/api/studio')).json();
+  const save = await request('/api/studio', { method: 'PUT', body: JSON.stringify({ version: studio.version, library: studio.library }) });
+  assert.equal(save.status, 200, await save.text());
+  const snapshot = await readLibrary();
+  const next = { ...snapshot.db, version: snapshot.db.version + 1 };
+  const concurrent = await Promise.allSettled([persist(next, snapshot), persist(next, snapshot)]);
+  assert.equal(concurrent.filter(result => result.status === 'fulfilled').length, 1);
+  assert(concurrent.find(result => result.status === 'rejected').reason instanceof BlobPreconditionFailedError);
+  console.log('PASS: login, durable save and concurrent save protection');
+
+  const small = sampleGLB();
+  const model = Buffer.alloc(6 * 1024 * 1024);
+  small.copy(model);
+  model.writeUInt32LE(model.length, 8);
+  const binOffset = model.readUInt32LE(12) + 20;
+  model.writeUInt32LE(model.length - binOffset - 8, binOffset);
+  const prepareResponse = await request('/api/uploads/prepare', { method: 'POST', body: JSON.stringify({ kind: 'model', size: model.length }) });
+  assert.equal(prepareResponse.status, 200);
+  const prepared = await prepareResponse.json();
+  const upload = await fetch(prepared.url, { method: 'PUT', body: model, headers: { 'Content-Type': 'model/gltf-binary' } });
+  assert.equal(upload.status, 200, await upload.text());
+  const finish = await request('/api/models/upload', { method: 'POST', body: JSON.stringify({ filename: prepared.filename }) });
+  const registered = await finish.json();
+  assert.equal(finish.status, 201, JSON.stringify(registered));
+  const asset = await request(registered.url);
+  assert.equal(asset.status, 307);
+  const bytes = await fetch(asset.headers.get('location'));
+  assert.equal(bytes.status, 200);
+  assert.equal((await bytes.arrayBuffer()).byteLength, model.length);
+  console.log('PASS: 6MB direct model upload, validation and signed download');
+
+  process.env.DEPLOYMENT_APP = 'client';
+  assert.equal((await request('/api/library')).status, 200);
+  assert.equal((await request('/api/studio')).status, 404);
+  assert.equal((await request('/api/login', { method: 'POST', body: '{}' })).status, 404);
+  assert.equal((await request(registered.url)).status, 404);
+  process.env.DEPLOYMENT_APP = 'admin';
+  assert.equal((await request('/api/logout', { method: 'POST', body: '{}' })).status, 200);
+  assert.equal((await request('/api/studio')).status, 401);
+  console.log('PASS: client isolation, unpublished asset protection and logout');
+} finally {
+  server.closeAllConnections();
+  await new Promise(resolve => server.close(resolve));
+  const { blobs } = await list({ prefix });
+  assert(blobs.every(blob => blob.pathname.startsWith(prefix)));
+  if (blobs.length) await del(blobs.map(blob => blob.url));
+}

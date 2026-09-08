@@ -22,6 +22,13 @@ const request = (url, method = "GET", body, headers = {}) =>
   });
 test("sample books have valid references and unique identifiers", () =>
   assert.equal(librarySchema.safeParse(seed).success, true));
+
+test('publishing a book with an empty chapter and saving an invalid main are rejected',async()=>{
+ const state=await(await request('/api/studio')).json();const c=state.library.books[0].chapters[0];
+ c.mainPlacementId='missing-model';assert.equal((await request('/api/studio','PUT',state)).status,400);
+ c.mainPlacementId=null;c.placements=[];state.publish=true;
+ assert.equal((await request('/api/studio','PUT',state)).status,400);
+});
 test("negative radius, duplicate IDs and missing model references are rejected", () => {
   for (const edit of [
     (s) => (s.books[0].chapters[0].placements[0].radius = -1),

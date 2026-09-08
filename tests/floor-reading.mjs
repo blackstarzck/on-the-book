@@ -71,27 +71,28 @@ try {
   await page.locator('#floor-next').click();
   expect(await page.locator('#floor-accessible').evaluate(el => el.scrollTop)).toBe(0);
   console.log('PASS enlarged overflowing text scrolls independently with pagination visible');
-  const admin = await context.newPage(); await admin.goto(server.url + "/admin/");
+  const admin = await context.newPage(); await admin.goto(server.url + "/admin/"); await admin.locator('[data-open-book="alice"]').click();
   await admin.locator("#edit-story").click();
-  await admin.getByLabel("바닥에 보여 줄 글귀", {exact:true}).fill("앨리스는 토끼를 바라보았습니다. 작은 호기심에서 이야기가 시작되었습니다.");
-  await admin.getByLabel("바닥 손그림").selectOption("pocket-watch");
+  await admin.getByLabel("오른쪽에 보여 줄 글귀", {exact:true}).fill("앨리스는 토끼를 바라보았습니다. 작은 호기심에서 이야기가 시작되었습니다.");
+
   await admin.getByLabel("글귀 카메라 여백 배율").fill("1.3");
   await admin.getByRole("button", {name:"변경 적용",exact:true}).click();
-  await admin.locator("#preview-floor").click();
+  await admin.locator("#preview-client").click();
   await admin.screenshot({ path: "docs/floor-evidence/04-admin-preview.png", fullPage:true });
+  await admin.locator(".client-preview-dialog .close-modal").click();
   await admin.locator("#save").click(); await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
   let live = await (await context.request.get(server.url + "/api/library")).json();
   expect(live.books[0].chapters[0].floorText || "").toBe("");
-  await admin.reload(); await admin.locator("#edit-story").click();
-  await expect(admin.getByLabel("바닥 손그림")).toHaveValue("pocket-watch");
+  await admin.reload(); await admin.locator('[data-open-book="alice"]').click(); await admin.locator("#edit-story").click();
+  await expect(admin.getByLabel("글귀 카메라 여백 배율")).toHaveValue("1.3");
   await admin.keyboard.press("Escape");
   await admin.locator("#publish").click(); await expect(admin.locator("#save-state")).toHaveText("공개 완료");
   await page.reload(); await page.waitForFunction(() => window.__testWorld?.sun); await approach();
   await expect(page.locator("#floor-accessible")).toContainText("작은 호기심");
   console.log("PASS administrator text, art and camera settings persist and publish");
   await admin.locator("#edit-story").click();
-  await admin.getByLabel("모델 접근 시 바닥 글귀와 카메라 연출").uncheck();
-  await admin.getByLabel("모델을 따라 이어지는 바닥 화살표").uncheck();
+  await admin.getByLabel("모델 접근 시 글 섹션과 카메라 연출").uncheck();
+
   await admin.getByRole("button", {name:"변경 적용",exact:true}).click();
   await admin.locator("#publish").click(); await expect(admin.locator("#save-state")).toHaveText("공개 완료");
   await page.reload(); await page.waitForFunction(() => window.__testWorld?.sun);
@@ -101,3 +102,6 @@ try {
   expect(errors).toEqual([]);
   console.log("PASS disabled floor reading preserves model proximity animations; no browser errors");
 } finally { await browser.close(); await server.stop(); }
+
+
+

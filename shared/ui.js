@@ -70,6 +70,15 @@ export const esc = (s) =>
   );
 export const uid = () => crypto.randomUUID();
 export async function api(url, options = {}) {
+  if (['client', 'admin'].includes(import.meta.env.MODE) && options.body instanceof FormData) {
+    const image = url === '/api/floor/upload';
+    const file = options.body.get(image ? 'image' : 'model');
+    if (!file) throw Error('파일을 선택해 주세요.');
+    const prepared = await api('/api/uploads/prepare', { method: 'POST', body: JSON.stringify({ kind: image ? 'image' : 'model', size: file.size }) });
+    const upload = await fetch(prepared.url, { method: 'PUT', headers: { 'Content-Type': image ? 'image/png' : 'model/gltf-binary' }, body: file });
+    if (!upload.ok) throw Error('파일을 업로드하지 못했습니다. 다시 시도해 주세요.');
+    options = { ...options, body: JSON.stringify({ filename: prepared.filename }) };
+  }
   let response;
   try {
     response = await fetch(url, {

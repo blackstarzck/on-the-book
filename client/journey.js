@@ -1,8 +1,8 @@
-import { reactionSize } from "../shared/experience.js";
+import { reactionSize, triggerCircles, mainModel, collisionSize } from "../shared/experience.js";
 import { obstacles, slideMove, clearAt } from "../shared/collision.js";
 import * as THREE from "three";
 import { World } from "../shared/world.js";
-import { layout, terrain } from "../shared/landscape.js";
+import { layout, terrain, floorArt } from "../shared/landscape.js";
 import { textPages, sideReadingPose } from "../shared/floor-reading.js";
 
 export class Journey extends World {
@@ -54,9 +54,12 @@ export class Journey extends World {
   build(chapter) {
     this.chapters = chapter.journeyChapters;
     this.zones = layout(this.chapters);
+    const circles=triggerCircles({chapters:this.chapters});
+    const start=this.zones[0].start,end=this.zones.at(-1).end;
+    terrain(this.root,{width:end-start,depth:Math.max(...this.zones.map(z=>z.depth)),placements:[]},(start+end)/2,[],true);
     this.container.style.setProperty("--scene-bg", "#eeeada");
     this.zones.forEach((zone, i) => {
-      terrain(this.root, zone.chapter, zone.x);
+      floorArt(this.root, zone.chapter, zone.x, circles.map(p=>({...p,x:p.x-zone.x})));
       for (const p of zone.chapter.placements) {
         this.addPlacement({ ...p, x: zone.x + p.x });
         const o = this.objects.at(-1);
@@ -88,7 +91,8 @@ export class Journey extends World {
     if (!this.zones[index]) return;
     this.index = index; this.keys.clear(); this.heldMouse = null;
     const zone = this.zones[index];
-    this.player.position.set(zone.x - Math.min(12, zone.width / 4), .08, 4);
+    const main=mainModel(zone.chapter);
+    this.player.position.set(main?zone.x+main.x:zone.x-Math.min(12,zone.width/4),.08,main?THREE.MathUtils.clamp(main.z+collisionSize(main)+1,-zone.depth/2+.5,zone.depth/2-.5):4);
     const walls = obstacles(this.objects), origin = this.player.position.clone();
     if (!clearAt(origin, walls)) {
       let found = false;
@@ -121,7 +125,7 @@ export class Journey extends World {
   }
   updateReading(dt, paused) {
     if (!paused) {
-      const candidates = this.objects.filter(o => o.near && this.zones[o.chapterIndex].chapter.floorEnabled !== false && (this.zones[o.chapterIndex].chapter.floorText?.trim() || this.zones[o.chapterIndex].chapter.body?.trim()));
+      const candidates = this.objects.filter(o => o.near && mainModel(this.zones[o.chapterIndex].chapter)?.id===o.p.id && this.zones[o.chapterIndex].chapter.floorEnabled !== false && (this.zones[o.chapterIndex].chapter.floorText?.trim() || this.zones[o.chapterIndex].chapter.body?.trim()));
       const nearest = candidates.includes(this.readingActive) ? this.readingActive : candidates.sort((a, b) => this.player.position.distanceToSquared(a.group.position) - this.player.position.distanceToSquared(b.group.position))[0];
       if ((nearest || null) !== this.readingActive) {
         this.readingActive = nearest || null;

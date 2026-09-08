@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { terrain, floorArt } from "./landscape.js";
 import { textPages, sideReadingPose, revealReading } from "./floor-reading.js";
+import { reactionSize, collisionSize } from "./experience.js";
 const mat = (color) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02 });
 function mesh(parent, geo, color, pos = [0, 0, 0], scale = [1, 1, 1]) {
@@ -308,7 +309,7 @@ export class World {
         );
         this.ray.setFromCamera(this.pointer, this.camera);
         const hit = this.ray.intersectObjects(
-          this.objects.map((o) => o.group),
+          this.pickObjects?.() || this.objects.map((o) => o.group),
           true,
         )[0];
         if (editor && hit) {
@@ -316,6 +317,10 @@ export class World {
           while (obj && !obj.userData.placementId) obj = obj.parent;
           this.onSelect(obj?.userData.placementId);
           return;
+        }
+        if(editor && this.onSelectFloor && this.floorArt){
+          const floorHit=this.ray.intersectObjects(this.pickFloorObjects?.() || this.floorArt.children,true).find(h=>h.object.userData.floorDecalId);
+          if(floorHit){this.onSelectFloor(floorHit.object.userData.floorDecalId,floorHit.object.userData.chapterId);return;}
         }
         const point = new THREE.Vector3();
         if (this.ray.ray.intersectPlane(this.plane, point)) {
@@ -491,7 +496,7 @@ export class World {
     const model = this.models.find((m) => m.id === p.modelId);
     if (!model) return;
     const group = new THREE.Group();
-    group.position.set(p.x, 0.32, p.z);
+    group.position.set(p.x, 0.32 + (p.y || 0), p.z);
     group.rotation.y = THREE.MathUtils.degToRad(p.rotation);
     group.scale.setScalar(p.scale);
     group.userData.placementId = p.id;
@@ -499,7 +504,7 @@ export class World {
     const entry = {
       p,
       group,
-      baseY: 0.32,
+      baseY: 0.32 + (p.y || 0),
       baseRot: group.rotation.y,
       near: false,
       phase: 0,
@@ -559,10 +564,19 @@ export class World {
       [p.x, 0.29, p.z],
     );
     halo.rotation.x = -Math.PI / 2;
-    halo.scale.setScalar(this.editor ? p.radius : 0.62);
+    halo.scale.setScalar(this.editor ? reactionSize(p, this.chapter) : 0.62);
     halo.material.transparent = true;
     halo.material.opacity = 0.65;
     entry.halo = halo;
+    if (this.editor) {
+      const boundary = mesh(this.root, new THREE.RingGeometry(.97, 1, 64), '#be756a', [p.x, .30, p.z]);
+      boundary.rotation.x = -Math.PI / 2;
+      boundary.material.transparent = true;
+      boundary.material.opacity = .65;
+      boundary.scale.setScalar(collisionSize(p) + .32);
+      boundary.visible = p.collision !== false;
+      entry.collisionHalo = boundary;
+    }
   }
   resize() {
     const { width, height } = this.container.getBoundingClientRect();
@@ -629,11 +643,17 @@ export class World {
     if (!o) return;
     const moved = o.group.position.x !== p.x || o.group.position.z !== p.z;
     o.p = p;
-    o.group.position.set(p.x, 0.32, p.z);
+    o.baseY = .32 + (p.y || 0);
+    o.group.position.set(p.x, o.baseY, p.z);
     o.group.scale.setScalar(p.scale);
     o.baseRot = THREE.MathUtils.degToRad(p.rotation);
     o.halo.position.set(p.x, 0.29, p.z);
-    o.halo.scale.setScalar(this.editor ? p.radius : 0.62);
+    o.halo.scale.setScalar(this.editor ? reactionSize(p, this.chapter) : 0.62);
+    if (o.collisionHalo) {
+      o.collisionHalo.position.set(p.x, .30, p.z);
+      o.collisionHalo.scale.setScalar(collisionSize(p) + .32);
+      o.collisionHalo.visible = p.collision !== false;
+    }
     if (moved && this.floorArt) {
       this.disposeTree(this.floorArt); this.root.remove(this.floorArt);
       this.floorArt = floorArt(this.root, this.chapter);
@@ -772,3 +792,4 @@ export class World {
     this.renderer.domElement.remove();
   }
 }
+

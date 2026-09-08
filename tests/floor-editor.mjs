@@ -1,0 +1,45 @@
+import { chromium,expect } from '@playwright/test';
+import { startServer } from './helpers.js';
+const server=await startServer(4292);
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const context=await browser.newContext({viewport:{width:1440,height:960}});
+context.setDefaultTimeout(20000);
+await context.route('**/assets/client-*.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace(/(\w+)\.setActive\((\w+)\)/,(match,name)=>match+',(window.__testWorld='+name+')');await route.fulfill({response,body});});
+const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+try {
+ await page.goto(server.url+'/admin/');await page.locator('#edit-story').click();
+ for(const name of ['floorPanelHeight','floorOpacity','floorBlur'])await expect(page.locator(`[name="${name}"]`)).toHaveCount(0);
+ await page.getByLabel('오른쪽에 보여 줄 글귀',{exact:true}).fill('바닥 배치와 함께 관리하는 챕터 텍스트입니다.');
+ await page.getByRole('button',{name:'변경 적용',exact:true}).click();
+ await page.locator('#edit-floor').click();
+ await page.getByLabel('화살표 간격',{exact:true}).fill('6');await page.getByLabel('화살표 크기 배율',{exact:true}).fill('1.5');
+ await page.locator('[data-route="0"]').click();
+ await page.locator('#floor-item-form').getByLabel('가로 위치',{exact:true}).fill('-12');
+ await page.locator('#floor-item-form').getByLabel('세로 위치',{exact:true}).fill('8');
+ await page.locator('#route-later').click();
+ await page.locator('#add-route').click();await page.locator('#remove-floor-item').click();
+ await page.locator('#new-floor-asset').selectOption('open-book');await page.locator('#add-decal').click();
+ const form=page.locator('#floor-item-form');
+ for(const [name,value] of [['가로 위치','10'],['세로 위치','-8'],['이미지 너비','7'],['이미지 높이','4'],['이미지 회전','45']])await form.getByLabel(name,{exact:true}).fill(value);
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6i8AAAAASUVORK5CYII=','base64');
+ await page.locator('#upload-floor').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});
+ await expect(page.locator('[data-decal]').last()).toContainText('업로드 이미지');
+ await page.locator('#floor-item-form').getByLabel('가로 위치',{exact:true}).fill('14');
+ await page.locator('#floor-item-form').getByLabel('세로 위치',{exact:true}).fill('-4');
+ await page.screenshot({path:'docs/floor-evidence/floor-editor.png'});
+ await page.locator('#floor-apply').click();await page.locator('#save').click();await expect(page.locator('#save-state')).toHaveText('변경사항 저장됨');
+ const live=await(await context.request.get(server.url+'/api/library')).json();expect(live.books[0].chapters[0].floorRoute ?? null).toBe(null);
+ let saved=await(await context.request.get(server.url+'/api/studio')).json();const c=saved.library.books[0].chapters[0];
+ expect(c.floorRoute[1]).toEqual({x:-12,z:8});expect(c.floorArrowSpacing).toBe(6);expect(c.floorArrowScale).toBe(1.5);
+ expect(c.floorDecals.find(p=>p.asset==='open-book')).toMatchObject({x:10,z:-8,width:7,height:4,rotation:45});
+ const image=c.floorDecals.at(-1);expect(image.asset).toMatch(/\.png$/);
+ await page.reload();await page.locator('#edit-floor').click();await expect(page.getByLabel('화살표 간격',{exact:true})).toHaveValue('6');
+ await page.locator('.floor-editor-dialog .close-modal').click();await page.locator('#publish').click();await expect(page.locator('#save-state')).toHaveText('공개 완료');
+ const reader=await context.newPage();reader.on('pageerror',e=>errors.push(e.message));await reader.goto(server.url+'/client/?book=alice&chapter=alice-1');
+ await reader.waitForFunction(()=>window.__testWorld?.sun);
+ await reader.waitForFunction(url=>{let found=false;window.__testWorld.root.traverse(o=>{if(o.material?.map?.image?.src?.endsWith(url)&&o.position.x===14&&o.position.z===-4)found=true;});return found;},image.asset);
+ expect(await reader.evaluate(()=>window.__testWorld.zones[0].chapter.floorRoute[1])).toEqual({x:-12,z:8});
+ const invalid=await context.request.post(server.url+'/api/floor/upload',{headers:{'X-On-The-Book':'studio'},multipart:{image:{name:'bad.png',mimeType:'image/png',buffer:Buffer.from('not png')}}});expect(invalid.status()).toBe(400);
+ expect(errors).toEqual([]);console.log('PASS removed style controls; floor route order, image transforms/upload, persistence, draft isolation and client publication');
+} finally {await browser.close();await server.stop();}
+

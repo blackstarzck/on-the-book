@@ -46,11 +46,11 @@ export async function startServer(port, password) {
   child.kill();
   throw Error(logs || "Test server did not start");
 }
-export function sampleGLB() {
+export function sampleGLB(rigged = true) {
   const floats = new Float32Array([
     -1, 0, 0, 1, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 1, 0,
   ]);
-  const bin = Buffer.from(floats.buffer);
+  let bin = Buffer.from(floats.buffer);
   const json = {
     asset: { version: "2.0", generator: "On the Book test fixture" },
     scene: 0,
@@ -96,6 +96,15 @@ export function sampleGLB() {
       },
     ],
   };
+  if(rigged){
+    const jointOffset=bin.length,weightOffset=jointOffset+12;
+    bin=Buffer.concat([bin,Buffer.alloc(12),Buffer.from(new Float32Array([1,0,0,0,1,0,0,0,1,0,0,0]).buffer)]);
+    json.nodes[0].skin=0;json.nodes.push({name:'RootJoint'});json.scenes[0].nodes.push(1);json.skins=[{joints:[1]}];
+    json.bufferViews.push({buffer:0,byteOffset:jointOffset,byteLength:12},{buffer:0,byteOffset:weightOffset,byteLength:48});
+    json.accessors.push({bufferView:3,componentType:5121,count:3,type:'VEC4'},{bufferView:4,componentType:5126,count:3,type:'VEC4'});
+    json.meshes[0].primitives[0].attributes.JOINTS_0=3;json.meshes[0].primitives[0].attributes.WEIGHTS_0=4;
+    json.animations[0].channels[0].target.node=1;json.buffers[0].byteLength=bin.length;
+  }
   let text = Buffer.from(JSON.stringify(json));
   const padding = (4 - (text.length % 4)) % 4;
   text = Buffer.concat([text, Buffer.alloc(padding, 32)]);

@@ -127,9 +127,6 @@ function showFloorReading(state) {
   panel.querySelector("#floor-accessible").textContent = state.text;
   panel.querySelector("#floor-accessible").scrollTop = 0;
   const settings = state.settings || {};
-  panel.style.setProperty('--reading-height', (settings.floorPanelHeight ?? 560) + 'px');
-  panel.style.setProperty('--reading-opacity', settings.floorOpacity ?? .58);
-  panel.style.setProperty('--reading-blur', (settings.floorBlur ?? 14) + 'px');
   if (settings.floorStagger !== false) revealReading(panel);
 }
 function syncChapter(index) {
@@ -167,7 +164,7 @@ function readChapter() {
 }
 function openLibrary() {
   const d = modal(
-    `<span class="eyebrow">THE BOOKSHELF</span><h2>어떤 이야기 속을 걸어 볼까요?</h2><div class="bookshelf">${library.books.map((b, i) => `<button class="book-option" data-book="${b.id}"><span class="mini-cover cover-${i % 3}"><small>ON THE BOOK CLASSICS</small>${icon("book-open")}<strong>${esc(b.englishTitle)}</strong><small>${b.year}</small></span><strong>${esc(b.title)}</strong><span>${esc(b.author)} · ${b.chapters.length}개의 장면</span><p>${esc(b.description)}</p></button>`).join("")}</div>`,
+    `<span class="eyebrow">THE BOOKSHELF</span><h2>어떤 이야기 속을 걸어 볼까요?</h2><div class="bookshelf">${library.books.map((b, i) => `<button class="book-option" data-book="${b.id}"><span class="mini-cover cover-${i % 3}">${b.cover ? `<img class="uploaded-cover" src="${esc(b.cover)}" alt="${esc(b.title)} 표지">` : `<small>ON THE BOOK CLASSICS</small>${icon("book-open")}<strong>${esc(b.englishTitle)}</strong><small>${b.year}</small>`}</span><strong>${esc(b.title)}</strong><span>${esc(b.author)} · ${b.chapters.length}개의 장면</span><p>${esc(b.description)}</p></button>`).join("")}</div>`,
   );
   for (const el of d.querySelectorAll("[data-book]"))
     el.onclick = () => {
@@ -225,6 +222,7 @@ document.addEventListener("visibilitychange", () => {
     document.hidden ? audioContext.suspend() : sound && audioContext.resume();
 });
 async function init() {
+  if (draftPreview) document.documentElement.dataset.draftPreview = "true";
   app.innerHTML =
     '<div class="loading-screen"><span class="brand">' +
     logo +
@@ -256,3 +254,6 @@ async function init() {
   }
 }
 init();
+
+
+
