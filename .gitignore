@@ -8,6 +8,7 @@ uploads/
 .vercel/
 *.log
 test-results/
+.codex-remote-attachments/
 
 .vercel
 .env*

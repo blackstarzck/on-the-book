@@ -10,7 +10,8 @@
     "build:client": "vite build --mode client",
     "build:admin": "vite build --mode admin",
     "test": "node --test tests/*.test.js",
-    "test:e2e": "node tests/workspace.mjs"
+    "test:e2e": "node tests/workspace.mjs",
+    "test:mobile": "npm run build && node tests/mobile-entry.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",
