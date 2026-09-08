@@ -1,0 +1,11 @@
+.git
+.vercel
+node_modules
+dist
+data
+uploads
+.env
+.env.*
+.codex-remote-attachments
+test-results
+*.log
