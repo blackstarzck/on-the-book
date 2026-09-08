@@ -1,0 +1,41 @@
+.reader-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  background: var(--paper, #f4f3e9);
+  text-align: center;
+}
+.reader-curtain p {
+  margin: 26px 0 22px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.reader-loading-line {
+  width: 72px;
+  height: 2px;
+  overflow: hidden;
+  background: #6a7b6820;
+}
+.reader-loading-line::after {
+  content: "";
+  display: block;
+  width: 50%;
+  height: 100%;
+  background: #7f9a6c;
+  animation: reader-loading 1.4s ease-in-out infinite;
+}
+@keyframes reader-loading {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(200%); }
+}
+/* Page entrances are sequenced in one place, including the exploration canvas. */
+#app .is-exploring .scene-wrap { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reader-loading-line::after { animation: none; width: 100%; }
+}

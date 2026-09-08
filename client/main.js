@@ -1,6 +1,7 @@
 import { revealReading } from "../shared/floor-reading.js";
 import { World } from "../shared/world.js";
 import { Journey } from "./journey.js";
+import { showLoading, clearLoading, transitionPage } from "./transitions.js";
 import { api, esc, icon, icons, logo, modal, toast } from "../shared/ui.js";
 import "../shared/style.css";
 let library,
@@ -84,13 +85,13 @@ function render() {
   document.querySelector("#help-button").onclick = help;
   document.querySelector("#sound-button").onclick = toggleSound;
   if (!exploring) {
-    document.querySelector("#start-button").onclick = () => {
-      exploring = true;
-      chapter =
-        book.chapters.find((c) => c.id === record().chapter) ||
-        book.chapters[0];
-      render();
-      if (!progress.tutorial) {
+    document.querySelector("#start-button").onclick = async () => {
+      const changed = await transitionPage(app, () => {
+        exploring = true;
+        chapter = book.chapters.find((c) => c.id === record().chapter) || book.chapters[0];
+        render();
+      }, { label: "이야기 속으로 들어가는 중이에요…" });
+      if (changed && !progress.tutorial) {
         help();
         progress.tutorial = true;
         remember();
@@ -138,13 +139,19 @@ function syncChapter(index) {
 }
 function goChapter(index) {
   if (index < 0 || index >= book.chapters.length) return;
-  if (exploring && world instanceof Journey) { world.jump(index); return; }
-  chapter = book.chapters[index];
-  record().chapter = chapter.id;
-  remember();
-  exploring = true;
-  render();
-  history.replaceState(null, "", `?book=${book.id}&chapter=${chapter.id}`);
+  if (exploring && world instanceof Journey) {
+    if (index === book.chapters.indexOf(chapter)) return;
+    transitionPage(app, () => world.jump(index), { label: "다음 장면을 펼치는 중이에요…", focus: "#map-button" });
+    return;
+  }
+  transitionPage(app, () => {
+    chapter = book.chapters[index];
+    record().chapter = chapter.id;
+    remember();
+    exploring = true;
+    render();
+    history.replaceState(null, "", `?book=${book.id}&chapter=${chapter.id}`);
+  });
 }
 function nextChapter() { goChapter(book.chapters.indexOf(chapter) + 1); }
 function help() {
@@ -168,12 +175,14 @@ function openLibrary() {
   );
   for (const el of d.querySelectorAll("[data-book]"))
     el.onclick = () => {
-      book = library.books.find((b) => b.id === el.dataset.book);
-      chapter = book.chapters[0];
-      exploring = false;
-      history.replaceState(null, "", `?book=${book.id}${draftPreview ? "&preview=draft" : ""}`);
       d.close();
-      render();
+      transitionPage(app, () => {
+        book = library.books.find((b) => b.id === el.dataset.book);
+        chapter = book.chapters[0];
+        exploring = false;
+        history.replaceState(null, "", `?book=${book.id}${draftPreview ? "&preview=draft" : ""}`);
+        render();
+      }, { label: "새로운 이야기를 펼치는 중이에요…" });
     };
 }
 function chapterMap() {
@@ -223,14 +232,14 @@ document.addEventListener("visibilitychange", () => {
 });
 async function init() {
   if (draftPreview) document.documentElement.dataset.draftPreview = "true";
-  app.innerHTML =
-    '<div class="loading-screen"><span class="brand">' +
-    logo +
-    "</span><p>책 속의 작은 세계를 펼치는 중이에요…</p></div>";
-  icons();
+  app.innerHTML = "";
+  showLoading();
+  app.setAttribute("aria-busy", "true");
   try {
     library = draftPreview ? (await api("/api/studio")).library : await api("/api/library");
     if (!library.books.length) {
+      clearLoading();
+      app.removeAttribute("aria-busy");
       app.innerHTML =
         '<div class="loading-screen"><h1>새로운 이야기를 준비하고 있어요.</h1><p>관리자가 책을 공개하면 이곳에 나타나요.</p></div>';
       return;
@@ -243,12 +252,14 @@ async function init() {
       book.chapters.find((c) => c.id === params.get("chapter")) ||
       book.chapters[0];
     exploring = params.has("chapter");
-    render();
+    await transitionPage(app, render, { initial: true });
     if (draftPreview && params.get('model') && world instanceof Journey) {
       const object = world.objects.find(o => o.p.id === params.get('model'));
       if (object) world.moveTo(object.p.x, object.p.z);
     }
   } catch (e) {
+    clearLoading();
+    app.removeAttribute("aria-busy");
     app.innerHTML = `<div class="loading-screen"><h1>책장을 불러오지 못했어요.</h1><p>${esc(e.message)}</p><button class="primary-button" id="retry">다시 시도</button></div>`;
     document.querySelector("#retry").onclick = init;
   }
