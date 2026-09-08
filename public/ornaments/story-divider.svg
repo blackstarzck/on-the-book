@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="42" viewBox="0 0 280 42" fill="none">
+<title>꽃잎 장식 구분선</title>
+<g stroke="#354a3e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M8 21h94m76 0h94M8 19c-3-2-4 4 0 4m264-4c3-2 4 4 0 4"/>
+<path d="M102 21c5-7 11 7 16 0-5-7-11 7-16 0zm60 0c5-7 11 7 16 0-5-7-11 7-16 0z"/>
+<g transform="translate(140 21) scale(.65) translate(-140 -21)">
+<path d="M140 19c-12-20 12-20 0 0zm2 2c20-12 20 12 0 0zm-2 2c12 20-12 20 0 0zm-2-2c-20 12-20-12 0 0z"/>
+<circle cx="140" cy="21" r="1.5"/></g><circle cx="122" cy="21" r="1"/><circle cx="158" cy="21" r="1"/>
+</g></svg>

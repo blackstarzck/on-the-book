@@ -1,0 +1,15 @@
+{
+  "results": [
+    "Ground click moves traveller; proximity starts, exits reset, re-entry replays",
+    "Unconditional continuous chapter travel and wide depth movement",
+    "Last chapter stays freely explorable with no completion flow",
+    "Draft persists through reload; publish separately updates public content",
+    "Wide-world size, placement and radius persist and publish independently",
+    "GLB upload with animation, registration, search and 3D preview work",
+    "Published uploaded GLB plays its clip on approach",
+    "Placement and unused model removal work",
+    "Book creation, chapter creation, story editing and reordering work",
+    "Mobile direction pad, layout and reduced-motion support",
+    "No uncaught browser errors"
+  ]
+}
