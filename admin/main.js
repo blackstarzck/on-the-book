@@ -1,4 +1,4 @@
-import { shelfHTML, mountWorkspace } from "./workspace.js";
+import { shelfHTML, mountWorkspace, thumbnails } from "./workspace.js";
 
 import { reactionSize } from "../shared/experience.js";
 import { World } from "../shared/world.js";
@@ -26,6 +26,7 @@ let library,
   dirty = false,
   busy = false,
   query = "";
+let disposeModelThumbnails=null;
 let workspace=null, inEditor=false, baseline=null, savedLibrary=null, leaveDialog=null, undoStack=[], redoStack=[];
 const app = document.querySelector("#app");
 const clientUrl = import.meta.env.VITE_CLIENT_URL || "/client/";
@@ -113,6 +114,7 @@ const select = (label, name, options, value) =>
     )
     .join("")}</select></div>`;
 function render() {
+  disposeModelThumbnails?.(); disposeModelThumbnails=null;
   if(workspace){workspace.dispose();workspace=null;world=null;}
   if(tab==='books' && inEditor && book() && chapter()) {
     world?.dispose();
@@ -441,22 +443,15 @@ function modelsView() {
         const used = library.books
           .flatMap((b) => b.chapters.flatMap((c) => c.placements))
           .filter((p) => p.modelId === m.id).length;
-        return `<article class="model-card"><div class="model-art kind-${m.kind}" style="--model-color:${esc(m.color)}">${modelArt(m.kind)}<span>${m.kind === "glb" ? "GLB" : "BUILT-IN"}</span></div><div class="model-card-body"><h2>${esc(m.name)}</h2><p>${used}개 장면 배치 · ${m.kind === "glb" ? "업로드한 모델" : "직접 제작한 기본 모델"}</p><div><button data-preview-model="${m.id}" class="text-button small">${icon("eye")} 미리보기</button><button data-edit-model="${m.id}" class="icon-button" aria-label="${esc(m.name)} 편집">${icon("settings-2")}</button></div></div></article>`;
+        return `<article class="model-card"><div class="model-art kind-${m.kind}" style="--model-color:${esc(m.color)}"><div class="model-thumbnail" data-thumb="${m.id}"></div><span>${m.kind === "glb" ? "GLB" : "BUILT-IN"}</span></div><div class="model-card-body"><h2>${esc(m.name)}</h2><p>${used}개 장면 배치 · ${m.kind === "glb" ? "업로드한 모델" : "직접 제작한 기본 모델"}</p><div><button data-preview-model="${m.id}" class="text-button small">${icon("eye")} 미리보기</button><button data-edit-model="${m.id}" class="icon-button" aria-label="${esc(m.name)} 편집">${icon("settings-2")}</button></div></div></article>`;
       })
       .join("") ||
     '<div class="empty-state"><h3>일치하는 모델이 없어요.</h3><p>다른 이름을 검색하거나 새 모델을 등록해 주세요.</p></div>'
   }</div>`;
 }
-function modelArt(kind) {
-  if (kind === "rabbit")
-    return '<div class="art-rabbit"><i></i><i></i><b><em></em><em></em></b><span></span></div>';
-  if (kind === "tree")
-    return '<div class="art-tree"><i></i><b></b><span></span></div>';
-  if (kind === "mushroom")
-    return '<div class="art-mushroom"><i></i><b></b></div>';
-  return `<span class="model-symbol">${icon(kind === "key" ? "sparkles" : kind === "cards" ? "layers" : kind === "house" ? "book-open" : "box")}</span>`;
-}
 function bindModels() {
+  try { disposeModelThumbnails=thumbnails(app,library.models,{width:640,height:360,animate:false}); }
+  catch { app.querySelectorAll('[data-thumb]').forEach(target=>{target.textContent='미리보기를 불러올 수 없어요.';}); }
   document.querySelector("#new-model").onclick = () => editModel();
   const search = document.querySelector("#model-search");
   search.oninput = (e) => {
@@ -497,6 +492,7 @@ function previewModel(m) {
       chapter: { theme: "meadow", placements: [p] },
       models: [m],
       editor: true,
+      modelOnly: true,
       onError: toast,
     });
     preview.preview("preview");
@@ -509,9 +505,9 @@ function editModel(existing) {
   const draft = existing
     ? structuredClone(existing)
     : { id: uid(), name: "", kind: "glb", color: "#8da88b", credit: "" };
-  let uploading = false;
+  let uploading = 0;
   const d = modal(
-    `<span class="eyebrow">MODEL LIBRARY</span><h2>${existing ? "모델 정보 수정" : "새 모델 등록"}</h2><form id="model-form">${field("모델 이름", "name", draft.name, "text", 'required maxlength="200"')}${select("모델 종류", "kind", { glb: "뼈대 애니메이션 GLB 파일" }, draft.kind)}<label class="upload-field" id="upload-area">${icon("upload")}<strong>3D 모델 파일 선택</strong><span>GLB 2.0 · 최대 25MB · 텍스처 포함</span><input type="file" name="file" accept=".glb" aria-label="3D 모델 파일 선택"><span id="upload-status">${draft.url ? "등록된 파일이 있어요. 새 파일을 선택하면 교체돼요." : "파일을 선택해 주세요."}</span></label>${field("기본 모델 색상", "color", draft.color, "color")}<label class="field">제작자 및 사용 권한<textarea name="credit" rows="3" maxlength="500" required>${esc(draft.credit)}</textarea></label><p class="field-hint">모델의 제작자와 사용 허가를 기록해 주세요. 업로드한 모델은 파일 자체의 색상을 사용해요.</p><div class="modal-actions">${existing ? '<button type="button" id="delete-model" class="text-button danger">모델 삭제</button>' : ""}<button id="model-submit" class="primary-button">${existing ? "변경 적용" : "보관함에 등록"}</button></div></form>`,
+    `<span class="eyebrow">MODEL LIBRARY</span><h2>${existing ? "모델 정보 수정" : "새 모델 등록"}</h2><form id="model-form">${field("모델 이름", "name", draft.name, "text", 'required maxlength="200"')}${select("모델 종류", "kind", { glb: "뼈대 애니메이션 GLB 파일" }, draft.kind)}<label class="upload-field" id="upload-area">${icon("upload")}<strong>3D 모델 파일 선택</strong><span>GLB 2.0 · 최대 25MB · 텍스처 포함</span><input type="file" name="file" accept=".glb" aria-label="3D 모델 파일 선택"><span id="upload-status">${draft.url ? "등록된 파일이 있어요. 새 파일을 선택하면 교체돼요." : "파일을 선택해 주세요."}</span></label><label class="upload-field">${icon("upload")}<strong>모델 썸네일 (필수)</strong><span>실제 모델을 보여 주는 PNG · 최대 5MB · 가로·세로 4096 이하</span><input type="file" name="thumbnail" accept="image/png,.png" aria-label="모델 썸네일"><img id="thumbnail-preview" class="thumbnail-preview" alt="선택한 모델 썸네일" ${draft.thumbnail ? `src="${esc(draft.thumbnail)}"` : "hidden"}><span id="thumbnail-status">${draft.thumbnail ? "등록된 썸네일이 있어요. 새 이미지로 교체할 수 있어요." : "모델을 대표할 이미지를 선택해 주세요."}</span></label>${field("기본 모델 색상", "color", draft.color, "color")}<label class="field">제작자 및 사용 권한<textarea name="credit" rows="3" maxlength="500" required>${esc(draft.credit)}</textarea></label><p class="field-hint">모델의 제작자와 사용 허가를 기록해 주세요. 업로드한 모델은 파일 자체의 색상을 사용해요.</p><div class="modal-actions">${existing ? '<button type="button" id="delete-model" class="text-button danger">모델 삭제</button>' : ""}<button id="model-submit" class="primary-button">${existing ? "변경 적용" : "보관함에 등록"}</button></div></form>`,
   );
   const form = d.querySelector("form");
   const update = () => {
@@ -522,7 +518,7 @@ function editModel(existing) {
   form.elements.file.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    uploading = true;
+    uploading++;
     d.querySelector("#model-submit").disabled = true;
     const status = d.querySelector("#upload-status");
     status.textContent = "모델 파일을 등록하는 중…";
@@ -540,9 +536,24 @@ function editModel(existing) {
     } catch (e) {
       status.textContent = e.message;
     } finally {
-      uploading = false;
-      d.querySelector("#model-submit").disabled = false;
+      uploading--;
+      d.querySelector("#model-submit").disabled = uploading > 0;
     }
+  };
+  form.elements.thumbnail.onchange = async (e) => {
+    const file=e.target.files[0]; if(!file)return;
+    uploading++; d.querySelector('#model-submit').disabled=true;
+    const status=d.querySelector('#thumbnail-status'); status.textContent='썸네일을 등록하는 중…';
+    try {
+      if(file.size>5*1024*1024)throw Error('5MB 이하의 PNG 이미지를 선택해 주세요.');
+      const bitmap=await createImageBitmap(file); bitmap.close();
+      const fd=new FormData(); fd.append('image',file);
+      const result=await api('/api/floor/upload',{method:'POST',body:fd});
+      draft.thumbnail=result.url;
+      const preview=d.querySelector('#thumbnail-preview'); preview.src=result.url; preview.hidden=false;
+      status.textContent='썸네일 업로드 완료';
+    } catch(error) { status.textContent=error.message; }
+    finally { uploading--; d.querySelector('#model-submit').disabled=uploading>0; }
   };
   form.onsubmit = (e) => {
     e.preventDefault();
@@ -552,6 +563,10 @@ function editModel(existing) {
     if (kind === "glb" && (!draft.url || !draft.rigged)) {
       toast("먼저 올바른 GLB 파일을 등록해 주세요.");
       return;
+    }
+    if (!draft.thumbnail) {
+      toast('모델 썸네일을 등록해 주세요.');
+      form.elements.thumbnail.focus(); return;
     }
     Object.assign(draft, {
       name: String(fd.get("name")).trim(),

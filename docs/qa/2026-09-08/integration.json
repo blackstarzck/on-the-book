@@ -1,0 +1,258 @@
+{
+  "engine": "Playwright MCP browser_run_code_unsafe",
+  "browser": "152.0.4191.66",
+  "startedAt": "2026-09-08T13:05:58.525Z",
+  "completedAt": "2026-09-08T13:06:19.294Z",
+  "group": "integration",
+  "records": [
+    {
+      "id": "I01",
+      "group": "integration",
+      "title": "임시 저장과 공개 분리",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2670,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I01.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\nQA 공개 전 제목\n✧\n루이스 캐럴\nQA 공개 전 제목\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "I02",
+      "group": "integration",
+      "title": "관리자 편집에서 공개와 사용자 확인까지",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 3575,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I02.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\nQA 새로 공개한 이야기\n\n루이스 캐럴 · 1865 · 6개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nAlice in Wonderland\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 01\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026\nTHE BOOKSHELF\n어떤 이야기 속을 걸어 볼까요?\nON THE BOOK CLASSICS\nAlice in Wonderland\n1865\nQA 새로 공개한 이야기\n루이스 캐럴 · 6개의 장면\n\n흰 토끼의 발자국을 따라, 상상이 피어나는 세계로.\n\nON THE BOOK CLASSICS\nThe Wonderful Wizard of Oz\n1900\n오즈의 마법사\nL. 프랭크 바움 · 3개의 장면\n\n노란 길 위에서 찾는 용기, 지혜, 그리고 집."
+    },
+    {
+      "id": "I03",
+      "group": "integration",
+      "title": "비공개 전환 후 책장 제외",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 3557,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I03.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\n오즈의 마법사\n\nL. 프랭크 바움 · 1900 · 3개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nThe Wonderful Wizard of Oz\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 01\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026\nTHE BOOKSHELF\n어떤 이야기 속을 걸어 볼까요?\nON THE BOOK CLASSICS\nThe Wonderful Wizard of Oz\n1900\n오즈의 마법사\nL. 프랭크 바움 · 3개의 장면\n\n노란 길 위에서 찾는 용기, 지혜, 그리고 집."
+    },
+    {
+      "id": "I04",
+      "group": "integration",
+      "title": "저자 및 권리 정보 없는 공개 차단",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1814,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I04.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "← 도서 보관함\n이상한 나라의 앨리스\n도서 정보\n저장하지 않은 변경사항\n↶ 실행 취소\n↷ 다시 실행\n임시 저장\n공개\n모델 보관함\n＋ 등록\n\n배치 대상: 흰 토끼를 따라서\n\n모델을 월드로 드래그하세요. 마우스를 올리면 동작을 미리 봅니다.\n\n하얀 토끼\n기본 동작 · 드래그 배치\n정보\n숲속 버섯\n기본 동작 · 드래그 배치\n정보\n이상한 찻주전자\n기본 동작 · 드래그 배치\n정보\n동그란 숲 나무\n기본 동작 · 드래그 배치\n정보\n여왕의 장미\n기본 동작 · 드래그 배치\n정보\n작은 황금 열쇠\n기본 동작 · 드래그 배치\n정보\n토끼의 회중시계\n기본 동작 · 드래그 배치\n정보\n하트 카드\n기본 동작 · 드래그 배치\n정보\n작은 오두막\n기본 동작 · 드래그 배치\n정보\n바닥 이미지\n\n이미지를 끌어 배치하고, 월드에서 선택해 수정하세요.\n\n화살표\n나뭇잎\n회중시계\n찻잔\n펼친 책\n＋ PNG 등록\n챕터\n01 흰 토끼를 따라서\n모델 3개\n02 작아지는 문, 커지는 세계\n모델 3개\n03 버섯 숲의 수수께끼\n모델 3개\n04 끝나지 않는 티 파티\n모델 3개\n05 장미 정원의 여왕\n모델 3개\n06 꿈에서 깨어나는 시간\n모델 3개\n＋\n챕터 추가\n챕터 모델\n조끼 입은 흰 토끼\n★ 메인\n시간을 쫓는 시계\n• 보조\n굴 입구의 작은 열쇠\n• 보조\n선택한 오브젝트\n★ 메인 · 화살표와 본문 연결\n장면 속 이름\n위치 · 격자에 맞춰 이동\nX\nY 높이\nZ\n방향 (도)\n크기 배율\n접근 애니메이션\n기본 동작\n폴짝 뛰기\n회전\n둥실 떠오르기\n흔들기\n동작 없음\n동작 재생 / 정지\n발동 반경 (m)\n\n실제 접근 범위 4.0 m\n\n충돌\n캐릭터 통과 막기\n충돌 반경\n복제\n삭제\n이동 W\n방향 E\n크기 S\n발동 범위 R\n격자\n0.5\n1\n2\n시점 초기화\n▶ 독자 체험\n왼쪽 드래그: 회전 · 오른쪽 드래그: 화면 이동 · 휠: 확대\n격자 스냅 ON · 회전 15° · 금색: 반응 범위 / 붉은색: 충돌\nX\n−X\nY\n−Y\nZ\n−Z\n이상한 나라의 앨리스의 저자·출처·권리 정보를 완성해 주세요."
+    },
+    {
+      "id": "I05",
+      "group": "integration",
+      "title": "메인 모델 없는 챕터 공개 차단",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1712,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I05.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 400
+        }
+      ],
+      "observed": "← 도서 보관함\nQA 메인 없음\n도서 정보\n저장하지 못했어요\n↶ 실행 취소\n↷ 다시 실행\n임시 저장\n공개\n모델 보관함\n＋ 등록\n\n배치 대상: 새로운 챕터\n\n모델을 월드로 드래그하세요. 마우스를 올리면 동작을 미리 봅니다.\n\n하얀 토끼\n기본 동작 · 드래그 배치\n정보\n숲속 버섯\n기본 동작 · 드래그 배치\n정보\n이상한 찻주전자\n기본 동작 · 드래그 배치\n정보\n동그란 숲 나무\n기본 동작 · 드래그 배치\n정보\n여왕의 장미\n기본 동작 · 드래그 배치\n정보\n작은 황금 열쇠\n기본 동작 · 드래그 배치\n정보\n토끼의 회중시계\n기본 동작 · 드래그 배치\n정보\n하트 카드\n기본 동작 · 드래그 배치\n정보\n작은 오두막\n기본 동작 · 드래그 배치\n정보\n바닥 이미지\n\n이미지를 끌어 배치하고, 월드에서 선택해 수정하세요.\n\n화살표\n나뭇잎\n회중시계\n찻잔\n펼친 책\n＋ PNG 등록\n챕터\n01 새로운 챕터\n모델 없음\n＋\n챕터 추가\n챕터 모델\n\n모델을 배치하면 첫 모델이 메인이 됩니다.\n\n선택한 오브젝트\n월드에서 모델 또는 이미지를 선택하세요.\n\n새 챕터는 빈 월드입니다. 왼쪽 보관함에서 모델을 끌어 놓으세요.\n이동 W\n방향 E\n크기 S\n발동 범위 R\n격자\n0.5\n1\n2\n시점 초기화\n▶ 독자 체험\n왼쪽 드래그: 회전 · 오른쪽 드래그: 화면 이동 · 휠: 확대\n격자 스냅 ON · 회전 15° · 금색: 반응 범위 / 붉은색: 충돌\nX\n−X\nY\n−Y\nZ\n−Z\n“QA 메인 없음 / 새로운 챕터”에 메인 모델을 배치한 뒤 공개해 주세요."
+    },
+    {
+      "id": "I06",
+      "group": "integration",
+      "title": "저장 오류 후 수정 내용 유지와 재시도",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1731,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I06.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 500
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "← 도서 보관함\nQA 저장 재시도\n도서 정보\n변경사항 저장됨\n↶ 실행 취소\n↷ 다시 실행\n임시 저장\n공개\n모델 보관함\n＋ 등록\n\n배치 대상: 흰 토끼를 따라서\n\n모델을 월드로 드래그하세요. 마우스를 올리면 동작을 미리 봅니다.\n\n하얀 토끼\n기본 동작 · 드래그 배치\n정보\n숲속 버섯\n기본 동작 · 드래그 배치\n정보\n이상한 찻주전자\n기본 동작 · 드래그 배치\n정보\n동그란 숲 나무\n기본 동작 · 드래그 배치\n정보\n여왕의 장미\n기본 동작 · 드래그 배치\n정보\n작은 황금 열쇠\n기본 동작 · 드래그 배치\n정보\n토끼의 회중시계\n기본 동작 · 드래그 배치\n정보\n하트 카드\n기본 동작 · 드래그 배치\n정보\n작은 오두막\n기본 동작 · 드래그 배치\n정보\n바닥 이미지\n\n이미지를 끌어 배치하고, 월드에서 선택해 수정하세요.\n\n화살표\n나뭇잎\n회중시계\n찻잔\n펼친 책\n＋ PNG 등록\n챕터\n01 흰 토끼를 따라서\n모델 3개\n02 작아지는 문, 커지는 세계\n모델 3개\n03 버섯 숲의 수수께끼\n모델 3개\n04 끝나지 않는 티 파티\n모델 3개\n05 장미 정원의 여왕\n모델 3개\n06 꿈에서 깨어나는 시간\n모델 3개\n＋\n챕터 추가\n챕터 모델\n조끼 입은 흰 토끼\n★ 메인\n시간을 쫓는 시계\n• 보조\n굴 입구의 작은 열쇠\n• 보조\n선택한 오브젝트\n★ 메인 · 화살표와 본문 연결\n장면 속 이름\n위치 · 격자에 맞춰 이동\nX\nY 높이\nZ\n방향 (도)\n크기 배율\n접근 애니메이션\n기본 동작\n폴짝 뛰기\n회전\n둥실 떠오르기\n흔들기\n동작 없음\n동작 재생 / 정지\n발동 반경 (m)\n\n실제 접근 범위 4.0 m\n\n충돌\n캐릭터 통과 막기\n충돌 반경\n복제\n삭제\n이동 W\n방향 E\n크기 S\n발동 범위 R\n격자\n0.5\n1\n2\n시점 초기화\n▶ 독자 체험\n왼쪽 드래그: 회전 · 오른쪽 드래그: 화면 이동 · 휠: 확대\n격자 스냅 ON · 회전 15° · 금색: 반응 범위 / 붉은색: 충돌\nX\n−X\nY\n−Y\nZ\n−Z\n변경사항을 임시 저장했어요."
+    },
+    {
+      "id": "I07",
+      "group": "integration",
+      "title": "다른 창의 저장과 충돌 처리",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 3852,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I07.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "← 도서 보관함\nQA 첫 번째 창\n도서 정보\n변경사항 저장됨\n↶ 실행 취소\n↷ 다시 실행\n임시 저장\n공개\n모델 보관함\n＋ 등록\n\n배치 대상: 흰 토끼를 따라서\n\n모델을 월드로 드래그하세요. 마우스를 올리면 동작을 미리 봅니다.\n\n하얀 토끼\n기본 동작 · 드래그 배치\n정보\n숲속 버섯\n기본 동작 · 드래그 배치\n정보\n이상한 찻주전자\n기본 동작 · 드래그 배치\n정보\n동그란 숲 나무\n기본 동작 · 드래그 배치\n정보\n여왕의 장미\n기본 동작 · 드래그 배치\n정보\n작은 황금 열쇠\n기본 동작 · 드래그 배치\n정보\n토끼의 회중시계\n기본 동작 · 드래그 배치\n정보\n하트 카드\n기본 동작 · 드래그 배치\n정보\n작은 오두막\n기본 동작 · 드래그 배치\n정보\n바닥 이미지\n\n이미지를 끌어 배치하고, 월드에서 선택해 수정하세요.\n\n화살표\n나뭇잎\n회중시계\n찻잔\n펼친 책\n＋ PNG 등록\n챕터\n01 흰 토끼를 따라서\n모델 3개\n02 작아지는 문, 커지는 세계\n모델 3개\n03 버섯 숲의 수수께끼\n모델 3개\n04 끝나지 않는 티 파티\n모델 3개\n05 장미 정원의 여왕\n모델 3개\n06 꿈에서 깨어나는 시간\n모델 3개\n＋\n챕터 추가\n챕터 모델\n조끼 입은 흰 토끼\n★ 메인\n시간을 쫓는 시계\n• 보조\n굴 입구의 작은 열쇠\n• 보조\n선택한 오브젝트\n★ 메인 · 화살표와 본문 연결\n장면 속 이름\n위치 · 격자에 맞춰 이동\nX\nY 높이\nZ\n방향 (도)\n크기 배율\n접근 애니메이션\n기본 동작\n폴짝 뛰기\n회전\n둥실 떠오르기\n흔들기\n동작 없음\n동작 재생 / 정지\n발동 반경 (m)\n\n실제 접근 범위 4.0 m\n\n충돌\n캐릭터 통과 막기\n충돌 반경\n복제\n삭제\n이동 W\n방향 E\n크기 S\n발동 범위 R\n격자\n0.5\n1\n2\n시점 초기화\n▶ 독자 체험\n왼쪽 드래그: 회전 · 오른쪽 드래그: 화면 이동 · 휠: 확대\n격자 스냅 ON · 회전 15° · 금색: 반응 범위 / 붉은색: 충돌\nX\n−X\nY\n−Y\nZ\n−Z\n변경사항을 임시 저장했어요."
+    },
+    {
+      "id": "I08",
+      "group": "integration",
+      "title": "저장 중 버튼 중복 요청 방지",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1684,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/I08.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "← 도서 보관함\nQA 저장 중\n도서 정보\n변경사항 저장됨\n↶ 실행 취소\n↷ 다시 실행\n임시 저장\n공개\n모델 보관함\n＋ 등록\n\n배치 대상: 흰 토끼를 따라서\n\n모델을 월드로 드래그하세요. 마우스를 올리면 동작을 미리 봅니다.\n\n하얀 토끼\n기본 동작 · 드래그 배치\n정보\n숲속 버섯\n기본 동작 · 드래그 배치\n정보\n이상한 찻주전자\n기본 동작 · 드래그 배치\n정보\n동그란 숲 나무\n기본 동작 · 드래그 배치\n정보\n여왕의 장미\n기본 동작 · 드래그 배치\n정보\n작은 황금 열쇠\n기본 동작 · 드래그 배치\n정보\n토끼의 회중시계\n기본 동작 · 드래그 배치\n정보\n하트 카드\n기본 동작 · 드래그 배치\n정보\n작은 오두막\n기본 동작 · 드래그 배치\n정보\n바닥 이미지\n\n이미지를 끌어 배치하고, 월드에서 선택해 수정하세요.\n\n화살표\n나뭇잎\n회중시계\n찻잔\n펼친 책\n＋ PNG 등록\n챕터\n01 흰 토끼를 따라서\n모델 3개\n02 작아지는 문, 커지는 세계\n모델 3개\n03 버섯 숲의 수수께끼\n모델 3개\n04 끝나지 않는 티 파티\n모델 3개\n05 장미 정원의 여왕\n모델 3개\n06 꿈에서 깨어나는 시간\n모델 3개\n＋\n챕터 추가\n챕터 모델\n조끼 입은 흰 토끼\n★ 메인\n시간을 쫓는 시계\n• 보조\n굴 입구의 작은 열쇠\n• 보조\n선택한 오브젝트\n★ 메인 · 화살표와 본문 연결\n장면 속 이름\n위치 · 격자에 맞춰 이동\nX\nY 높이\nZ\n방향 (도)\n크기 배율\n접근 애니메이션\n기본 동작\n폴짝 뛰기\n회전\n둥실 떠오르기\n흔들기\n동작 없음\n동작 재생 / 정지\n발동 반경 (m)\n\n실제 접근 범위 4.0 m\n\n충돌\n캐릭터 통과 막기\n충돌 반경\n복제\n삭제\n이동 W\n방향 E\n크기 S\n발동 범위 R\n격자\n0.5\n1\n2\n시점 초기화\n▶ 독자 체험\n왼쪽 드래그: 회전 · 오른쪽 드래그: 화면 이동 · 휠: 확대\n격자 스냅 ON · 회전 15° · 금색: 반응 범위 / 붉은색: 충돌\nX\n−X\nY\n−Y\nZ\n−Z\n변경사항을 임시 저장했어요."
+    }
+  ]
+}

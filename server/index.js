@@ -129,6 +129,12 @@ app.put("/api/studio", sameOrigin, auth, async (req, res) => {
   try {
     if(req.body.publish)for(const b of parsed.data.books.filter(b=>b.published))for(const c of b.chapters)if(!c.mainPlacementId)return res.status(400).json({error:`“${b.title} / ${c.title}”에 메인 모델을 배치한 뒤 공개해 주세요.`});
     for(const book of parsed.data.books)if(newTriggerConflict(book,db.draft.books.find(b=>b.id===book.id)))return res.status(400).json({error:'모델의 애니메이션 발동 영역이 겹칩니다. 위치나 발동 반경을 조정해 주세요.'});
+    for (const model of parsed.data.models) {
+      const previous=db.draft.models.find(m=>m.id===model.id);
+      if ((!previous || previous.thumbnail) && !model.thumbnail)
+        return res.status(400).json({error:'모델 썸네일을 등록해 주세요.'});
+      if(model.thumbnail)await readAsset(path.basename(model.thumbnail));
+    }
     for (const model of parsed.data.models)
       if (model.kind === "glb") {
         const info=modelInfo(await readAsset(path.basename(model.url)));

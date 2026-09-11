@@ -894,7 +894,7 @@
 .single-preview {
   height: 330px;
   width: 100%;
-  background: #edf0e2;
+  background: transparent;
   border-radius: 8px;
 }
 .single-preview canvas {
@@ -1227,3 +1227,8 @@
 .leave-editor-dialog .leave-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-top: 28px; }
 .leave-editor-dialog .leave-error { color: #a34c40; }
 .leave-editor-dialog .leave-error:empty { display: none; }
+
+.model-thumbnail { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; color:#66745e; }
+.model-thumbnail img { width:100%; height:100%; object-fit:contain; }
+.thumbnail-preview { width:100%; max-height:180px; object-fit:contain; border-radius:6px; }
+.thumbnail-preview[hidden] { display:none; }

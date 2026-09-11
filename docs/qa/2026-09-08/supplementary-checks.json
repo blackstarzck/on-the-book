@@ -1,0 +1,12 @@
+{
+  "checks": [
+    { "command": "npm test", "exitCode": 0, "total": 24, "passed": 24, "failed": 0 },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "npm run build:client -- --outDir test-results/qa-uat-2026-09-08/build-client", "exitCode": 0 },
+    { "command": "npm run build:admin -- --outDir test-results/qa-uat-2026-09-08/build-admin", "exitCode": 0 }
+  ],
+  "warning": "공통 3D 코드를 포함한 일부 빌드 산출물이 압축 전 500KB를 초과함. 빌드 실패는 아니며 부하/성능 검사는 별도 범위임.",
+  "artifactValidation": { "uniqueScenarioIds": 135, "gherkinFeatureFiles": 17, "missingScreenshots": 0 },
+  "productFilesModified": false,
+  "originalWorkingDataModified": false
+}

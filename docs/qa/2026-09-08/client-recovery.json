@@ -1,0 +1,215 @@
+{
+  "engine": "Playwright MCP browser_run_code_unsafe",
+  "browser": "152.0.4191.66",
+  "startedAt": "2026-09-08T13:01:02.361Z",
+  "completedAt": "2026-09-08T13:01:31.163Z",
+  "group": "client-recovery",
+  "records": [
+    {
+      "id": "R1",
+      "group": "client-recovery",
+      "title": "손상된 방문 기록 복구 1",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2388,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R1.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "R2",
+      "group": "client-recovery",
+      "title": "손상된 방문 기록 복구 2",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2389,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R2.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "R3",
+      "group": "client-recovery",
+      "title": "손상된 방문 기록 복구 3",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2464,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R3.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "R4",
+      "group": "client-recovery",
+      "title": "손상된 방문 기록 복구 4",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2384,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R4.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "R05",
+      "group": "client-recovery",
+      "title": "책장 요청 실패 후 재시도",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1219,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R05.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 503
+        },
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\n이상한 나라의 앨리스\n\n루이스 캐럴 · 1865 · 6개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nAlice in Wonderland\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 01\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "R06",
+      "group": "client-recovery",
+      "title": "공개 도서가 없는 책장",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 897,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R06.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "새로운 이야기를 준비하고 있어요.\n\n관리자가 책을 공개하면 이곳에 나타나요."
+    },
+    {
+      "id": "R07",
+      "group": "client-recovery",
+      "title": "3D 미지원 브라우저의 본문 대안",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1493,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R07.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n3D 화면을 불러오지 못했어요\n\n이 브라우저에서 3D 화면을 시작하지 못했습니다. 하드웨어 가속을 켜거나 다른 브라우저로 열어 주세요.\n\n이야기 읽기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\n이상한 나라의 앨리스\n\n루이스 캐럴 · 1865 · 6개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nAlice in Wonderland\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 01\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026\nCHAPTER 01\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다. 토끼는 조끼 주머니에서 시계를 꺼내더니 늦었다며 중얼거렸습니다. 앨리스는 생각할 틈도 없이 토끼를 따라 달렸습니다.\n\n울타리 아래 커다란 토끼 굴. 그 안으로 한 걸음 내딛는 순간, 평범하던 오후가 아주 낯선 모험으로 바뀌었습니다.\n\n1865년 영어 원작을 바탕으로 직접 쓴 한국어 축약·각색입니다. 기존 한국어 번역문과 삽화를 사용하지 않았습니다.\n원작 정보 보기 ↗"
+    },
+    {
+      "id": "R08",
+      "group": "client-recovery",
+      "title": "저장 공간 쓰기 실패 안내",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2891,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R08.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\nHOW TO WANDER\n정해진 속도는 없어요.\n01\n\n가고 싶은 곳을 눌러요\n땅을 클릭하거나 마우스를 누른 채 움직이면 그 위치를 따라가요. 방향키·W A S D로도 이동해요. 휴대폰에서는 화면의 방향 버튼도 사용할 수 있어요.\n\n02\n\n작은 물체에 다가가요\n챕터의 3D 모델에 가까워지면 애니메이션이 재생돼요. 멀어지면 멈추고, 다시 가까워지면 처음부터 재생돼요.\n\n03\n\n다음 이야기를 만나요\n넓게 이어진 공간을 자유롭게 걸어요. 이동을 위한 조건은 없어요. 지도에서 원하는 챕터를 바로 열 수도 있어요.\n\n소리는 오른쪽 위에서 켤 수 있어요. 탐험 기록은 이 브라우저에 저장돼요.\n\n이 브라우저에서는 탐험 기록을 저장할 수 없습니다."
+    },
+    {
+      "id": "R09",
+      "group": "client-recovery",
+      "title": "응답이 느릴 때 중복 진입 방지",
+      "status": "failed",
+      "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#app[aria-busy=\"true\"]') to be visible\u001b[22m\n\u001b[2m    27 × locator resolved to hidden <div id=\"app\" aria-busy=\"true\"></div>\u001b[22m\n",
+      "elapsedMs": 12557,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/R09.png",
+      "errors": [],
+      "network": [],
+      "observed": "on the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    }
+  ]
+}

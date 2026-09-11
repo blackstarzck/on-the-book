@@ -1,0 +1,60 @@
+{
+  "engine": "Playwright MCP browser_run_code_unsafe",
+  "browser": "152.0.4191.66",
+  "startedAt": "2026-09-08T13:10:00.397Z",
+  "completedAt": "2026-09-08T13:10:07.153Z",
+  "group": "recheck-functional",
+  "records": [
+    {
+      "id": "J02",
+      "group": "uat-extended",
+      "title": "저장 도중 추가 수정의 미저장 상태 표시",
+      "status": "failed",
+      "error": "표시 누락: 저장하지 않은",
+      "elapsedMs": 4696,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/J02.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        },
+        {
+          "method": "PUT",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "← 도서 보관함\nQA 저장 중 추가 편집\n도서 정보\n변경사항 저장됨\n↶ 실행 취소\n↷ 다시 실행\n임시 저장\n공개\n모델 보관함\n＋ 등록\n\n배치 대상: 흰 토끼를 따라서\n\n모델을 월드로 드래그하세요. 마우스를 올리면 동작을 미리 봅니다.\n\n하얀 토끼\n기본 동작 · 드래그 배치\n정보\n숲속 버섯\n기본 동작 · 드래그 배치\n정보\n이상한 찻주전자\n기본 동작 · 드래그 배치\n정보\n동그란 숲 나무\n기본 동작 · 드래그 배치\n정보\n여왕의 장미\n기본 동작 · 드래그 배치\n정보\n작은 황금 열쇠\n기본 동작 · 드래그 배치\n정보\n토끼의 회중시계\n기본 동작 · 드래그 배치\n정보\n하트 카드\n기본 동작 · 드래그 배치\n정보\n작은 오두막\n기본 동작 · 드래그 배치\n정보\n바닥 이미지\n\n이미지를 끌어 배치하고, 월드에서 선택해 수정하세요.\n\n화살표\n나뭇잎\n회중시계\n찻잔\n펼친 책\n＋ PNG 등록\n챕터\n01 흰 토끼를 따라서\n모델 3개\n02 작아지는 문, 커지는 세계\n모델 3개\n03 버섯 숲의 수수께끼\n모델 3개\n04 끝나지 않는 티 파티\n모델 3개\n05 장미 정원의 여왕\n모델 3개\n06 꿈에서 깨어나는 시간\n모델 3개\n＋\n챕터 추가\n챕터 모델\n조끼 입은 흰 토끼\n★ 메인\n시간을 쫓는 시계\n• 보조\n굴 입구의 작은 열쇠\n• 보조\n선택한 오브젝트\n★ 메인 · 화살표와 본문 연결\n장면 속 이름\n위치 · 격자에 맞춰 이동\nX\nY 높이\nZ\n방향 (도)\n크기 배율\n접근 애니메이션\n기본 동작\n폴짝 뛰기\n회전\n둥실 떠오르기\n흔들기\n동작 없음\n동작 재생 / 정지\n발동 반경 (m)\n\n실제 접근 범위 4.0 m\n\n충돌\n캐릭터 통과 막기\n충돌 반경\n복제\n삭제\n이동 W\n방향 E\n크기 S\n발동 범위 R\n격자\n0.5\n1\n2\n시점 초기화\n▶ 독자 체험\n왼쪽 드래그: 회전 · 오른쪽 드래그: 화면 이동 · 휠: 확대\n격자 스냅 ON · 회전 15° · 금색: 반응 범위 / 붉은색: 충돌\nX\n−X\nY\n−Y\nZ\n−Z\n변경사항을 임시 저장했어요."
+    },
+    {
+      "id": "Z03",
+      "group": "edge-cases",
+      "title": "기본 제공 모델의 정보 수정",
+      "status": "failed",
+      "error": "기본 모델 편집이 파일 등록 요구로 차단됨",
+      "elapsedMs": 1911,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/Z03.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n3D 모델 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nTHE LITTLE CAST OF YOUR STORIES\n3D 모델 보관함\n\n이야기의 주인공과 소품을 모아 두는 공간이에요.\n\n모델 등록\n9개의 모델 · GLB 파일 지원\nBUILT-IN\n하얀 토끼\n\n4개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n숲속 버섯\n\n1개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n이상한 찻주전자\n\n2개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n동그란 숲 나무\n\n3개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n여왕의 장미\n\n2개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n작은 황금 열쇠\n\n5개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n토끼의 회중시계\n\n2개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n하트 카드\n\n2개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n작은 오두막\n\n3개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nMODEL LIBRARY\n모델 정보 수정\n모델 이름\n모델 종류\n뼈대 애니메이션 GLB 파일\n3D 모델 파일 선택\nGLB 2.0 · 최대 25MB · 텍스처 포함\n파일을 선택해 주세요.\n기본 모델 색상\n제작자 및 사용 권한\n\n모델의 제작자와 사용 허가를 기록해 주세요. 업로드한 모델은 파일 자체의 색상을 사용해요.\n\n모델 삭제\n변경 적용\n먼저 올바른 GLB 파일을 등록해 주세요."
+    }
+  ]
+}
