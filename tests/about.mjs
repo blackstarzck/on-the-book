@@ -1,4 +1,6 @@
 import { chromium, expect } from "@playwright/test";
+import { execFileSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { startServer } from "./helpers.js";
 
@@ -185,6 +187,15 @@ try {
     expect(problems).toEqual([]);
     await context.close();
     pass(`Reader header fits the about link at ${viewport.width}px`);
+  }
+  {
+    // The studio's Vercel project serves the reader for previews but has no /about page.
+    execFileSync(process.execPath, ["node_modules/vite/bin/vite.js", "build", "--mode", "admin", "--logLevel", "error"], { stdio: "inherit" });
+    const linksAbout = (dir) =>
+      readdirSync(dir).filter((file) => /^client-.*\.js$/.test(file)).some((file) => readFileSync(`${dir}/${file}`, "utf8").includes("about-link"));
+    expect(linksAbout("dist/assets")).toBe(true);
+    expect(linksAbout("dist/admin/assets")).toBe(false);
+    pass("The admin build leaves the about link out of the reader");
   }
 } finally {
   await browser.close();
