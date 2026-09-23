@@ -4,7 +4,7 @@ const server=await startServer(4292);
 const browser=await chromium.launch({channel:'msedge',headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:960}});
 context.setDefaultTimeout(20000);
-await context.route('**/assets/client-*.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace(/(\w+)\.setActive\((\w+)\)/,(match,name)=>match+',(window.__testWorld='+name+')');await route.fulfill({response,body});});
+await context.route('**/assets/client-*.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace(/([\w$]+)\.setActive\(([\w$]+)\)/,(match,name)=>match+',(window.__testWorld='+name+')');await route.fulfill({response,body});});
 const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try {
  await page.goto(server.url+'/admin/');await page.locator('#edit-story').click();

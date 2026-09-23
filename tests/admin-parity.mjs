@@ -6,7 +6,7 @@ const context = await browser.newContext({viewport:{width:1440,height:960}});
 context.setDefaultTimeout(20000);
 await context.route('**/assets/client-*.js', async route => {
   const response = await route.fetch();
-  const body = (await response.text()).replace(/(\w+)\.setActive\((\w+)\)/, (match,name) => match+',(window.__testWorld='+name+')');
+  const body = (await response.text()).replace(/([\w$]+)\.setActive\(([\w$]+)\)/, (match,name) => match+',(window.__testWorld='+name+')');
   await route.fulfill({response,body});
 });
 const page = await context.newPage();

@@ -2,7 +2,7 @@ import {chromium,expect} from '@playwright/test';
 import {startServer} from './helpers.js';
 const server=await startServer(4285),browser=await chromium.launch({channel:'msedge',headless:true});
 try {
- const context=await browser.newContext();await context.route('**/assets/client-*.js',async r=>{const response=await r.fetch();await r.fulfill({response,body:(await response.text()).replace(/(\w+)\.setActive\((\w+)\)/,(m,n)=>m+',window.__w='+n)});});
+ const context=await browser.newContext();await context.route('**/assets/client-*.js',async r=>{const response=await r.fetch();await r.fulfill({response,body:(await response.text()).replace(/([\w$]+)\.setActive\(([\w$]+)\)/,(m,n)=>m+',window.__w='+n)});});
  const p=await context.newPage();await p.goto(server.url+'/client/?book=alice&chapter=alice-1');await p.waitForFunction(()=>window.__w?.sun);
  await p.evaluate(()=>{const w=window.__w,o=w.objects[0];w.moveTo(o.p.x,o.p.z);});await p.waitForTimeout(2800);
  const state=await p.evaluate(()=>{const w=window.__w,o=w.objects[0];return {distance:Math.hypot(w.player.position.x-o.p.x,w.player.position.z-o.p.z),limit:(o.p.collisionRadius??.8)*o.p.scale+.32,near:o.near};});

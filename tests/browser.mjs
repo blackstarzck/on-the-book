@@ -23,7 +23,7 @@ const pass = (s) => {
 };
 await context.route("**/assets/client-*.js", async route => {
   const response = await route.fetch();
-  const body = (await response.text()).replace(/(\w+)\.setActive\((\w+)\)/, (match, name) => match + ',(window.__testWorld=' + name + ')');
+  const body = (await response.text()).replace(/([\w$]+)\.setActive\(([\w$]+)\)/, (match, name) => match + ',(window.__testWorld=' + name + ')');
   await route.fulfill({ response, body });
 });
 try {

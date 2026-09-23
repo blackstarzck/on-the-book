@@ -13,7 +13,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(server.url + '/client/');
     await expect(page.locator('.reader-curtain')).toHaveCount(0);
-    await page.waitForFunction(() => document.querySelector('#start-button')?.getAnimations().length === 0);
+    await expect(page.locator('.catalog-card')).toHaveCount(2);
     expect(await page.evaluate(() => scrollY)).toBe(0);
 
     // A locator click scrolls an offscreen button into view and hid the original bug.
@@ -41,20 +41,32 @@ try {
       }
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(50);
+      // Wait for the touch gesture's momentum to finish before a coordinate tap.
+      await page.evaluate(() => new Promise(resolve => {
+        let previous = scrollY, stableFrames = 0;
+        const tick = () => {
+          stableFrames = Math.abs(scrollY - previous) < .5 ? stableFrames + 1 : 0;
+          previous = scrollY;
+          if (stableFrames >= 6) resolve(); else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }));
       await cdp.detach();
     }
-    await tapVisible('#start-button');
+    // The library is scrollable; bring the selected cover into view before touching it.
+    await page.locator('[data-enter="alice"] .cover-stage').evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.locator('[data-enter="alice"] .cover-stage').scrollIntoViewIfNeeded();
+    await tapVisible('[data-enter="alice"] .cover-stage');
     await expect(page.locator('.reader-curtain')).toHaveCount(0);
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('button', { name: '닫기', exact: true }).tap();
-    await expect(page.locator('.reader-entry')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.locator('.library-page')).toHaveCount(0);
     await page.waitForFunction(() => document.querySelector('.journey-controls').getAnimations().length === 0);
     expect(await page.evaluate(() => scrollY)).toBe(0);
     await tapVisible('#next-chapter');
     await expect(page.locator('.reader-curtain')).toHaveCount(0);
     await expect(page.locator('#map-button')).toContainText('02');
     expect(errors).toEqual([]);
-    console.log(`PASS ${viewport.width}x${viewport.height}: entry and chapter controls reachable without scrolling`);
+    console.log(`PASS ${viewport.width}x${viewport.height}: book cover opens directly and chapter controls fit the viewport`);
     await context.close();
   }
 } finally {
