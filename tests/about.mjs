@@ -151,6 +151,41 @@ try {
     await context.close();
     pass(`About page fits ${viewport.width}px without sideways scrolling`);
   }
+  {
+    const { context, page, problems } = await open();
+    await page.goto(server.url + "/client/");
+    await page.locator("#about-link").click();
+    await page.waitForURL(aboutUrl);
+    await expect(page).toHaveTitle("On the Book — 책 속을 걷다");
+    await page.goto(server.url + "/client/?preview=draft");
+    await expect(page.locator("#library-button")).toBeVisible();
+    await expect(page.locator("#about-link")).toHaveCount(0);
+    expect(problems).toEqual([]);
+    await context.close();
+    pass("Reader header links to /about; the draft preview leaves the link out");
+  }
+  for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 560 }]) {
+    const { context, page, problems } = await open({ viewport, isMobile: true, hasTouch: true });
+    await page.goto(server.url + "/client/");
+    await expect(page.locator("#about-link")).toBeVisible();
+    await expect(page.locator(".reader-curtain")).toHaveCount(0);
+    const layout = await page.evaluate(() => {
+      const box = (selector) => {
+        const r = document.querySelector(selector).getBoundingClientRect();
+        return { selector, left: r.left, right: r.right };
+      };
+      return { header: box(".site-header"), items: [".site-header .brand", "#about-link", "#library-button", "#sound-button"].map(box) };
+    });
+    layout.items.forEach((item, i) => {
+      expect(item.left, `${item.selector} starts inside the header`).toBeGreaterThanOrEqual(layout.header.left - 0.5);
+      expect(item.right, `${item.selector} ends inside the header`).toBeLessThanOrEqual(layout.header.right + 0.5);
+      if (i) expect(item.left, `${item.selector} clears ${layout.items[i - 1].selector}`).toBeGreaterThanOrEqual(layout.items[i - 1].right - 0.5);
+    });
+    await page.locator(".site-header").screenshot({ path: `test-results/about-link-header-${viewport.width}.png` });
+    expect(problems).toEqual([]);
+    await context.close();
+    pass(`Reader header fits the about link at ${viewport.width}px`);
+  }
 } finally {
   await browser.close();
   await server.stop();

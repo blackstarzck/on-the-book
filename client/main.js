@@ -40,7 +40,7 @@ function record() {
   return progress[book.id];
 }
 function header() {
-  return `<header class="site-header"><a class="brand" href="/client/" aria-label="On the Book 홈">${logo}</a><nav aria-label="주 메뉴"><button id="library-button" class="text-button">책장 둘러보기</button><span class="nav-divider"></span><button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button><button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
+  return `<header class="site-header"><a class="brand" href="/client/" aria-label="On the Book 홈">${logo}</a><nav aria-label="주 메뉴">${draftPreview ? "" : '<a id="about-link" class="text-button" href="/about">소개</a>'}<button id="library-button" class="text-button">책장 둘러보기</button><span class="nav-divider"></span><button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button><button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
 }
 function render() {
   world?.dispose();
