@@ -1,6 +1,6 @@
 # On the Book: React + Next.js 전환과 관리자 편집기 투어 설계
 
-작성일 2026-09-11. 이 문서는 전환 전체의 아키텍처와 단계 경계를 정의하는 상위 스펙이다. 각 단계는 이 문서를 기준으로 별도 구현 계획을 만든다. 2026-09-23 소개 페이지(`/about`) 추가를 3·4·10·14·16절에 반영했다.
+작성일 2026-09-11. 이 문서는 전환 전체의 아키텍처와 단계 경계를 정의하는 상위 스펙이다. 각 단계는 이 문서를 기준으로 별도 구현 계획을 만든다. 2026-09-23 소개 페이지(`/about`) 추가를 3·4·10·12·14·16절에 반영했다.
 
 ## 1. 배경과 목표
 
@@ -48,8 +48,9 @@
 ```
 package.json                 workspaces: apps/*, packages/*  루트 스크립트 dev·build·test·test:e2e
 apps/client/                 Next 16. 사용자 화면
-  app/page.tsx               /  독서 경험
-  app/about/page.tsx         /about  소개 페이지(client/about 이식)
+  app/(reader)/layout.tsx    독자 화면 레이아웃. 전역 CSS(12절)를 여기서 가져온다
+  app/(reader)/page.tsx      /  독서 경험
+  app/(about)/about/page.tsx /about  소개 페이지(client/about 이식). 전용 CSS·에셋만 쓴다
   app/api/library/route.ts
   app/uploads/[filename]/route.ts   공개 자산만
   next.config.ts             rewrite /client, /client/:path* -> /, /:path*
@@ -217,7 +218,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 - 전환: 현재 `transitions.js` 의 커튼·순차 등장 로직을 `usePageTransition` 훅으로 옮긴다. Web Animations API 와 동작 줄이기 처리를 유지한다.
 - 소리: `useAmbientSound` 훅. AudioContext 3음 사인파, 탭 숨김 시 일시 중지.
 - WebGL 불가 시 현재의 설명·본문 읽기 대안을 유지한다.
-- 소개 페이지 `app/about/page.tsx`: 2026-09-23 에 `client/about` 으로 추가한 바닐라 페이지를 옮긴다. client 컴포넌트가 `useEffect` 로 명령형 3D 모듈(`createBookScene`, `createClayJourney`, `createJourneyLabels`)과 스크롤 연출을 감싸고, 에셋은 `client/about/assets` 에서 앱 쪽으로 옮긴다. 이관 전후 화면은 `tests/about-compare.mjs` 로 비교한다. 설계는 `2026-09-23-about-page-design.md`.
+- 소개 페이지 `app/(about)/about/page.tsx`: 2026-09-23 에 `client/about` 으로 추가한 바닐라 페이지를 옮긴다. client 컴포넌트가 `useEffect` 에서 명령형 3D 모듈(`createBookScene`, `createClayJourney`, `createJourneyLabels`)과 스크롤 연출을 시작하고, 정리 함수에서 색 순환 `setInterval`, window·document 리스너, `IntersectionObserver`·`ResizeObserver` 를 해제하고 두 장면의 `dispose()` 를 부른다. 바닐라 페이지는 문서와 수명이 같아 정리 코드가 없다. 에셋은 `public/` 을 거치지 않고 `apps/client/app/(about)/about/assets/` 에 두어 모듈 import 나 `new URL(…, import.meta.url)` 로 불러온다. `apps/*/public` 은 `packages/ui/public` 의 gitignore 된 복사본이고, `packages/ui/public` 에 두면 관리자 앱에도 13.6MB 가 실리기 때문이다. 독자 화면 전역 CSS(12절)는 `.site-header`, `.hero-copy`, `.eyebrow` 같은 클래스와 `a:hover` 같은 요소 규칙이 소개 페이지와 겹치므로 루트 레이아웃이 아니라 `app/(reader)/layout.tsx` 에서 가져오고, 소개 페이지는 자기 `style.css` 만 쓴다. 1단계에서 만든 `app/layout.tsx` 의 전역 CSS import 와 `app/page.tsx` 는 이 단계에서 `(reader)` 로 옮긴다. 이관 전후 화면은 `tests/about-compare.mjs` 로 비교한다. 설계는 `2026-09-23-about-page-design.md`.
 
 ## 11. antd Tour (관리자 월드 편집기)
 
@@ -251,7 +252,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 ## 12. 스타일과 자산
 
-- `shared/style.css`, `admin/style.css`, `admin/workspace.css`, `client/transitions.css` 를 `packages/ui/styles/` 로 옮겨 각 앱 루트 레이아웃에서 전역 CSS 로 가져온다. 클래스 이름은 유지한다. CSS Modules 로 바꾸지 않는다.
+- `shared/style.css`, `admin/style.css`, `admin/workspace.css`, `client/transitions.css` 를 `packages/ui/styles/` 로 옮겨 각 앱 루트 레이아웃에서 전역 CSS 로 가져온다. 사용자 앱은 소개 페이지와 섞이지 않도록 루트 레이아웃 대신 독자 화면 route group 레이아웃(`app/(reader)/layout.tsx`)에서 가져온다(10절). 클래스 이름은 유지한다. CSS Modules 로 바꾸지 않는다.
 - Google Fonts `@import` 는 제거하고 `next/font/google` 로 대체한다. 연결 실패 시 시스템 글꼴 폴백은 폰트 스택으로 유지한다.
 - antd 는 Tour 관련 스타일만 런타임에 주입된다. antd reset CSS 는 불러오지 않는다.
 

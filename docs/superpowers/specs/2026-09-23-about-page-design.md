@@ -196,8 +196,8 @@ input: {
 - `docs/ABOUT-PAGE.md`(새 문서): 출처와 이식 시점, 구간별 확인할 동작(시안 README 의 표를 client 기준으로 갱신), 시안과 달라진 점(5절 요약), 에셋 목록과 변환 명령, 원본 위치(`../on-the-book-brand/sample-02/models`, `models/generated-images`), 9.4 비교 결과.
 - 전환 스펙 `2026-09-11-react-next-migration-design.md`: 반영하지 않으면 7단계에서 `client/` 를 지울 때 소개 페이지도 사라진다.
   - 3절 사용자 화면 URL 에 `/about`(로컬 `/client/about/`)을 추가한다.
-  - 4절 저장소 구조의 `apps/client` 에 `app/about/page.tsx` 를 추가한다.
-  - 10절에 소개 페이지 항목을 추가한다. client 컴포넌트가 5절의 명령형 3D 모듈과 스크롤 연출을 `useEffect` 로 감싸고, 에셋은 `client/about/assets` 에서 앱 쪽으로 옮긴다.
+  - 4절 저장소 구조의 `apps/client` 를 route group 으로 나눠 `app/(reader)/layout.tsx`·`app/(reader)/page.tsx` 와 `app/(about)/about/page.tsx` 를 둔다.
+  - 10절에 소개 페이지 항목을 추가한다. client 컴포넌트가 5절의 명령형 3D 모듈과 스크롤 연출을 `useEffect` 로 감싸고 정리 함수에서 해제한다. 에셋은 `public/` 을 거치지 않고 페이지 폴더의 `assets/` 에서 모듈로 불러오며, 독자 화면 전역 CSS 는 `(reader)` 레이아웃에서만 가져온다(12절도 함께 고친다). 2026-09-23 최종 리뷰에서 전환 스펙 4·12절 규칙과의 충돌을 찾아 보완했다.
   - 16절 6단계 완료 기준에 `about` 검증 이관을 추가한다.
 - 1단계 계획 `2026-09-14-phase1-monorepo-api.md`: Task 1 이 `package.json` 을 통째로 바꾸므로 scripts 에 `"legacy:test:about": "npm run legacy:build && node tests/about.mjs"` 를 추가한다. `legacy:test` 기대 출력의 검사 수를 24 에서 26 으로 고치고, `tests/about.test.js` 는 구 Vite 입력과 Express 이동을 검사하므로 새 스택으로 옮기지 않는다고 적는다.
 - 전환 스펙 14절의 이관 대상 스크립트 목록에 `about` 을 더한다(11개 → 12개).
