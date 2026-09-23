@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eeece5">
+  <meta name="description" content="책을 고르고, 이야기 속 공간을 걸으며, 장면 곁에서 읽는 새로운 독서 경험. On the Book.">
+  <title>On the Book — 책 속을 걷다</title>
+  <link rel="icon" href="/brand/book-path-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/brand/book-path-favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/brand/book-path-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script type="module" src="./main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#experience">독서 경험 소개로 건너뛰기</a>
+  <header class="site-header">
+    <a class="brand" href="#beginning" aria-label="On the Book 처음으로">
+      <svg viewBox="0 0 40 34" aria-hidden="true"><path d="M3 5q10-3 17 4 7-7 17-4v23q-10-3-17 3-7-6-17-3Z M20 9v22 M7 10q6-1 10 3 M24 13q4-4 9-3" /></svg>
+      <span>on the book</span>
+    </a>
+  </header>
+  <main>
+    <section class="hero" id="beginning" aria-labelledby="hero-title">
+      <div class="hero-stage">
+        <div class="leaf-shadow" aria-hidden="true"></div>
+        <div class="hero-wordmark" aria-hidden="true">on the book<span>✳</span></div>
+        <div class="hero-canvas-wrap" aria-hidden="true"><canvas id="book-world"></canvas></div>
+        <div class="hero-object-hit" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="eyebrow"><i class="tiny-dot"></i>A WORLD BETWEEN THE WORDS</p>
+          <h1 id="hero-title">책 속을<br> 걷다<span class="rust">.</span></h1>
+          <p class="hero-description">책을 고르고, 이야기 속 공간을 걸으며,<br> 장면 곁에서 읽는 새로운 독서 경험.</p>
+          <a class="text-link" href="#world">이야기 안으로 <span aria-hidden="true">↘</span></a>
+        </div>
+        <div class="hero-scroll-copy" aria-hidden="true"><p class="eyebrow">ONE BOOK. ANOTHER WORLD.</p><p class="hero-second-title">책을 펼치면,<br> 산책이 시작됩니다.</p></div>
+        <button class="film-teaser" data-film-open aria-label="20초 브랜드 필름 보기">
+          <img src="./assets/garden.webp" alt="" width="1600" height="900">
+          <span>한 권의 세계,<br> 20초의 초대.</span><small>필름 보기 <b aria-hidden="true">↗</b></small>
+        </button>
+        <div class="hero-bottom"><span class="eyebrow">IMAGINATION MADE SPATIAL</span><a class="scroll-prompt" href="#world">스크롤해서 펼쳐 보기 <span aria-hidden="true">↓</span></a><span class="eyebrow edition">A NEW WAY TO READ — 01</span></div>
+      </div>
+    </section>
+
+    <section class="world" id="world" data-dark aria-labelledby="world-heading">
+      <div class="world-stage">
+        <div class="section-label"><span>01 / INTO THE STORY</span><span>읽는다는 건, 다른 세계를 만나는 일.</span></div>
+        <div class="world-copy"><p class="eyebrow">A PLACE FOR YOUR IMAGINATION</p><h2 id="world-heading">상상했던 곳에,<br> 발을 디디는 경험.</h2><p>눈으로만 따라가던 이야기를<br> 이제, 당신의 발걸음으로 만나보세요.</p><span class="journey-hint">스크롤하며, 빛을 따라 걸어요. <i aria-hidden="true">↓</i></span></div>
+        <figure class="world-illustration journey-visual" aria-label="돌길을 따라 걸으면 사진이 앞으로 다가와 정면을 향하고, 사진 오른쪽에 설명이 나타납니다.">
+          <div class="journey-stage" aria-hidden="true">
+            <img class="journey-poster" src="./assets/clay-journey-poster.webp" alt="" loading="lazy" width="1000" height="1100">
+            <canvas id="clay-journey"></canvas>
+          </div>
+          <div class="world-notes">
+            <article class="world-note" data-note="0"><span>01 / WALK</span><div><h3>길은 이어지고.</h3><p>연결된 챕터를<br>자유롭게 걸어요.</p></div></article>
+            <article class="world-note" data-note="1"><span>02 / APPROACH</span><div><h3>장면은 반응하고.</h3><p>인물과 사물 가까이에서<br>움직임을 만나요.</p></div></article>
+            <article class="world-note" data-note="2"><span>03 / READ</span><div><h3>문장은 머무릅니다.</h3><p>읽기 지점에서 본문을<br>천천히 읽어요.</p></div></article>
+          </div>
+          <figcaption>A PLACE TO WANDER. A SENTENCE TO STAY.</figcaption>
+        </figure>
+        <div class="world-progress" aria-hidden="true"><span></span></div>
+      </div>
+    </section>
+
+    <section class="experience section-pad" id="experience" aria-labelledby="experience-heading">
+      <div class="section-label"><span>02 / YOUR OWN WAY</span><span>HOW IT FEELS</span></div>
+      <div class="experience-heading reveal"><h2 id="experience-heading">읽는 방식은,<br> 당신의 걸음만큼 자유롭게.</h2><p>어디로 향할지, 얼마나 머무를지.<br> 이야기를 만나는 속도는<br> 당신에게 맡겨 둘게요.</p></div>
+      <div class="experience-scroll">
+      <div class="experience-grid">
+        <div class="experience-menu">
+          <nav class="way-nav" aria-label="독서 경험 구간">
+            <a href="#way-panel-0" data-way="0"><small>01</small><span>걷고.</span><b aria-hidden="true">↗</b></a>
+            <a href="#way-panel-1" data-way="1"><small>02</small><span>다가가고.</span><b aria-hidden="true">↗</b></a>
+            <a href="#way-panel-2" data-way="2"><small>03</small><span>읽고.</span><b aria-hidden="true">↗</b></a>
+          </nav>
+          <p class="way-hint">스크롤하며, 한 걸음씩. <span>↓</span></p>
+        </div>
+        <div class="way-panels">
+          <section class="way-panel" id="way-panel-0" aria-labelledby="way-heading-0">
+            <div class="way-description"><p class="eyebrow">SPACE TO WANDER</p><h3 id="way-heading-0">호기심이<br> 길이 되는 순간.</h3><p>연결된 챕터를 자유롭게 걸으며<br> 이야기 속 공간을 둘러보세요.<br> 챕터 지도로 다른 장면을<br> 찾아갈 수도 있어요.</p><span class="way-count">01 <i>/ 03</i></span></div>
+            <figure class="way-image"><img src="./assets/wander.webp" alt="넓게 펼쳐진 책의 페이지 위를 걸어가는 인물" loading="lazy" width="1440" height="810"><figcaption>마음이 향하는 곳으로.<span>WANDER ↗</span></figcaption></figure>
+          </section>
+          <section class="way-panel" id="way-panel-1" aria-labelledby="way-heading-1">
+            <div class="way-description"><p class="eyebrow">MOMENTS THAT RESPOND</p><h3 id="way-heading-1">한 걸음 가까이,<br> 장면은 생생하게.</h3><p>인물과 사물에 다가가면<br> 장면 속 움직임이 시작돼요.<br> 잠시 멀어졌다 돌아오면<br> 그 순간을 다시 만날 수 있어요.</p><span class="way-count">02 <i>/ 03</i></span></div>
+            <figure class="way-image"><img src="./assets/invitation.webp" alt="책 속 정원에 들어선 인물과 나무" loading="lazy" width="1440" height="810"><span class="proximity-ring" aria-hidden="true"></span><figcaption>다가갈수록, 새로운 이야기.<span>COME CLOSER ↗</span></figcaption></figure>
+          </section>
+          <section class="way-panel" id="way-panel-2" aria-labelledby="way-heading-2">
+            <div class="way-description"><p class="eyebrow">ROOM TO STAY</p><h3 id="way-heading-2">그 장면 곁에서,<br> 문장에 머무르기.</h3><p>읽기 지점에서 본문을 펼쳐요.<br> 같은 브라우저로 다시 찾아오면<br> 마지막으로 방문한 챕터에서<br> 이야기를 이어 갈 수 있어요.</p><span class="way-count">03 <i>/ 03</i></span></div>
+            <figure class="way-image"><img src="./assets/garden.webp" alt="책 속 초록 정원" loading="lazy" width="1600" height="900"><figcaption>장면 속에서, 천천히 읽기.<span>STAY A WHILE ↗</span></figcaption></figure>
+          </section>
+        </div>
+      </div>
+      </div>
+      <p class="section-caption">브랜드 필름의 장면으로 독서 경험을 소개합니다.</p>
+    </section>
+
+    <section class="scenes" id="scenes" aria-labelledby="scenes-heading">
+      <div class="scenes-heading section-pad"><div class="section-label"><span>03 / LITTLE MOMENTS</span><span>COLLECT YOUR CURIOSITY</span></div><div class="scenes-heading-row reveal"><h2 id="scenes-heading">어떤 장면은,<br> 오래 머물고 싶으니까.</h2><p>옆으로 넘기며 장면을 둘러보세요.<br> 궁금한 순간은, 눌러서 더 가까이. <span>↔</span></p></div></div>
+      <div class="scene-rail" tabindex="0" role="region" aria-label="책 속 장면 가로 갤러리">
+        <figure class="scene-card"><button data-gallery-open="0" aria-label="한 권의 세계 장면 크게 보기"><img src="./assets/scene-concepts/card-01-world-a.webp" alt="펼친 고서 속 작은 정원과 빛나는 문을 담은 미니어처" loading="lazy" draggable="false" width="1448" height="1086"><span class="card-explore">가까이 보기 ↗</span></button><figcaption><span class="eyebrow">01 / THE BEGINNING</span><h3>한 권의 세계.</h3><p>첫 페이지 너머, 산책의 시작.</p></figcaption></figure>
+        <figure class="scene-card"><button data-gallery-open="1" aria-label="낯선 정원 장면 크게 보기"><img src="./assets/scene-concepts/card-02-secret-garden-a.webp" alt="꽃과 나뭇가지 아치 아래로 이어지는 작은 정원 오솔길" loading="lazy" draggable="false" width="1448" height="1086"><span class="card-explore">가까이 보기 ↗</span></button><figcaption><span class="eyebrow">02 / A SECRET GARDEN</span><h3>낯선 정원.</h3><p>한 발 더, 궁금한 풍경 쪽으로.</p></figcaption></figure>
+        <figure class="scene-card"><button data-gallery-open="2" aria-label="나만의 발걸음 장면 크게 보기"><img src="./assets/scene-concepts/card-03-own-pace-a.webp" alt="펼친 책 위에서 여러 방향으로 갈라지는 길과 작은 여행자" loading="lazy" draggable="false" width="1448" height="1086"><span class="card-explore">가까이 보기 ↗</span></button><figcaption><span class="eyebrow">03 / AT YOUR PACE</span><h3>나만의 발걸음.</h3><p>서두르지 않아도 좋은 길.</p></figcaption></figure>
+        <figure class="scene-card"><button data-gallery-open="3" aria-label="다가온 이야기 장면 크게 보기"><img src="./assets/scene-concepts/card-04-story-near-a.webp" alt="펼친 책 속에 마련된 따뜻한 1인 독서 공간" loading="lazy" draggable="false" width="1448" height="1086"><span class="card-explore">가까이 보기 ↗</span></button><figcaption><span class="eyebrow">04 / A LITTLE CLOSER</span><h3>다가온 이야기.</h3><p>그 장면 곁에서, 잠시 머무르기.</p></figcaption></figure>
+      </div>
+      <div class="rail-footer section-pad"><span class="eyebrow">BRAND FILM SCENE COLLECTION</span><div class="rail-meter" aria-hidden="true"><span></span></div><div class="rail-actions"><span class="rail-count" aria-live="polite">01 / 04</span><button data-rail="-1" aria-label="이전 장면으로" disabled>←</button><button data-rail="1" aria-label="다음 장면으로">→</button></div></div>
+    </section>
+
+    <section class="film section-pad" id="film" aria-labelledby="film-heading">
+      <div class="film-heading"><p class="eyebrow">A SMALL INVITATION</p><h2 id="film-heading">상상했던 그곳에서,<br> 만나요.</h2><p>20초, 이야기 안으로.</p></div>
+      <button class="film-surface" data-film-open aria-label="On the Book 20초 브랜드 필름 재생">
+        <video class="film-inline-video" src="./assets/trailer.mp4" poster="./assets/garden.webp" muted playsinline preload="metadata" aria-hidden="true"></video>
+        <span class="film-play"><svg viewBox="0 0 160 160" aria-hidden="true"><defs><path id="play-circle" d="M80 17a63 63 0 1 1-.01 0"/></defs><text><textPath href="#play-circle">A WORLD BETWEEN THE WORDS · PRESS TO PLAY · </textPath></text></svg><i aria-hidden="true">▶</i></span>
+        <span class="film-bottom"><span>ON THE BOOK — THE BRAND FILM</span><span>00:20 ↗</span></span>
+      </button>
+      <p class="section-caption">한 권의 책이, 하나의 세계가 되는 순간.</p>
+    </section>
+
+  </main>
+  <footer class="site-footer" id="start" aria-labelledby="footer-heading">
+    <div class="footer-grid">
+      <a class="footer-signature" href="#beginning" aria-label="On the Book 처음으로">
+        <svg class="footer-bookmark" viewBox="0 0 420 490" fill="currentColor" aria-hidden="true">
+          <path d="M194 101C145 59 81 36 10 36V380c76 0 137 25 184 71V101ZM226 101C275 59 339 36 410 36V380c-76 0-137 25-184 71V101Z"/>
+          <path class="footer-page-cut" d="M62 107c36 6 65 17 91 35v25c-29-18-59-29-91-34Zm0 57c36 6 65 17 91 35v25c-29-18-59-29-91-34Zm205-22c26-18 55-29 91-35v26c-32 5-62 16-91 34Z"/>
+          <path class="footer-loose-page" d="M232 68C269 31 310 8 351 0v30c-48 9-86 30-119 62Z"/>
+        </svg>
+        <span class="footer-wordmark">on the book<span aria-hidden="true">✳</span></span>
+        <span class="footer-tagline">A WORLD BETWEEN THE WORDS.</span>
+      </a>
+      <div class="footer-content">
+        <div class="footer-shelf" data-footer-row>
+          <img class="footer-drawing footer-books" src="./assets/footer-books-hairline.webp" data-ink-width="98" alt="" aria-hidden="true" width="768" height="512" loading="lazy">
+          <div class="footer-invitation" data-footer-copy>
+            <p class="eyebrow">YOUR NEXT CHAPTER</p>
+            <h2 id="footer-heading">다음 이야기를<br>펼쳐 볼까요?</h2>
+            <a class="footer-start-link" data-service-link href="/">On the Book 시작하기 <span aria-hidden="true">↗</span></a>
+          </div>
+          <span class="footer-rule" aria-hidden="true"></span>
+        </div>
+        <div class="footer-about" data-footer-row>
+          <div class="footer-principles">
+            <div data-footer-copy><span class="footer-index">01 / CHOOSE</span><h3>한 권을 고르고.</h3><p>마음이 가는 책 한 권.<br> 새로운 세계의 문을 열어요.</p></div>
+            <div data-footer-copy style="--footer-delay:.09"><span class="footer-index">02 / WANDER</span><h3>장면 속을 걷고.</h3><p>발걸음이 닿는 곳마다<br> 이야기가 가까워져요.</p></div>
+            <div data-footer-copy style="--footer-delay:.18"><span class="footer-index">03 / STAY</span><h3>문장에 머물고.</h3><p>서두르지 않아도 괜찮아요.<br> 당신의 속도로 읽어요.</p></div>
+          </div>
+          <img class="footer-drawing footer-door" src="./assets/footer-door-hairline.webp" data-ink-width="49.4" alt="" aria-hidden="true" width="384" height="960" loading="lazy">
+          <span class="footer-rule" aria-hidden="true"></span>
+        </div>
+        <div class="footer-explore" data-footer-row>
+          <img class="footer-drawing footer-reader" src="./assets/footer-reader-hairline.webp" data-ink-width="42" alt="" aria-hidden="true" width="512" height="683" loading="lazy">
+          <nav class="footer-nav" aria-label="푸터 메뉴" data-footer-copy>
+            <a href="#world"><span>책 속으로</span><span aria-hidden="true">↗</span></a>
+            <a href="#experience"><span>읽는 방식</span><span aria-hidden="true">↗</span></a>
+            <a href="#scenes"><span>장면 둘러보기</span><span aria-hidden="true">↗</span></a>
+            <button data-film-open><span>브랜드 필름</span><span aria-hidden="true">↗</span></button>
+          </nav>
+          <span class="footer-rule" aria-hidden="true"></span>
+        </div>
+        <div class="footer-colophon">
+          <span>책 속을 걷는, 조금 다른 독서.</span>
+          <a class="footer-top" href="#beginning">처음으로 <span aria-hidden="true">↑</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom"><span>© ON THE BOOK</span><span>ONE BOOK. ANOTHER WORLD.</span><span>MADE FOR YOUR CURIOSITY <i aria-hidden="true">✳</i></span></div>
+  </footer>
+  <button class="motion-control" aria-pressed="false"><span class="motion-dot" aria-hidden="true"></span><span class="motion-label">모션 켜짐</span></button>
+
+  <dialog class="film-dialog" aria-labelledby="film-dialog-heading"><div class="dialog-header"><h2 id="film-dialog-heading">On the Book — Brand Film</h2><button data-film-close aria-label="브랜드 필름 닫기">닫기 ×</button></div><video class="film-video" controls playsinline preload="none" poster="./assets/garden.webp" aria-label="On the Book 20초 브랜드 필름"></video><p>책 속을 걷는 새로운 독서 경험.</p></dialog>
+  <dialog class="gallery-dialog" aria-labelledby="gallery-heading"><div class="dialog-header"><h2 id="gallery-heading">한 권의 세계.</h2><button data-gallery-close aria-label="장면 크게 보기 닫기">닫기 ×</button></div><img class="gallery-large" src="./assets/scene-concepts/card-01-world-a.webp" alt="펼친 고서 속 작은 정원과 빛나는 문을 담은 미니어처" width="1448" height="1086"><div class="gallery-bottom"><p class="gallery-caption">첫 페이지 너머, 산책의 시작.</p><div><button data-gallery-step="-1" aria-label="확대한 이전 장면">←</button><span class="gallery-count" aria-live="polite">01 / 04</span><button data-gallery-step="1" aria-label="확대한 다음 장면">→</button></div></div></dialog>
+</body>
+</html>

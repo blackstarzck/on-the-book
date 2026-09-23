@@ -199,6 +199,7 @@ export class World {
       onSelect = () => {},
       onError = () => {},
       editor = false,
+      modelOnly = false,
       hero = false,
     } = {},
   ) {
@@ -211,6 +212,7 @@ export class World {
     this.onSelect = onSelect;
     this.onError = onError;
     this.editor = editor;
+    this.modelOnly = modelOnly;
     this.hero = hero;
     this.active = false;
     this.dead = false;
@@ -238,7 +240,7 @@ export class World {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.setAttribute(
       "aria-label",
-      "책 속 3D 공간. 땅을 누르거나 방향키로 이동하세요.",
+      modelOnly ? "선택한 모델 미리보기. 드래그로 회전하고 휠로 확대하세요." : "책 속 3D 공간. 땅을 누르거나 방향키로 이동하세요.",
     );
     this.renderer.domElement.tabIndex = 0;
     container.append(this.renderer.domElement);
@@ -285,6 +287,11 @@ export class World {
       this.controls.minDistance = 12;
       this.controls.maxDistance = 350;
       this.controls.target.set(0, 0, 0);
+      if (modelOnly) {
+        this.controls.maxPolarAngle = Math.PI;
+        this.controls.minDistance = 0.5;
+        this.controls.enablePan = false;
+      }
     }
     const signal = this.abort.signal;
     this.renderer.domElement.addEventListener(
@@ -297,6 +304,7 @@ export class World {
     this.renderer.domElement.addEventListener(
       "pointerup",
       (e) => {
+        if (this.modelOnly) return;
         if (
           !this.down ||
           Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > 8
@@ -376,6 +384,10 @@ export class World {
     this.renderer.setAnimationLoop((t) => this.frame(t));
   }
   build(chapter) {
+    if (this.modelOnly) {
+      for (const p of chapter.placements) this.addPlacement(p);
+      return;
+    }
     if (chapter?.width) {
       this.floorArt = terrain(this.root, chapter);
       for (const p of chapter.placements) this.addPlacement(p);
@@ -537,6 +549,7 @@ export class World {
             }
           });
           group.add(gltf.scene);
+          if (this.modelOnly) this.fitModel();
           if (gltf.animations.length) {
             entry.clips = gltf.animations;
             entry.selectedClip = p.clip;
@@ -552,6 +565,7 @@ export class World {
         undefined,
         () => {
           this.onError(`“${model.name}” 모델을 불러오지 못했습니다.`);
+          if (this.modelOnly) return;
           const fallback = makeModel("cards", "#c66c65");
           group.add(fallback);
         },
@@ -568,7 +582,8 @@ export class World {
     halo.material.transparent = true;
     halo.material.opacity = 0.65;
     entry.halo = halo;
-    if (this.editor) {
+    halo.visible = !this.modelOnly;
+    if (this.editor && !this.modelOnly) {
       const boundary = mesh(this.root, new THREE.RingGeometry(.97, 1, 64), '#be756a', [p.x, .30, p.z]);
       boundary.rotation.x = -Math.PI / 2;
       boundary.material.transparent = true;
@@ -584,6 +599,7 @@ export class World {
     this.renderer.setSize(width, height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
+    if (this.modelOnly) this.fitModel();
     if (this.editor && this.chapter?.width && !this.fitted) {
       const size = Math.max(this.chapter.width, this.chapter.depth) * .75;
       this.camera.position.set(size * .6, size, size);
@@ -595,6 +611,21 @@ export class World {
       this.cameraBase = this.camera.position.clone();
       this.camera.lookAt(0, 0, 0);
     }
+  }
+  fitModel() {
+    const group = this.objects[0]?.group;
+    if (!group || !this.controls) return;
+    const bounds = new THREE.Box3().setFromObject(group);
+    if (bounds.isEmpty()) return;
+    const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+    const halfFov = Math.min(THREE.MathUtils.degToRad(this.camera.fov / 2), Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect));
+    const distance = Math.max(sphere.radius, 0.1) / Math.sin(halfFov) * 1.15;
+    this.controls.target.copy(sphere.center);
+    this.camera.position.copy(sphere.center).add(new THREE.Vector3(3, 1.8, 4).normalize().multiplyScalar(distance));
+    this.controls.maxDistance = distance * 4;
+    this.camera.far = Math.max(150, distance * 5);
+    this.camera.updateProjectionMatrix();
+    this.controls.update();
   }
   moveTo(x, z) {
     this.target.set(

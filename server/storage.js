@@ -103,7 +103,7 @@ export function publicAssetNames(db) {
   const books = db.live.books.filter(book => book.published);
   const models = new Set(books.flatMap(book => book.chapters.flatMap(chapter => chapter.placements.map(p => p.modelId))));
   return new Set([
-    ...db.live.models.filter(model => models.has(model.id)).map(model => model.url),
+    ...db.live.models.filter(model => models.has(model.id)).flatMap(model => [model.url, model.thumbnail]),
     ...books.flatMap(book => [book.cover, ...(book.floorAssets || []).map(item => item.asset), ...book.chapters.flatMap(chapter => (chapter.floorDecals || []).map(item => item.asset))]),
   ].filter(Boolean).map(url => path.basename(url)));
 }

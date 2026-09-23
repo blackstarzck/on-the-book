@@ -54,7 +54,10 @@ try{
  await page.locator('#delete-object').click();
  await page.locator('#new-model').click();await page.getByLabel('모델 이름',{exact:true}).fill('뼈대 테스트 모델');await page.getByLabel('제작자 및 사용 권한').fill('테스트 직접 제작');
  await page.getByLabel('3D 모델 파일 선택',{exact:true}).setInputFiles({name:'rig.glb',mimeType:'model/gltf-binary',buffer:sampleGLB()});
- await expect(page.locator('#upload-status')).toContainText('업로드 완료');await page.getByRole('button',{name:'보관함에 등록',exact:true}).click();
+ await expect(page.locator('#upload-status')).toContainText('업로드 완료');
+ await page.locator('[name="thumbnail"]').setInputFiles({name:'thumb.png',mimeType:'image/png',buffer:await page.screenshot()});
+ await expect(page.locator('#thumbnail-status')).toContainText('업로드 완료');
+ await page.getByRole('button',{name:'보관함에 등록',exact:true}).click();
  const card=page.locator('.asset-tile').filter({hasText:'뼈대 테스트 모델'});await expect(card).toBeVisible();
  await card.locator('img').dragTo(page.locator('#studio-world'),{targetPosition:{x:780,y:470}});
  await expect(page.locator('#object-form')).toBeVisible();await expect(page.locator('[name="clip"]')).toHaveValue('Float');

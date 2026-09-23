@@ -1,0 +1,239 @@
+{
+  "engine": "Playwright MCP browser_run_code_unsafe",
+  "browser": "152.0.4191.66",
+  "startedAt": "2026-09-08T13:06:29.365Z",
+  "completedAt": "2026-09-08T13:06:45.521Z",
+  "group": "responsive",
+  "records": [
+    {
+      "id": "PC390",
+      "group": "responsive",
+      "title": "client 화면 크기 390×844",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2329,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "evidence": "evidence/PC390.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n↑\n←\n↓\n→\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "PA390",
+      "group": "responsive",
+      "title": "admin 화면 크기 390×844",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1047,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "evidence": "evidence/PA390.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "PC768",
+      "group": "responsive",
+      "title": "client 화면 크기 768×1024",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2402,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "evidence": "evidence/PC768.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "PA768",
+      "group": "responsive",
+      "title": "admin 화면 크기 768×1024",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1047,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "evidence": "evidence/PA768.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n도서 보관함\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "PC1024",
+      "group": "responsive",
+      "title": "client 화면 크기 1024×768",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2503,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "evidence": "evidence/PC1024.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "PA1024",
+      "group": "responsive",
+      "title": "admin 화면 크기 1024×768",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 985,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "evidence": "evidence/PA1024.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n도서 보관함\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "PC1600",
+      "group": "responsive",
+      "title": "client 화면 크기 1600×1000",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2453,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/PC1600.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "PA1600",
+      "group": "responsive",
+      "title": "admin 화면 크기 1600×1000",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 945,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/PA1600.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "P09",
+      "group": "responsive",
+      "title": "작은 화면의 편집 주요 도구 접근",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1069,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "evidence": "evidence/P09.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "← 도서 보관함\n도서 정보\n↶ 실행 취소\n↷ 다시 실행\n임시 저장\n공개\n모델 보관함\n＋ 등록\n\n배치 대상: 흰 토끼를 따라서\n\n모델을 월드로 드래그하세요. 마우스를 올리면 동작을 미리 봅니다.\n\n하얀 토끼\n기본 동작 · 드래그 배치\n정보\n숲속 버섯\n기본 동작 · 드래그 배치\n정보\n이상한 찻주전자\n기본 동작 · 드래그 배치\n정보\n동그란 숲 나무\n기본 동작 · 드래그 배치\n정보\n여왕의 장미\n기본 동작 · 드래그 배치\n정보\n작은 황금 열쇠\n기본 동작 · 드래그 배치\n정보\n토끼의 회중시계\n기본 동작 · 드래그 배치\n정보\n하트 카드\n기본 동작 · 드래그 배치\n정보\n작은 오두막\n기본 동작 · 드래그 배치\n정보\n바닥 이미지\n\n이미지를 끌어 배치하고, 월드에서 선택해 수정하세요.\n\n화살표\n나뭇잎\n회중시계\n찻잔\n펼친 책\n＋ PNG 등록\n챕터\n01 흰 토끼를 따라서\n모델 3개\n02 작아지는 문, 커지는 세계\n모델 3개\n03 버섯 숲의 수수께끼\n모델 3개\n04 끝나지 않는 티 파티\n모델 3개\n05 장미 정원의 여왕\n모델 3개\n06 꿈에서 깨어나는 시간\n모델 3개\n＋\n챕터 추가\n챕터 모델\n조끼 입은 흰 토끼\n★ 메인\n시간을 쫓는 시계\n• 보조\n굴 입구의 작은 열쇠\n• 보조\n선택한 오브젝트\n월드에서 모델 또는 이미지를 선택하세요.\n\n새 챕터는 빈 월드입니다. 왼쪽 보관함에서 모델을 끌어 놓으세요.\n이동 W\n방향 E\n크기 S\n발동 범위 R\n격자\n0.5\n1\n2\n시점 초기화\n▶ 독자 체험\n왼쪽 드래그: 회전 · 오른쪽 드래그: 화면 이동 · 휠: 확대\nX\n−X\nY\n−Y\nZ\n−Z"
+    },
+    {
+      "id": "P10",
+      "group": "responsive",
+      "title": "동작 줄이기 설정에서 화면 이동",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1232,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-2",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/P10.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n이야기의 지도\n02 — 작아지는 문, 커지는 세계\n작아지는 문, 커지는 세계\n\n굴 아래에는 문이 가득한 긴 복도가 있었습니다. 유리 탁자 위의 황금 열쇠는 작은 문에 꼭 맞았습니다. 문틈 너머로 아름다운 정원이 보였지만, 앨리스는 너무 컸습니다.\n\n\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026"
+    }
+  ]
+}

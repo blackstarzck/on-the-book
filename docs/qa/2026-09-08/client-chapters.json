@@ -1,0 +1,216 @@
+{
+  "engine": "Playwright MCP browser_run_code_unsafe",
+  "browser": "152.0.4191.66",
+  "startedAt": "2026-09-08T13:00:52.157Z",
+  "completedAt": "2026-09-08T13:01:01.817Z",
+  "group": "client-chapters",
+  "records": [
+    {
+      "id": "C17",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 흰 토끼를 따라서",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1065,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-1",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C17.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C18",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 작아지는 문, 커지는 세계",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1040,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-2",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C18.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n02 — 작아지는 문, 커지는 세계\n작아지는 문, 커지는 세계\n\n굴 아래에는 문이 가득한 긴 복도가 있었습니다. 유리 탁자 위의 황금 열쇠는 작은 문에 꼭 맞았습니다. 문틈 너머로 아름다운 정원이 보였지만, 앨리스는 너무 컸습니다.\n\n\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C19",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 버섯 숲의 수수께끼",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1056,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-3",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C19.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n03 — 버섯 숲의 수수께끼\n버섯 숲의 수수께끼\n\n커다란 버섯 위에서 애벌레가 물었습니다. 너는 누구냐고요. 하루에도 몇 번씩 키가 달라진 앨리스에게는 쉽게 답할 수 없는 질문이었습니다.\n\n버섯의 한쪽은 키를 크게 하고, 반대쪽은 작게 했습니다.\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C20",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 끝나지 않는 티 파티",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1055,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-4",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C20.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n04 — 끝나지 않는 티 파티\n끝나지 않는 티 파티\n\n나무 아래 긴 탁자에 모자 장수와 삼월 토끼가 앉아 있었습니다. 자리는 많았지만 모두 자리가 없다고 외쳤습니다. 앨리스는 빈 의자에 앉았습니다.\n\n답 없는 수수께끼와 엉뚱한 대화가 이어졌습니다.\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C21",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 장미 정원의 여왕",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1120,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-5",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C21.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n05 — 장미 정원의 여왕\n장미 정원의 여왕\n\n정원사들이 하얀 장미에 빨간 물감을 칠하고 있었습니다. 곧 하트 여왕과 카드 병사들의 행렬이 도착했습니다. 앨리스는 이상한 크로케 경기에 초대되었습니다.\n\n\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C22",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 꿈에서 깨어나는 시간",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1118,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-6",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C22.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n06 — 꿈에서 깨어나는 시간\n꿈에서 깨어나는 시간\n\n법정의 말들은 점점 더 엉뚱해졌습니다. 앨리스는 자신이 다시 커졌다는 것을 알았습니다. 카드들이 날아오르자 앨리스는 외쳤습니다. 너희는 그저 카드일 뿐이라고요.\n\n눈을 뜨니 다시 강둑이었습니다.\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C23",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 노란 벽돌 길",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1051,
+      "url": "http://127.0.0.1:4317/client/?book=oz&chapter=oz-1",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C23.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 노란 벽돌 길\n노란 벽돌 길\n\n회오리바람이 도로시와 작은 집을 낯선 나라로 데려왔습니다. 도로시는 집으로 돌아갈 방법을 찾아 노란 벽돌 길을 걷기 시작했습니다.\n\n길에서 만난 허수아비는 지혜를 원했습니다.\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C24",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 함께 걷는 숲",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 969,
+      "url": "http://127.0.0.1:4317/client/?book=oz&chapter=oz-2",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C24.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n02 — 함께 걷는 숲\n함께 걷는 숲\n\n마음이 필요한 양철 나무꾼과 용기를 원하는 사자가 동행이 되었습니다. 어려운 일이 생길 때마다 친구들은 서로를 도왔습니다.\n\n\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C25",
+      "group": "client-chapters",
+      "title": "공개 챕터 직접 접속: 집으로 가는 마음",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1032,
+      "url": "http://127.0.0.1:4317/client/?book=oz&chapter=oz-3",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C25.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n03 — 집으로 가는 마음\n집으로 가는 마음\n\n긴 여행 끝에 도로시는 돌아갈 방법을 알게 되었습니다. 친구들에게 작별 인사를 하고, 가장 그리운 집을 마음속에 그렸습니다.\n\n\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    }
+  ]
+}

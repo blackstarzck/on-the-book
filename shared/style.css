@@ -1192,6 +1192,24 @@ nav {
     display: none;
   }
 }
+nav #about-link:hover {
+  text-decoration: none;
+}
+@media (max-width: 700px) {
+  nav #about-link {
+    font-size: 10px;
+    width: 44px;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 359px) {
+  nav #about-link {
+    width: 36px;
+  }
+  nav #library-button {
+    margin-right: 0;
+  }
+}
 
 /* Screen-space reading: the scene remains visible through the frosted panel. */
 .floor-reading-controls {

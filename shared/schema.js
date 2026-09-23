@@ -25,6 +25,7 @@ export const modelSchema = z
       .string()
       .regex(/^\/uploads\/[a-f0-9-]+\.glb$/)
       .optional(),
+    thumbnail: z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).optional(),
     credit: z.string().max(500),
     color: z.string().regex(/^#[a-f0-9]{6}$/i),
   })

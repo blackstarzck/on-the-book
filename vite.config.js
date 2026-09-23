@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       input: {
         client: resolve("client/index.html"),
+        ...(mode === "admin" ? {} : { about: resolve("client/about/index.html") }),
         ...(mode === "client" ? {} : { admin: resolve("admin/index.html") }),
       },
     },

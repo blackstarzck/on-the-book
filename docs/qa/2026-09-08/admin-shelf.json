@@ -1,0 +1,198 @@
+{
+  "engine": "Playwright MCP browser_run_code_unsafe",
+  "browser": "152.0.4191.66",
+  "startedAt": "2026-09-08T13:04:29.463Z",
+  "completedAt": "2026-09-08T13:04:37.765Z",
+  "group": "admin-shelf",
+  "records": [
+    {
+      "id": "A01",
+      "group": "admin-shelf",
+      "title": "관리자 도서 보관함",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 871,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A01.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "A02",
+      "group": "admin-shelf",
+      "title": "도서 제목 검색",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 913,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A02.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "A03",
+      "group": "admin-shelf",
+      "title": "검색 결과 없음과 검색 해제",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1164,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A03.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "A04",
+      "group": "admin-shelf",
+      "title": "공개 상태별 필터",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 963,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A04.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "A05",
+      "group": "admin-shelf",
+      "title": "모델 보관함 검색",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 979,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A05.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n3D 모델 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nTHE LITTLE CAST OF YOUR STORIES\n3D 모델 보관함\n\n이야기의 주인공과 소품을 모아 두는 공간이에요.\n\n모델 등록\n2개의 모델 · GLB 파일 지원\nBUILT-IN\n하얀 토끼\n\n4개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기\nBUILT-IN\n토끼의 회중시계\n\n2개 장면 배치 · 직접 제작한 기본 모델\n\n미리보기"
+    },
+    {
+      "id": "A06",
+      "group": "admin-shelf",
+      "title": "설정 파일 내려받기",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1099,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A06.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n공개 및 안내\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nREADY TO OPEN THE BOOK\n공개 및 안내\n\n장면을 충분히 살펴본 후 독자를 초대해 주세요.\n\n저장과 공개\n\n임시 저장은 관리자 작업을 보관합니다. 사용자에게 보여 주려면 사용자 화면에 공개를 눌러 주세요.\n\n책 정보에서 ‘공개 대상’을 해제하고 다시 공개하면 해당 책을 책장에서 숨길 수 있어요.\n\n공개된 화면 확인\n작업 데이터 백업\n\n책, 챕터, 배치 설정을 한 파일로 내려받습니다. 업로드한 3D 원본 파일은 서버의 데이터 폴더에 별도로 보관됩니다.\n\n설정 내려받기\n이야기와 모델의 출처\n\n기본 이야기는 영어 고전을 바탕으로 직접 작성한 한국어 축약·각색입니다. 기존 번역문과 캐릭터 자산을 가져오지 않았습니다.\n\n새 책과 모델을 등록할 때에는 이용할 원문·번역·3D 파일 각각의 사용 권한을 기록해 주세요.\n\n내 컴퓨터에서 실행 중\n\n현재 서버는 이 컴퓨터에서만 연결되도록 설정되어 있습니다. 로컬 작업에서는 로그인 없이 관리할 수 있습니다.\n\n외부 서비스로 운영할 때 필요한 배포·로그인·백업 설정은 프로젝트 안내문에 정리했습니다."
+    },
+    {
+      "id": "A07",
+      "group": "admin-shelf",
+      "title": "사용자 화면 새 창 링크",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1199,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A07.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    },
+    {
+      "id": "A08",
+      "group": "admin-shelf",
+      "title": "스튜디오 요청 실패와 재시도",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 970,
+      "url": "http://127.0.0.1:4317/admin/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/A08.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 500
+        },
+        {
+          "method": "GET",
+          "path": "/api/studio",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\nSTORYTELLING STUDIO\nWORKSPACE\n도서 보관함\n3D 모델 보관함\n공개 및 안내\n\n한 장면의 작은 움직임이\n이야기에 생명을 불어넣어요.\n\n사용자 화면 열기\nO\nOn the Book\n내 컴퓨터 작업 공간\n워크스페이스\n도서 보관함\n변경사항 저장됨\n임시 저장\n사용자 화면에 공개\nON THE BOOK / STUDIO\n이야기의 세계를 만드세요.\n\n책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.\n\n＋ 새 도서 추가\n모든 도서\n비공개 초안\n공개 대상\nON THE BOOK\n이상한 나라의 앨리스\n✧\n루이스 캐럴\n이상한 나라의 앨리스\n6개 챕터 · 공개 대상\n월드 편집 ↗\nON THE BOOK\n오즈의 마법사\n✧\nL. 프랭크 바움\n오즈의 마법사\n3개 챕터 · 공개 대상\n월드 편집 ↗"
+    }
+  ]
+}

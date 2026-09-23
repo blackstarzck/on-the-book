@@ -117,7 +117,7 @@ try {
     .getByLabel("제작자 및 사용 권한")
     .fill("On the Book integration test");
   await admin
-    .locator("input[type=file]")
+    .locator("input[name=file]")
     .setInputFiles({
       name: "test.glb",
       mimeType: "model/gltf-binary",
@@ -126,6 +126,8 @@ try {
   await expect(admin.locator("#upload-status")).toContainText("동작 1개", {
     timeout: 10000,
   });
+  await admin.locator('[name="thumbnail"]').setInputFiles({name:'thumb.png',mimeType:'image/png',buffer:await admin.screenshot()});
+  await expect(admin.locator('#thumbnail-status')).toContainText('업로드 완료');
   await admin.locator("#model-submit").click();
   await expect(admin.locator(".model-card")).toHaveCount(10);
   await admin.locator("#model-search").fill("테스트 GLB");

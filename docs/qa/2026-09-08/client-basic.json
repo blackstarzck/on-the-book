@@ -1,0 +1,198 @@
+{
+  "engine": "Playwright MCP browser_run_code_unsafe",
+  "browser": "152.0.4191.66",
+  "startedAt": "2026-09-08T13:00:03.475Z",
+  "completedAt": "2026-09-08T13:00:19.934Z",
+  "group": "client-basic",
+  "records": [
+    {
+      "id": "C01",
+      "group": "client-basic",
+      "title": "첫 화면과 실제 3D 장면",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1100,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C01.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\n이상한 나라의 앨리스\n\n루이스 캐럴 · 1865 · 6개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nAlice in Wonderland\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 01\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C02",
+      "group": "client-basic",
+      "title": "처음 탐험할 때 사용 안내",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 3086,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C02.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026"
+    },
+    {
+      "id": "C03",
+      "group": "client-basic",
+      "title": "반복 방문 시 안내를 중복 표시하지 않음",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 3196,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C03.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n이야기 속으로 들어가는 중이에요…"
+    },
+    {
+      "id": "C04",
+      "group": "client-basic",
+      "title": "도서 선택과 표지 정보",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2552,
+      "url": "http://127.0.0.1:4317/client/?book=oz",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C04.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\n오즈의 마법사\n\nL. 프랭크 바움 · 1900 · 3개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nThe Wonderful Wizard of Oz\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 02\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026\non the book.\n\n새로운 이야기를 펼치는 중이에요…"
+    },
+    {
+      "id": "C05",
+      "group": "client-basic",
+      "title": "사용 안내의 키보드 닫기와 초점 복귀",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2014,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C05.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\n이상한 나라의 앨리스\n\n루이스 캐럴 · 1865 · 6개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nAlice in Wonderland\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 01\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026"
+    },
+    {
+      "id": "C06",
+      "group": "client-basic",
+      "title": "소리 켜기와 끄기",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 2148,
+      "url": "http://127.0.0.1:4317/client/",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C06.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\nA NEW WAY TO READ\n책을 펼치면,\n세상이 깨어나요.\n\n읽는 것을 넘어, 이야기 속으로.\n당신의 걸음으로 완성하는 작은 모험.\n\n오늘, 걸어 볼 이야기\n이상한 나라의 앨리스\n\n루이스 캐럴 · 1865 · 6개의 장면\n\n책 속으로 들어가기\n\n설치 없이, 나만의 속도로 떠나는 여행\n\n✧\nTHE WORLD BETWEEN THE PAGES\n\nAlice in Wonderland\n\n작은 호기심이,\n큰 모험이 되는 곳.\nTHE INTERACTIVE CLASSICS COLLECTION   /   VOL. 01\n오래된 이야기, 새로운 발견.\n01   책을 고르고\n02   장면을 걷고\n03   이야기를 만나요\nON THE BOOK © 2026"
+    },
+    {
+      "id": "C07",
+      "group": "client-basic",
+      "title": "첫 챕터의 이전 이동 제한",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1080,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-1",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C07.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n01 — 흰 토끼를 따라서\n흰 토끼를 따라서\n\n강둑에 앉아 있던 앨리스는 언니의 책을 슬쩍 들여다보았습니다. 그림도 대화도 없는 책은 조금 따분했지요.\n\n그때 분홍빛 눈을 가진 흰 토끼가 지나갔습니다.\n\n←\n1 / 3\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    },
+    {
+      "id": "C08",
+      "group": "client-basic",
+      "title": "마지막 챕터의 다음 이동 제한",
+      "status": "passed",
+      "error": null,
+      "elapsedMs": 1147,
+      "url": "http://127.0.0.1:4317/client/?book=alice&chapter=alice-6",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "evidence": "evidence/C08.png",
+      "errors": [],
+      "network": [
+        {
+          "method": "GET",
+          "path": "/api/library",
+          "status": 200
+        }
+      ],
+      "observed": "on the book.\n책장 둘러보기\n지금 걷고 있는 페이지\n06 — 꿈에서 깨어나는 시간\n꿈에서 깨어나는 시간\n\n법정의 말들은 점점 더 엉뚱해졌습니다. 앨리스는 자신이 다시 커졌다는 것을 알았습니다. 카드들이 날아오르자 앨리스는 외쳤습니다. 너희는 그저 카드일 뿐이라고요.\n\n눈을 뜨니 다시 강둑이었습니다.\n\n←\n1 / 2\n→\n문장 너머의 세계를, 천천히.\n땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상\nON THE BOOK © 2026\non the book.\n\n책 속의 작은 세계를 펼치는 중이에요…"
+    }
+  ]
+}

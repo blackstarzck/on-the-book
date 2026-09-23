@@ -10,6 +10,9 @@
     { "source": "/api/:path*", "destination": "/api/index?route=/api/:path*" },
     { "source": "/uploads/:path*", "destination": "/api/index?route=/uploads/:path*" },
     { "source": "/", "destination": "/client/index.html" },
-    { "source": "/client/", "destination": "/client/index.html" }
+    { "source": "/client/", "destination": "/client/index.html" },
+    { "source": "/about", "destination": "/client/about/index.html" },
+    { "source": "/about/", "destination": "/client/about/index.html" },
+    { "source": "/client/about/", "destination": "/client/about/index.html" }
   ]
 }

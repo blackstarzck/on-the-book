@@ -68,9 +68,15 @@ test("drafts persist on disk while published snapshot stays unchanged; stale wri
   );
 });
 test("publishing applies changes and excludes private books and unused assets", async () => {
+  const fd=new FormData();
+  fd.append('image',new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')],{type:'image/png'}),'thumb.png');
+  const uploaded=await fetch(server.url+'/api/floor/upload',{method:'POST',headers:{'X-On-The-Book':'studio'},body:fd});
+  assert.equal(uploaded.status,201);
+  const {url:thumbnail}=await uploaded.json();
   const state = await (await request("/api/studio")).json();
   state.library.books[1].published = false;
   state.library.models.push({
+    thumbnail,
     id: "unused-test-model",
     name: "비공개 모델",
     kind: "tree",
