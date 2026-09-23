@@ -39,7 +39,7 @@ sample-02 는 저장소 옆 폴더 `../on-the-book-brand/sample-02` 에 있는 �
 로컬 이동은 현재 `/` → `/client/` 와 같은 방식이다. 빌드된 HTML 은 `/assets/…` 절대 경로를 쓰므로 Vercel 에서 `/about` 주소로 제공해도 자산 경로가 깨지지 않는다.
 
 연결
-- client 헤더 `nav` 의 첫 항목('책장 둘러보기' 앞)으로 `<a id="about-link" class="text-button" href="/about">소개</a>` 를 둔다. 초안 미리보기(`?preview=draft`)와 관리자 빌드(`import.meta.env.MODE === "admin"`)에서는 렌더하지 않는다. 관리자 배포에는 소개 페이지가 없고, 미리보기 안에서 로고를 누르면 `?preview=draft` 가 빠지기 때문이다.
+- client 헤더 `nav` 의 첫 항목(책장 버튼 앞. 책장 첫 화면 개편 전에는 '책장 둘러보기' 앞)으로 `<a id="about-link" class="text-button" href="/about">소개</a>` 를 둔다. 초안 미리보기(`?preview=draft`)와 관리자 빌드(`import.meta.env.MODE === "admin"`)에서는 렌더하지 않는다. 관리자 배포에는 소개 페이지가 없고, 미리보기 안에서 로고를 누르면 `?preview=draft` 가 빠지기 때문이다.
 - 휴대폰(≤700px)에서는 현재 `nav .text-button { font-size: 0; width: 44px }` 규칙이 글자를 숨긴다. `#about-link` 에 `#library-button` 과 같은 10px 글자, 44px 너비 규칙을 둔다. 320px 에서는 로고(146px)와 버튼 셋을 더한 폭이 헤더 안쪽 폭보다 10px 넓어 소리 버튼이 오른쪽 여백을 침범하므로, 359px 이하에서는 `#about-link` 너비를 36px 로 줄이고 `#library-button` 의 오른쪽 여백 4px 를 없앤다(2026-09-23 측정).
 - 소개 페이지의 'On the Book 시작하기'(`data-service-link`)는 `href="/"` 로 고정한다. 로컬에서는 `/client/` 로 이동한다.
 - 소개 페이지 헤더 로고, 푸터 심벌, '처음으로'는 시안처럼 `#beginning` 으로 이동한다. 페이지 안 링크(`#world`, `#experience`, `#scenes`, `#way-panel-*`)도 그대로 둔다.
@@ -168,10 +168,10 @@ input: {
 4. 걷고·다가가고·읽고: 단어 링크를 누르면 해당 링크가 `aria-current="step"` 이 된다.
 5. 갤러리: 처음에는 `01 / 04` 이고 이전 버튼이 꺼져 있다. 다음 버튼을 누르면 이전 버튼이 켜지고 카운트가 바뀐다(카운트는 스크롤 비율로 정해져 1440 폭에서는 `03 / 04`). 갤러리에서 End 키를 누르면 `04 / 04` 이고 다음 버튼이 꺼진다. 두 번째 카드를 누르면 확대 창이 '낯선 정원.' `02 / 04` 로 열리고, → 키로 '나만의 발걸음.' `03 / 04` 로 바뀌며, Escape 로 닫으면 누른 카드 버튼에 초점이 돌아온다.
 6. 필름: 필름 버튼을 누르면 영상 창이 열리고 영상 `src` 가 빌드된 mp4 주소다. 닫으면 누른 버튼으로 초점이 돌아온다.
-7. 연결: 'On the Book 시작하기'를 누르면 client 첫 화면(`#start-button`)에 도착한다. client 첫 화면의 '소개'를 누르면 소개 페이지에 도착한다. `/client/?preview=draft` 에는 `#about-link` 가 없다. `vite build --mode admin` 결과의 독자 화면 스크립트에는 `about-link` 가 없고 기본 빌드에는 있다.
+7. 연결: 'On the Book 시작하기'를 누르면 client 첫 화면(`.library-page`, 2026-09-23 책장 첫 화면 개편 전에는 `#start-button`)에 도착한다. client 첫 화면의 '소개'를 누르면 소개 페이지에 도착한다. `/client/?preview=draft` 에는 `#about-link` 가 없다. `vite build --mode admin` 결과의 독자 화면 스크립트에는 `about-link` 가 없고 기본 빌드에는 있다.
 8. 모션: '모션 켜짐' 버튼을 누르면 `html` 이 `motion-off`, `natural-flow` 가 되고 라벨이 '모션 꺼짐'으로 바뀐다. `reducedMotion: "reduce"` 컨텍스트에서는 처음부터 `natural-flow` 다.
 9. 대체 화면: `addInitScript` 로 `HTMLCanvasElement.prototype.getContext` 가 WebGL 요청에 `null` 을 돌려주게 하면 `data-book-world="fallback"`, `data-journey="fallback"` 과 `.is-still` 이 되고, 정지 이미지(`.journey-poster`)가 불러와져 불투명도 1 로 보인다.
-10. 휴대폰: 390×844, 320×560 에서 소개 페이지의 `scrollWidth` 가 화면 폭을 넘지 않는다. client 헤더의 로고·'소개'·'책장 둘러보기'·소리 버튼이 화면 안에 있고 서로 겹치지 않는다.
+10. 휴대폰: 390×844, 320×560 에서 소개 페이지의 `scrollWidth` 가 화면 폭을 넘지 않는다. client 헤더의 로고·'소개'·책장 버튼·도움말 버튼이 헤더의 안쪽 폭(padding 제외) 안에 있고 서로 겹치지 않는다(책장 첫 화면 개편 전에는 로고·'소개'·'책장 둘러보기'·소리 버튼).
 11. 스크린샷: `docs/screenshots/about-desktop.png`(1440×900 첫 화면), `docs/screenshots/about-mobile.png`(390×844 첫 화면).
 
 ### 9.2 단위 검사(`npm test`)

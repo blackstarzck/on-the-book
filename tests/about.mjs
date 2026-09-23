@@ -109,7 +109,7 @@ try {
     await expect(start).toHaveAttribute("href", "/");
     await start.click();
     await page.waitForURL(server.url + "/client/");
-    await expect(page.locator("#start-button")).toBeVisible();
+    await expect(page.locator(".library-page")).toBeVisible();
     pass("Start link opens the reader home");
     expect(problems).toEqual([]);
     await context.close();
@@ -176,7 +176,12 @@ try {
         const r = document.querySelector(selector).getBoundingClientRect();
         return { selector, left: r.left, right: r.right };
       };
-      return { header: box(".site-header"), items: [".site-header .brand", "#about-link", "#library-button", "#sound-button"].map(box) };
+      // Measure against the header's content box: the bookshelf header insets its items with padding.
+      const header = document.querySelector(".site-header"), style = getComputedStyle(header), r = header.getBoundingClientRect();
+      return {
+        header: { left: r.left + parseFloat(style.paddingLeft), right: r.right - parseFloat(style.paddingRight) },
+        items: [".site-header .brand", "#about-link", "#library-button", "#help-button"].map(box),
+      };
     });
     layout.items.forEach((item, i) => {
       expect(item.left, `${item.selector} starts inside the header`).toBeGreaterThanOrEqual(layout.header.left - 0.5);
