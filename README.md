@@ -8,6 +8,7 @@ Vercel에서는 사용자 화면과 관리자 화면을 별도 프로젝트로 �
 
 - 사용자 화면: http://127.0.0.1:4173/client/
 - 관리자 화면: http://127.0.0.1:4173/admin/
+- 소개 페이지: http://127.0.0.1:4173/about (로컬에서는 `/client/about/`으로 이동합니다)
 
 프로젝트 폴더에서 Node.js 20.19 이상 또는 22.12 이상으로 실행합니다.
 
@@ -44,6 +45,7 @@ npm start
 
 - `server`: 저장·공개·업로드를 처리하는 로컬 서버
 - `shared`: 공통 3D 화면, 모델 생성, 데이터 검증, 스타일
+- `client/about`: 브랜드 시안 sample-02를 옮긴 소개 페이지. 출처와 에셋은 `docs/ABOUT-PAGE.md`를 참고하세요.
 - `data/library.json`: 실제 작업 중인 책장과 공개된 책장. 서버를 껐다 켜도 유지됩니다.
 - `data/uploads`: 업로드한 GLB 원본. 보관함에서 삭제해도 이미 공개된 장면의 원본을 보존하기 위해 파일을 즉시 지우지 않습니다.
 - `docs/REFERENCE-RESEARCH.md`: 직접 조작한 참고 사이트 조사 기록
@@ -80,6 +82,7 @@ npm test
 npm run build
 npm run test:e2e
 node tests/floor-reading.mjs
+npm run test:about
 ```
 
 브라우저 검증은 설치된 Microsoft Edge를 사용합니다. 다른 환경은 `tests/browser.mjs`의 브라우저 채널을 해당 환경에 맞게 바꿔야 합니다. 테스트는 4274~4276번 및 4283번 포트에 별도 서버와 임시 데이터를 사용하며 현재 작업 데이터를 변경하지 않습니다.

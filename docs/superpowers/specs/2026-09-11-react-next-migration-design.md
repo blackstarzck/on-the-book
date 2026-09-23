@@ -1,6 +1,6 @@
 # On the Book: React + Next.js 전환과 관리자 편집기 투어 설계
 
-작성일 2026-09-11. 이 문서는 전환 전체의 아키텍처와 단계 경계를 정의하는 상위 스펙이다. 각 단계는 이 문서를 기준으로 별도 구현 계획을 만든다.
+작성일 2026-09-11. 이 문서는 전환 전체의 아키텍처와 단계 경계를 정의하는 상위 스펙이다. 각 단계는 이 문서를 기준으로 별도 구현 계획을 만든다. 2026-09-23 소개 페이지(`/about`) 추가를 3·4·10·14·16절에 반영했다.
 
 ## 1. 배경과 목표
 
@@ -40,7 +40,7 @@
 - API 경로와 메서드, 요청·응답 JSON, 상태 코드, 한국어 오류 메시지: `POST /api/login`, `POST /api/logout`, `GET /api/library`, `GET|PUT /api/studio`, `POST /api/uploads/prepare`(cloud), `POST /api/floor/upload`, `POST /api/models/upload`, `GET /uploads/:filename`.
 - 헤더 `X-On-The-Book: studio` same-origin 검사, 쿠키 `otb_session`(httpOnly, sameSite strict, 8시간), 로그인 시도 제한 10회/60초, 저장 버전 충돌 409, Blob ETag 충돌 409.
 - 사용자 진행 기록 localStorage 키 `otb-reader` 와 값 구조 `{ [bookId]: { chapter } }`.
-- 사용자 화면 URL: `/`, `/client/`, 쿼리 `book`, `chapter`, `preview=draft`, `model`. 관리자 URL: `/admin/`.
+- 사용자 화면 URL: `/`, `/client/`, 쿼리 `book`, `chapter`, `preview=draft`, `model`. 소개 페이지 `/about`(로컬 `/client/about/`). 관리자 URL: `/admin/`.
 - 정적 자산 경로 `/brand/*`, `/floor-assets/*`, `/ornaments/*`, `/favicon.svg`.
 
 ## 4. 저장소 구조
@@ -49,6 +49,7 @@
 package.json                 workspaces: apps/*, packages/*  루트 스크립트 dev·build·test·test:e2e
 apps/client/                 Next 16. 사용자 화면
   app/page.tsx               /  독서 경험
+  app/about/page.tsx         /about  소개 페이지(client/about 이식)
   app/api/library/route.ts
   app/uploads/[filename]/route.ts   공개 자산만
   next.config.ts             rewrite /client, /client/:path* -> /, /:path*
@@ -216,6 +217,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 - 전환: 현재 `transitions.js` 의 커튼·순차 등장 로직을 `usePageTransition` 훅으로 옮긴다. Web Animations API 와 동작 줄이기 처리를 유지한다.
 - 소리: `useAmbientSound` 훅. AudioContext 3음 사인파, 탭 숨김 시 일시 중지.
 - WebGL 불가 시 현재의 설명·본문 읽기 대안을 유지한다.
+- 소개 페이지 `app/about/page.tsx`: 2026-09-23 에 `client/about` 으로 추가한 바닐라 페이지를 옮긴다. client 컴포넌트가 `useEffect` 로 명령형 3D 모듈(`createBookScene`, `createClayJourney`, `createJourneyLabels`)과 스크롤 연출을 감싸고, 에셋은 `client/about/assets` 에서 앱 쪽으로 옮긴다. 이관 전후 화면은 `tests/about-compare.mjs` 로 비교한다. 설계는 `2026-09-23-about-page-design.md`.
 
 ## 11. antd Tour (관리자 월드 편집기)
 
@@ -264,7 +266,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 - 단위(Vitest): `@otb/shared`(schema, experience, collision, landscape 수학, textPages), `@otb/server`(validation, storage 로컬 모드, upgrade, seed), `@otb/scene` 의 순수 함수(`sideReadingPose`).
 - API 블랙박스(Vitest): 빌드된 admin 앱을 임시 `DATA_DIR`, 고유 포트로 `next start` 해 현재 `tests/server.test.js` 의 모든 케이스를 통과시킨다. client 앱에 관리자 API 가 없음을 확인하는 케이스를 추가한다.
-- e2e(@playwright/test): `webServer` 로 빌드된 두 앱을 같은 `DATA_DIR` 로 띄운다. 현재 11개 스크립트(`admin-parity`, `browser`, `collision`, `floor-editor`, `floor-reading`, `leave-guard`, `mobile-entry`, `model-thumbnails`, `workspace`, `capture`, `cloud`) 의 검증을 spec 으로 이관한다. `cloud` 는 `BLOB_READ_WRITE_TOKEN` 이 있을 때만 실행한다. `window.__editorWorld`, `window.__testReader` 는 빌드 환경변수 `NEXT_PUBLIC_TEST_HOOKS=1` 일 때 노출되는 `window.__otb = { studio, reader, scene }` 로 대체한다.
+- e2e(@playwright/test): `webServer` 로 빌드된 두 앱을 같은 `DATA_DIR` 로 띄운다. 현재 12개 스크립트(`admin-parity`, `browser`, `collision`, `floor-editor`, `floor-reading`, `leave-guard`, `mobile-entry`, `model-thumbnails`, `workspace`, `capture`, `cloud`, `about`) 의 검증을 spec 으로 이관한다. `cloud` 는 `BLOB_READ_WRITE_TOKEN` 이 있을 때만 실행한다. `window.__editorWorld`, `window.__testReader` 는 빌드 환경변수 `NEXT_PUBLIC_TEST_HOOKS=1` 일 때 노출되는 `window.__otb = { studio, reader, scene }` 로 대체한다.
 - 시각 확인: 단계별로 `docs/screenshots` 의 기존 화면과 같은 구도로 스크린샷을 남겨 비교한다.
 - QA-UAT: 7단계에서 셀렉터를 갱신하고 `node tests/qa-uat/run-all.mjs` 를 재실행한다. Playwright MCP 방식은 유지한다.
 - 정적 검사: `tsc --noEmit`(모든 패키지·앱), `next lint`, `next build`.
@@ -286,7 +288,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 3. 관리자 셸: 9절의 편집기 제외 전체. 완료 기준: `browser`, `leave-guard`, `model-thumbnails` 의 관리자 검증 이관 통과.
 4. 관리자 월드 편집기: 7.2 와 9절 `WorldEditor`. 완료 기준: `workspace`, `floor-editor`, `admin-parity`, `collision` 의 편집기 검증 이관 통과, 스크린샷.
 5. antd Tour: 11절. 완료 기준: 투어 e2e 통과, 다른 e2e 가 우회 플래그로 통과.
-6. `@otb/reader` 와 사용자 앱, `/admin/preview`: 10절. 완료 기준: `floor-reading`, `mobile-entry`, `browser` 의 사용자 검증 이관 통과, 390×844 스크린샷.
+6. `@otb/reader` 와 사용자 앱(소개 페이지 포함), `/admin/preview`: 10절. 완료 기준: `floor-reading`, `mobile-entry`, `browser` 의 사용자 검증과 `about` 검증 이관 통과, `tests/about-compare.mjs` 로 이관 전후 소개 페이지 비교, 390×844 스크린샷.
 7. 정리: `client/`, `admin/`, `shared/`, `server/`, `vite.config.js`, 구 테스트 스크립트 제거, `capture`·`cloud` 이관, QA-UAT 재실행, README·DEPLOYMENT·ADMIN-GUIDE 갱신. 완료 기준: 저장소에 Vite 흔적 없음, 모든 테스트 통과, 문서의 주소·명령이 실제와 일치.
 
 ## 17. 위험과 대응

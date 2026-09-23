@@ -90,7 +90,8 @@ tests/e2e/phase1-smoke.spec.ts, playwright.config.ts
     "legacy:build:admin": "vite build --mode admin",
     "legacy:test": "node --test tests/*.test.js",
     "legacy:test:e2e": "node tests/workspace.mjs",
-    "legacy:test:mobile": "npm run legacy:build && node tests/mobile-entry.mjs"
+    "legacy:test:mobile": "npm run legacy:build && node tests/mobile-entry.mjs",
+    "legacy:test:about": "npm run legacy:build && node tests/about.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",
@@ -169,8 +170,8 @@ playwright-report/
 Run: `npm install && npm run legacy:test 2>&1 | grep -E "ℹ (tests|pass|fail)"`
 Expected:
 ```
-ℹ tests 24
-ℹ pass 24
+ℹ tests 26
+ℹ pass 26
 ℹ fail 0
 ```
 
@@ -209,7 +210,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 - [ ] **Step 1: 실패하는 단위 테스트를 만든다**
 
-기존 `tests/*.test.js` 의 검증을 그대로 옮긴다. 파일 다섯 개를 만든다.
+기존 `tests/*.test.js` 의 검증을 그대로 옮긴다. 파일 다섯 개를 만든다. `tests/about.test.js` 는 구 Vite 입력과 Express `/about` 이동을 검사하므로 옮기지 않는다(6단계에서 Next 라우트 검사로 대체한다).
 
 `tests/unit/shared/collision.test.ts`
 ```ts
@@ -3379,7 +3380,7 @@ npm run test:api
 npm run test:e2e
 npm run legacy:test
 ```
-Expected: 모두 통과. `legacy:test` 는 `ℹ pass 24`.
+Expected: 모두 통과. `legacy:test` 는 `ℹ pass 26`.
 
 Run: `npm run dev`
 Expected: 두 앱이 함께 뜨고 `http://127.0.0.1:3000/` 과 `http://127.0.0.1:3001/admin` 이 응답한다. 확인 후 Ctrl+C 로 둘 다 종료되는지 본다(`concurrently -k`).
