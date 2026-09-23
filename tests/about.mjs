@@ -1,7 +1,9 @@
 import { chromium, expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { startServer } from "./helpers.js";
 
 // Browser checks for the /about page ported from the sample-02 brand page.
@@ -195,11 +197,17 @@ try {
   }
   {
     // The studio's Vercel project serves the reader for previews but has no /about page.
-    execFileSync(process.execPath, ["node_modules/vite/bin/vite.js", "build", "--mode", "admin", "--logLevel", "error"], { stdio: "inherit" });
-    const linksAbout = (dir) =>
-      readdirSync(dir).filter((file) => /^client-.*\.js$/.test(file)).some((file) => readFileSync(`${dir}/${file}`, "utf8").includes("about-link"));
-    expect(linksAbout("dist/assets")).toBe(true);
-    expect(linksAbout("dist/admin/assets")).toBe(false);
+    // Build it outside dist/: an admin build there would replace the default build's studio page other checks serve.
+    const adminOut = await mkdtemp(path.join(tmpdir(), "otb-admin-build-"));
+    try {
+      execFileSync(process.execPath, ["node_modules/vite/bin/vite.js", "build", "--mode", "admin", "--outDir", adminOut, "--emptyOutDir", "--logLevel", "error"], { stdio: "inherit" });
+      const linksAbout = (dir) =>
+        readdirSync(dir).filter((file) => /^client-.*\.js$/.test(file)).some((file) => readFileSync(path.join(dir, file), "utf8").includes("about-link"));
+      expect(linksAbout("dist/assets")).toBe(true);
+      expect(linksAbout(path.join(adminOut, "assets"))).toBe(false);
+    } finally {
+      await rm(adminOut, { recursive: true, force: true });
+    }
     pass("The admin build leaves the about link out of the reader");
   }
 } finally {
