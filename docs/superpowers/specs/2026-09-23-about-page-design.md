@@ -40,7 +40,7 @@ sample-02 는 저장소 옆 폴더 `../on-the-book-brand/sample-02` 에 있는 �
 
 연결
 - client 헤더 `nav` 의 첫 항목('책장 둘러보기' 앞)으로 `<a id="about-link" class="text-button" href="/about">소개</a>` 를 둔다. 초안 미리보기(`?preview=draft`)에서는 렌더하지 않는다. 관리자 배포에는 소개 페이지가 없기 때문이다.
-- 휴대폰(≤700px)에서는 현재 `nav .text-button { font-size: 0; width: 44px }` 규칙이 글자를 숨긴다. `#about-link` 에 `#library-button` 처럼 11px 글자 규칙을 둔다. 320px 폭에서 로고와 버튼이 겹치지 않아야 하며, 이를 위한 간격 조정은 9.1-10 검사로 확정한다.
+- 휴대폰(≤700px)에서는 현재 `nav .text-button { font-size: 0; width: 44px }` 규칙이 글자를 숨긴다. `#about-link` 에 `#library-button` 과 같은 10px 글자, 44px 너비 규칙을 둔다. 320px 에서는 로고(146px)와 버튼 셋을 더한 폭이 헤더 안쪽 폭보다 10px 넓어 소리 버튼이 오른쪽 여백을 침범하므로, 359px 이하에서는 `#about-link` 너비를 36px 로 줄이고 `#library-button` 의 오른쪽 여백 4px 를 없앤다(2026-09-23 측정).
 - 소개 페이지의 'On the Book 시작하기'(`data-service-link`)는 `href="/"` 로 고정한다. 로컬에서는 `/client/` 로 이동한다.
 - 소개 페이지 헤더 로고, 푸터 심벌, '처음으로'는 시안처럼 `#beginning` 으로 이동한다. 페이지 안 링크(`#world`, `#experience`, `#scenes`, `#way-panel-*`)도 그대로 둔다.
 
@@ -61,9 +61,9 @@ client/about/
 
 진입점(`app.js` → `main.js`)과 스타일(`styles.css` → `style.css`)만 client 관례에 맞춰 이름을 바꾸고, 나머지는 원본과 비교하기 쉽도록 이름을 유지한다. 소개 페이지는 `shared/` 의 코드와 `shared/style.css` 를 불러오지 않는 독립 진입점이다. 같은 클래스 이름(`.site-header`, `.hero-copy`, `.eyebrow` 등)이 있어도 서로 다른 페이지라 충돌하지 않는다.
 
-변경하는 기존 파일: `vite.config.js`, `server/index.js`, `client/vercel.json`, `client/main.js`, `shared/style.css`, `package.json`(스크립트만), `tests/server.test.js`, `README.md`, `docs/DEPLOYMENT.md`, 전환 스펙, 1단계 계획.
+변경하는 기존 파일: `vite.config.js`, `server/index.js`, `client/vercel.json`, `client/main.js`, `shared/style.css`, `package.json`(스크립트만), `README.md`, `docs/DEPLOYMENT.md`, 전환 스펙, 1단계 계획.
 
-새 파일: `client/about/**`, `tests/about.mjs`, `tests/vite-config.test.js`, `docs/ABOUT-PAGE.md`, `docs/screenshots/about-desktop.png`, `docs/screenshots/about-mobile.png`.
+새 파일: `client/about/**`, `tests/about.test.js`, `tests/about.mjs`, `tests/about-compare.mjs`, `docs/ABOUT-PAGE.md`, `docs/screenshots/about-desktop.png`, `docs/screenshots/about-mobile.png`.
 
 ## 5. sample-02 조정
 
@@ -160,24 +160,26 @@ input: {
 
 ### 9.1 브라우저 검사 `tests/about.mjs`
 
-기존 `tests/*.mjs` 와 같이 `startServer(4331)`(완성본 모드, 임시 `DATA_DIR`), Edge 채널 헤드리스, `--enable-webgl --ignore-gpu-blocklist` 를 쓴다. `npm run test:about` 으로 빌드 후 실행한다. 모든 검사에서 `pageerror` 가 없어야 하고, 테스트 서버로 보낸 요청에 4xx·5xx 응답이 없어야 한다. 외부 글꼴 서비스 요청은 판정에서 제외한다.
+기존 `tests/*.mjs` 와 같이 `startServer(4331)`(완성본 모드, 임시 `DATA_DIR`), Edge 채널 헤드리스, `--enable-webgl --ignore-gpu-blocklist` 를 쓴다. `npm run test:about` 으로 빌드 후 실행한다. 모든 검사에서 `pageerror` 가 없어야 하고, 테스트 서버로 보낸 요청에 4xx·5xx 응답이 없어야 한다. 외부 글꼴 서비스 요청은 판정에서 제외한다. 환경변수 `ABOUT_BASE_URL` 을 주면 서버를 띄우지 않고 이미 실행 중인 서버(예: `npm run dev`)를 상대로 같은 검사를 실행한다.
 
 1. 주소: `/about` 요청이 `/client/about/` 에 도착하고 제목이 "On the Book — 책 속을 걷다" 다.
 2. 히어로: `.hero[data-book-world="ready"]`. 책 영역을 가로로 끌면 `.hero` 의 `data-rotation` 이 바뀐다.
 3. 점토 길: 이야기 구간으로 스크롤하면 `.world[data-journey="ready"]` 가 되고, 진행에 따라 `data-step` 이 0→1→2 로 바뀐다.
 4. 걷고·다가가고·읽고: 단어 링크를 누르면 해당 링크가 `aria-current="step"` 이 된다.
-5. 갤러리: 다음 버튼을 누르면 `02 / 04`. 카드를 누르면 확대 창이 열리고 → 키로 장면이 바뀌며, Escape 로 닫으면 누른 카드 버튼에 초점이 돌아온다.
+5. 갤러리: 처음에는 `01 / 04` 이고 이전 버튼이 꺼져 있다. 다음 버튼을 누르면 이전 버튼이 켜지고 카운트가 바뀐다(카운트는 스크롤 비율로 정해져 1440 폭에서는 `03 / 04`). 갤러리에서 End 키를 누르면 `04 / 04` 이고 다음 버튼이 꺼진다. 두 번째 카드를 누르면 확대 창이 '낯선 정원.' `02 / 04` 로 열리고, → 키로 '나만의 발걸음.' `03 / 04` 로 바뀌며, Escape 로 닫으면 누른 카드 버튼에 초점이 돌아온다.
 6. 필름: 필름 버튼을 누르면 영상 창이 열리고 영상 `src` 가 빌드된 mp4 주소다. 닫으면 누른 버튼으로 초점이 돌아온다.
 7. 연결: 'On the Book 시작하기'를 누르면 client 첫 화면(`#start-button`)에 도착한다. client 첫 화면의 '소개'를 누르면 소개 페이지에 도착한다. `/client/?preview=draft` 에는 `#about-link` 가 없다.
 8. 모션: '모션 켜짐' 버튼을 누르면 `html` 이 `motion-off`, `natural-flow` 가 되고 라벨이 '모션 꺼짐'으로 바뀐다. `reducedMotion: "reduce"` 컨텍스트에서는 처음부터 `natural-flow` 다.
-9. 대체 화면: `addInitScript` 로 `HTMLCanvasElement.prototype.getContext` 가 WebGL 요청에 `null` 을 돌려주게 하면 `data-book-world="fallback"`, `data-journey="fallback"` 이 되고 정지 이미지가 보인다.
+9. 대체 화면: `addInitScript` 로 `HTMLCanvasElement.prototype.getContext` 가 WebGL 요청에 `null` 을 돌려주게 하면 `data-book-world="fallback"`, `data-journey="fallback"` 과 `.is-still` 이 되고, 정지 이미지(`.journey-poster`)가 불러와져 불투명도 1 로 보인다.
 10. 휴대폰: 390×844, 320×560 에서 소개 페이지의 `scrollWidth` 가 화면 폭을 넘지 않는다. client 헤더의 로고·'소개'·'책장 둘러보기'·소리 버튼이 화면 안에 있고 서로 겹치지 않는다.
 11. 스크린샷: `docs/screenshots/about-desktop.png`(1440×900 첫 화면), `docs/screenshots/about-mobile.png`(390×844 첫 화면).
 
 ### 9.2 단위 검사(`npm test`)
 
-- `tests/vite-config.test.js`: `vite.config.js` 의 설정 함수를 mode 별로 호출해 입력이 7절 표와 일치하는지 확인한다.
-- `tests/server.test.js`: `/about`, `/about/` 이 302 와 `Location: /client/about/` 을 돌려준다.
+`tests/about.test.js` 한 파일에 둔다. 저장소의 `collision.test.js`·`collision.mjs` 처럼 단위 검사와 브라우저 검사를 이름으로 짝짓는다. `tests/server.test.js` 에 넣지 않는 이유는 1단계 계획이 그 파일의 모든 케이스를 새 API 테스트로 옮기기 때문이다.
+
+- `vite.config.js` 의 설정 함수를 mode 별로 호출해 입력이 7절 표와 일치하는지 확인한다.
+- 완성본 서버(4332 포트)에서 `/about`, `/about/` 이 302 와 `Location: /client/about/` 을 돌려준다.
 
 ### 9.3 회귀
 
@@ -185,7 +187,7 @@ input: {
 
 ### 9.4 시안과 비교
 
-sample-02(brand 폴더에서 `npm run dev`, 4380 포트)와 소개 페이지를 같은 화면 크기(1440×900, 390×844)와 같은 스크롤 위치(히어로, 이야기 구간의 세 사진, 걷고·다가가고·읽고, 갤러리, 필름, 푸터)에서 찍어 나란히 본다. 모션 켜짐과 꺼짐 두 상태로 찍고, 책 색 변화처럼 시간에 따른 차이는 제외하고 본다. 비교 이미지는 `test-results/` 에 두고 커밋하지 않으며, 결과 요약을 `docs/ABOUT-PAGE.md` 에 적는다. 배치·문구·색·동작에서 WebP 변환 외의 차이가 없어야 한다.
+`tests/about-compare.mjs <기준 주소> <비교 주소>` 로 sample-02(brand 폴더에서 `npm run dev`, 4380 포트)와 소개 페이지를 같은 화면 크기(1440×900, 390×844)와 같은 스크롤 위치(히어로, 이야기 구간의 세 사진, 걷고·다가가고·읽고, 갤러리, 필름, 푸터)에서 찍는다. 모션 켜짐과 꺼짐 두 상태로 찍고, 쌍마다 ffmpeg `ssim` 값을 구한 뒤 나란히 본다. 모션 꺼짐의 움직임 없는 구간(걷고·다가가고·읽고, 갤러리, 필름, 푸터)은 SSIM 0.97 이상이어야 하고, 책 색 변화처럼 시간에 따른 차이는 제외하고 본다. 이 도구는 6단계에서 React 이관 전후를 비교할 때도 쓴다. 비교 이미지는 `test-results/` 에 두고 커밋하지 않으며, 결과 요약을 `docs/ABOUT-PAGE.md` 에 적는다. 배치·문구·색·동작에서 WebP 변환 외의 차이가 없어야 한다.
 
 ## 10. 문서와 계획 반영
 
@@ -197,11 +199,12 @@ sample-02(brand 폴더에서 `npm run dev`, 4380 포트)와 소개 페이지를 
   - 4절 저장소 구조의 `apps/client` 에 `app/about/page.tsx` 를 추가한다.
   - 10절에 소개 페이지 항목을 추가한다. client 컴포넌트가 5절의 명령형 3D 모듈과 스크롤 연출을 `useEffect` 로 감싸고, 에셋은 `client/about/assets` 에서 앱 쪽으로 옮긴다.
   - 16절 6단계 완료 기준에 `about` 검증 이관을 추가한다.
-- 1단계 계획 `2026-09-14-phase1-monorepo-api.md`: Task 1 이 `package.json` 을 통째로 바꾸므로 scripts 에 `"legacy:test:about": "npm run legacy:build && node tests/about.mjs"` 를 추가한다.
+- 1단계 계획 `2026-09-14-phase1-monorepo-api.md`: Task 1 이 `package.json` 을 통째로 바꾸므로 scripts 에 `"legacy:test:about": "npm run legacy:build && node tests/about.mjs"` 를 추가한다. `legacy:test` 기대 출력의 검사 수를 24 에서 26 으로 고치고, `tests/about.test.js` 는 구 Vite 입력과 Express 이동을 검사하므로 새 스택으로 옮기지 않는다고 적는다.
+- 전환 스펙 14절의 이관 대상 스크립트 목록에 `about` 을 더한다(11개 → 12개).
 
 ## 11. 위험과 대응
 
-- `.glb` 는 Vite 의 기본 에셋 확장자가 아니어서 `new URL("./assets/clay-journey.glb", import.meta.url)` 가 에셋으로 나가지 않을 수 있다. 빌드 결과에 해시된 `.glb` 가 있고 9.1-3 이 통과하는지로 확인하고, 나가지 않으면 `assetsInclude: ["**/*.glb"]` 를 추가한다.
+- `.glb` 는 Vite 의 기본 에셋 확장자가 아니다. 2026-09-23 시험 빌드(Vite 7.3.6)에서 `new URL("./assets/clay-journey.glb", import.meta.url)` 과 `.json` 이 해시 파일로 나가고, HTML `<video src>` 와 JS import 의 mp4 가 같은 파일 하나로 합쳐지는 것을 확인했으므로 `assetsInclude` 는 쓰지 않는다. 4KB 미만 파일은 data URL 로 인라인되지만 옮기는 에셋 중에는 없다.
 - 헤더 링크가 늘어 320px 에서 넘칠 수 있다. 9.1-10 과 `mobile-entry` 로 확인하고 간격을 조정한다.
 - WebP 변환으로 투명 가장자리나 세부가 달라질 수 있다. 9.4 비교에서 차이가 보이면 품질을 올리거나 해당 파일만 PNG 로 둔다.
 - 헤드리스 Edge 의 WebGL 은 `tests/browser.mjs` 가 같은 플래그로 3D 를 검사하고 있으므로 같은 환경을 쓴다.
