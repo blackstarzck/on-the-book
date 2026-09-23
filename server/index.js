@@ -288,6 +288,7 @@ app.use("/api", (req, res) =>
   res.status(404).json({ error: "요청을 찾을 수 없습니다." }),
 );
 app.get("/", (req, res) => res.redirect("/client/"));
+app.get("/about", (req, res) => res.redirect("/client/about/"));
 if (!cloud && process.argv.includes("--production"))
   app.use(express.static(path.join(root, "dist")));
 else if (!cloud) {

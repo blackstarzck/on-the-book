@@ -35,8 +35,10 @@ async function open(options = {}, init) {
 try {
   {
     const { context, page, problems } = await open();
-    await page.goto(aboutUrl);
+    await page.goto(server.url + "/about");
+    await expect(page).toHaveURL(aboutUrl);
     await expect(page).toHaveTitle("On the Book — 책 속을 걷다");
+    pass("Local /about opens the about page");
     await expect(page.locator(".hero")).toHaveAttribute("data-book-world", "ready", slow);
     await page.screenshot({ path: "docs/screenshots/about-desktop.png" });
     const hit = await page.locator(".hero-object-hit").boundingBox();
