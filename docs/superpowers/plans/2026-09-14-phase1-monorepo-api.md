@@ -10,6 +10,11 @@
 
 **스펙:** `docs/superpowers/specs/2026-09-11-react-next-migration-design.md` 3·4·5·6·12·14·15절, 16절 1단계.
 
+> **2026-09-28 반영 사항(홈 화면 관리):** 이 계획을 쓴 뒤 현재 앱에 `book.category`, `chapter.thumbnail`, `home.hero` 와 `shared/home.js`, `server/publication.js` 가 추가됐다(`docs/superpowers/plans/2026-09-28-home-management.md`). 아래 코드 블록 중 스키마·타입·공개 자산 목록·이미지 확인·라이브러리 응답·업로드 파일 응답은 반영해 두었다. 실행할 때 더 할 일은 다음과 같다.
+> - Task 2: `shared/home.js` 를 `packages/shared/src/home.ts` 로 옮긴다(아래 Step 6). `tests/home.test.js` 를 `tests/unit/shared/home.test.ts` 로 이식하고, Step 7 의 파일·테스트 수를 그만큼 늘려 적는다.
+> - Task 3: `tests/publication.test.js` 를 `tests/unit/server/publication.test.ts` 로 이식한다(옛 허용 목록과 같은 결과, 비공개 책·본문 주소 제외, `home` 없는 원본 데이터).
+> - Task 4·9: `tests/server.test.js` 에 추가된 두 케이스(공개 응답의 `home` 거르기, 올리지 않은 이미지 저장 시 400)를 핸들러·블랙박스 테스트에 이식한다.
+
 **스펙과의 차이(의도된 조정):**
 - `Modal` 컴포넌트는 1단계 화면이 쓰지 않으므로 3단계로 미룬다. `Toast` 는 포함한다.
 - Next 16 에서 `next lint` 가 제거되어 ESLint 설정은 7단계에서 한다. 1단계 정적 검사는 `tsc --noEmit` 과 `next build` 다.
@@ -37,8 +42,8 @@ tsconfig.base.json                    새 파일: 공통 TS 옵션
 vitest.config.ts                      새 파일
 .gitignore                            수정
 scripts/sync-public.mjs               새 파일: 공용 정적 자산 복사
-packages/shared/{package.json,tsconfig.json,src/index.ts,src/schema.ts,src/types.ts,src/experience.ts,src/collision.ts,src/landscape.ts,src/text-pages.ts}
-packages/server/{package.json,tsconfig.json,src/index.ts,src/upgrade.ts,src/seed.ts,src/storage.ts,src/validation.ts,src/http.ts,src/session.ts,src/library-rules.ts,src/handlers/{session.ts,library.ts,studio.ts,uploads.ts,uploaded-file.ts,not-found.ts}}
+packages/shared/{package.json,tsconfig.json,src/index.ts,src/schema.ts,src/types.ts,src/home.ts,src/experience.ts,src/collision.ts,src/landscape.ts,src/text-pages.ts}
+packages/server/{package.json,tsconfig.json,src/index.ts,src/upgrade.ts,src/seed.ts,src/storage.ts,src/publication.ts,src/validation.ts,src/http.ts,src/session.ts,src/library-rules.ts,src/handlers/{session.ts,library.ts,studio.ts,uploads.ts,uploaded-file.ts,not-found.ts}}
 packages/ui/{package.json,tsconfig.json,src/index.ts,src/api.ts,src/Logo.tsx,src/toast.ts,src/Toaster.tsx,styles/{base.css,admin.css,workspace.css,transitions.css},public/**}
 apps/admin/{package.json,tsconfig.json,next.config.ts,vercel.json,app/layout.tsx,app/fonts.ts,app/admin/page.tsx,components/StudioBoot.tsx,components/LoginScreen.tsx,app/api/**/route.ts,app/uploads/[filename]/route.ts}
 apps/client/{package.json,tsconfig.json,next.config.ts,vercel.json,app/layout.tsx,app/fonts.ts,app/page.tsx,components/ReaderBoot.tsx,app/api/library/route.ts,app/api/[[...missing]]/route.ts,app/uploads/[filename]/route.ts}
@@ -196,8 +201,8 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `packages/shared/package.json`, `packages/shared/tsconfig.json`
-- Create: `packages/shared/src/schema.ts`, `src/types.ts`, `src/experience.ts`, `src/collision.ts`, `src/landscape.ts`, `src/text-pages.ts`, `src/index.ts`
-- Test: `tests/unit/shared/collision.test.ts`, `experience.test.ts`, `landscape.test.ts`, `text-pages.test.ts`, `schema.test.ts`
+- Create: `packages/shared/src/schema.ts`, `src/types.ts`, `src/home.ts`, `src/experience.ts`, `src/collision.ts`, `src/landscape.ts`, `src/text-pages.ts`, `src/index.ts`
+- Test: `tests/unit/shared/collision.test.ts`, `experience.test.ts`, `landscape.test.ts`, `text-pages.test.ts`, `schema.test.ts`, `home.test.ts`
 
 **Interfaces:**
 - Produces:
@@ -385,6 +390,7 @@ import { z } from "zod";
 
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 const text = z.string().trim().min(1).max(200);
+const image = z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).or(z.literal("")).default("");
 export const kinds = ["rabbit", "mushroom", "teapot", "tree", "rose", "key", "clock", "cards", "house", "glb"] as const;
 export const animations = ["hop", "spin", "float", "sway", "clip", "none"] as const;
 export const themes = ["meadow", "night", "tea", "rose", "gold"] as const;
@@ -428,6 +434,7 @@ export const chapterSchema = z
     subtitle: z.string().max(250),
     body: z.string().max(15000),
     theme: z.enum(themes),
+    thumbnail: image,
     width: z.number().min(40).max(120).default(64),
     depth: z.number().min(40).max(100).default(56),
     floorArrows: z.boolean().default(true),
@@ -475,6 +482,10 @@ export const bookSchema = z.object({
   title: text,
   englishTitle: text,
   author: z.string().max(200),
+  // "all" and "reading" are the reader's own filter states.
+  category: z.string().trim().max(8, "분류는 8자 이하로 입력해 주세요.")
+    .refine((c) => !["all", "reading"].includes(c), { message: "분류 이름으로 all·reading은 쓸 수 없습니다." })
+    .default(""),
   cover: z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).or(z.literal("")).default(""),
   floorAssets: z.array(z.object({ asset: z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/), name: text })).max(300).optional(),
   year: z.number().int().min(1).max(2026),
@@ -485,27 +496,42 @@ export const bookSchema = z.object({
   chapters: z.array(chapterSchema).min(1).max(40),
 });
 
+export const heroSlideSchema = z.object({
+  id,
+  bookId: id,
+  image,
+  focus: z.enum(["left", "center", "right"]).default("center"),
+  kicker: z.string().trim().max(40).default(""),
+  title: z.string().trim().max(60).default(""),
+  description: z.string().trim().max(200).default(""),
+});
+
 export const librarySchema = z
   .object({
     models: z.array(modelSchema).max(300),
     books: z.array(bookSchema).max(50),
+    // prefault re-parses {} so every library gets its own slide list; a default object would be shared.
+    home: z.object({ hero: z.array(heroSlideSchema).max(5).default([]) }).prefault({}),
   })
   .superRefine((s, c) => {
     const modelIds = new Set(s.models.map((m) => m.id));
+    const bookIds = new Set(s.books.map((b) => b.id));
     const seen = new Set<string>();
-    for (const row of [...s.models, ...s.books, ...s.books.flatMap((b) => b.chapters), ...s.books.flatMap((b) => b.chapters.flatMap((ch) => ch.placements))]) {
+    for (const row of [...s.models, ...s.books, ...s.books.flatMap((b) => b.chapters), ...s.books.flatMap((b) => b.chapters.flatMap((ch) => ch.placements)), ...s.home.hero]) {
       if (seen.has(row.id)) c.addIssue({ code: "custom", message: "중복된 항목 ID가 있습니다." });
       seen.add(row.id);
     }
     for (const p of s.books.flatMap((b) => b.chapters.flatMap((ch) => ch.placements)))
       if (!modelIds.has(p.modelId)) c.addIssue({ code: "custom", message: "배치된 모델을 먼저 장면에서 제거해 주세요." });
+    for (const slide of s.home.hero)
+      if (!bookIds.has(slide.bookId)) c.addIssue({ code: "custom", message: "추천 슬라이드에 연결된 책을 찾을 수 없습니다." });
   });
 ```
 
 `packages/shared/src/types.ts`
 ```ts
 import type { z } from "zod";
-import type { bookSchema, chapterSchema, librarySchema, modelSchema, placementSchema } from "./schema";
+import type { bookSchema, chapterSchema, heroSlideSchema, librarySchema, modelSchema, placementSchema } from "./schema";
 
 export type Library = z.infer<typeof librarySchema>;
 export type LibraryInput = z.input<typeof librarySchema>;
@@ -513,6 +539,7 @@ export type Book = z.infer<typeof bookSchema>;
 export type Chapter = z.infer<typeof chapterSchema>;
 export type Placement = z.infer<typeof placementSchema>;
 export type Model = z.infer<typeof modelSchema>;
+export type HeroSlide = z.infer<typeof heroSlideSchema>;
 export type FloorDecal = NonNullable<Chapter["floorDecals"]>[number];
 ```
 
@@ -727,10 +754,33 @@ export function textPages(text: string, limit = 112): string[] {
 }
 ```
 
+`packages/shared/src/home.ts` (현재 `shared/home.js` 이식. 저장 데이터에 새 항목이 없을 때의 대체 규칙)
+```ts
+import type { Book, HeroSlide } from "./types";
+
+// Books saved before categories existed keep the labels the reader used to hardcode.
+const legacyCategories: Record<string, string> = { alice: "판타지", oz: "모험" };
+
+export const bookCategory = (book: Pick<Book, "id"> & { category?: string }) =>
+  book.category || (Object.hasOwn(legacyCategories, book.id) ? legacyCategories[book.id] : "문학");
+
+export const heroKicker = (slide: { kicker?: string }, index: number) =>
+  slide.kicker || (index ? "한 걸음, 새로운 모험" : "오늘의 이야기");
+
+// Slides for books missing from `books` are skipped; with none left the first two books are shown.
+export function heroSlides<B extends { id: string }>(books: B[], home?: { hero?: Partial<HeroSlide>[] }) {
+  const byId = new Map(books.map((book) => [book.id, book]));
+  const slides = (home?.hero || []).filter((slide) => byId.has(slide.bookId!));
+  if (!slides.length) return books.slice(0, 2).map((book) => ({ bookId: book.id, book }) as Partial<HeroSlide> & { book: B });
+  return slides.map((slide) => ({ ...slide, book: byId.get(slide.bookId!)! }));
+}
+```
+
 `packages/shared/src/index.ts`
 ```ts
 export * from "./schema";
 export * from "./types";
+export * from "./home";
 export * from "./experience";
 export * from "./collision";
 export * from "./landscape";
@@ -760,7 +810,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `packages/server/package.json`, `packages/server/tsconfig.json`
-- Create: `packages/server/src/upgrade.ts`, `src/seed.ts`, `src/storage.ts`, `src/validation.ts`, `src/index.ts`
+- Create: `packages/server/src/upgrade.ts`, `src/seed.ts`, `src/storage.ts`, `src/publication.ts`, `src/validation.ts`, `src/index.ts`
 - Create: `tests/fixtures.ts`
 - Test: `tests/unit/server/seed.test.ts`, `tests/unit/server/upgrade.test.ts`, `tests/unit/server/validation.test.ts`, `tests/unit/server/storage.test.ts`
 
@@ -769,7 +819,8 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Produces:
   - `upgrade<T>(library: T): T`, `seed: LibraryInput`
   - 타입 `Db = { version: number; draft: Library; live: Library; publishedAt: string }`, `Snapshot = { db: Db; etag?: string }`
-  - `isCloud()`, `dataDir()`, `uploadDir()`, `initialDb()`, `readLibrary()`, `persist(next, snapshot)`, `readAsset(filename, staging?)`, `writeAsset(filename, buffer)`, `signedAsset(pathname, operation?, maximumSizeInBytes?)`, `removeStaging(filename)`, `saveSession(token, expiry)`, `validSession(token?)`, `removeSession(token?)`, `publicAssetNames(db)`
+  - `isCloud()`, `dataDir()`, `uploadDir()`, `initialDb()`, `readLibrary()`, `persist(next, snapshot)`, `readAsset(filename, staging?)`, `writeAsset(filename, buffer)`, `signedAsset(pathname, operation?, maximumSizeInBytes?)`, `removeStaging(filename)`, `saveSession(token, expiry)`, `validSession(token?)`, `removeSession(token?)`
+  - `publicLibrary(db)`, `publicAssetNames(db)`, `imageUrls(library)` (`src/publication.ts`, 부수효과 없음. storage 는 타입만 가져온다)
   - `inspectPng(buffer)`, `inspectGlb(buffer)`, `modelInfo(buffer)`, 상수 `PNG_LIMIT`, `GLB_LIMIT`, `PNG_TOO_LARGE`, `PNG_INVALID`, `PNG_INCOMPLETE`, `GLB_TOO_LARGE`, `GLB_INVALID`, `GLB_NOT_STANDALONE`, `GLB_NOT_RIGGED`, 타입 `Inspection<T>`
 - 환경변수는 호출 시점에 읽는다(`DATA_DIR`, `VERCEL`, `BLOB_NAMESPACE`). 테스트가 `process.env` 를 바꿔 쓸 수 있어야 한다.
 
@@ -1010,15 +1061,19 @@ test("assets round-trip through the uploads folder", async () => {
   assert.equal((await readAsset("test.png")).toString(), "png-bytes");
   await assert.rejects(readAsset("missing.png"), (e: any) => e.code === "ENOENT");
 });
-test("public asset names include only assets of published books and their models", async () => {
+test("public asset names include only files the public library points to", async () => {
   const { db } = await readLibrary();
   const live = structuredClone(db.live);
   live.books[0].cover = "/uploads/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png";
+  live.books[0].chapters[0].thumbnail = "/uploads/cccccccc-cccc-cccc-cccc-cccccccccccc.png";
   live.books[1].published = false;
   live.books[1].cover = "/uploads/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.png";
+  live.home = { hero: [{ id: "slide-hidden", bookId: live.books[1].id, image: "/uploads/dddddddd-dddd-dddd-dddd-dddddddddddd.png", focus: "center", kicker: "", title: "", description: "" }] };
   const names = publicAssetNames({ ...db, live });
   assert.ok(names.has("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png"));
+  assert.ok(names.has("cccccccc-cccc-cccc-cccc-cccccccccccc.png"));
   assert.ok(!names.has("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.png"));
+  assert.ok(!names.has("dddddddd-dddd-dddd-dddd-dddddddddddd.png"));
 });
 ```
 
@@ -1258,18 +1313,46 @@ export async function removeSession(token?: string): Promise<void> {
   await del(blobKey(`sessions/${token}.json`));
 }
 
-export function publicAssetNames(db: Db): Set<string> {
+// publicAssetNames 는 src/publication.ts 로 옮겼다(공개 응답이 가리키는 파일만 허용).
+```
+
+`packages/server/src/publication.ts` (현재 `server/publication.js` 이식)
+```ts
+import path from "node:path";
+import type { Library } from "@otb/shared";
+import type { Db } from "./storage";
+
+// What readers may see. Stored cloud data is not re-parsed, so fields added later may be missing.
+export function publicLibrary(db: Db) {
   const books = db.live.books.filter((book) => book.published);
-  const models = new Set(books.flatMap((book) => book.chapters.flatMap((chapter) => chapter.placements.map((p) => p.modelId))));
-  return new Set(
-    [
-      ...db.live.models.filter((model) => models.has(model.id)).flatMap((model) => [model.url, model.thumbnail]),
-      ...books.flatMap((book) => [book.cover, ...(book.floorAssets || []).map((item) => item.asset), ...book.chapters.flatMap((chapter) => (chapter.floorDecals || []).map((item) => item.asset))]),
-    ]
-      .filter((url): url is string => !!url)
-      .map((url) => path.basename(url)),
-  );
+  const bookIds = new Set(books.map((book) => book.id));
+  const used = new Set(books.flatMap((book) => book.chapters.flatMap((chapter) => chapter.placements.map((p) => p.modelId))));
+  return {
+    books,
+    models: db.live.models.filter((model) => used.has(model.id)),
+    home: { hero: (db.live.home?.hero ?? []).filter((slide) => bookIds.has(slide.bookId)) },
+    publishedAt: db.publishedAt,
+  };
 }
+
+// Only these keys hold uploaded files, so an address typed into a story never becomes public.
+const assetKeys = new Set(["url", "thumbnail", "cover", "asset", "image"]);
+const uploadPath = /^\/uploads\/[a-f0-9-]+\.(png|glb)$/;
+function uploadsIn(value: unknown, found = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) for (const item of value) uploadsIn(item, found);
+  else if (value && typeof value === "object")
+    for (const [key, item] of Object.entries(value)) {
+      if (assetKeys.has(key) && typeof item === "string" && uploadPath.test(item)) found.add(item);
+      else uploadsIn(item, found);
+    }
+  return found;
+}
+
+export const publicAssetNames = (db: Db) => new Set([...uploadsIn(publicLibrary(db))].map((url) => path.basename(url)));
+
+// PNG files that books and hero slides point to. Model files are checked with the models.
+export const imageUrls = (library: Pick<Library, "books"> & { home?: Library["home"] }) =>
+  new Set([...uploadsIn({ books: library.books, home: library.home })].filter((url) => url.endsWith(".png")));
 ```
 
 `@vercel/blob` 의 `issueSignedToken`, `presignUrl`, `ifMatch`, `allowOverwrite` 옵션 이름은 현재 `server/storage.js` 와 같다. 타입 오류가 나면 `node_modules/@vercel/blob/dist/index.d.ts` 에서 시그니처를 확인하고 인자 형태만 맞춘다. 동작은 바꾸지 않는다.
@@ -1373,6 +1456,7 @@ export function inspectGlb(b: Buffer): Inspection<{ clips: string[]; rigged: tru
 export * from "./upgrade";
 export * from "./seed";
 export * from "./storage";
+export * from "./publication";
 export * from "./validation";
 ```
 
@@ -1625,6 +1709,7 @@ export async function requireAdmin(request: Request): Promise<Response | null> {
 import path from "node:path";
 import { newTriggerConflict, type Library } from "@otb/shared";
 import { readAsset, type Db } from "./storage";
+import { imageUrls } from "./publication";
 import { modelInfo } from "./validation";
 
 export const INCOMPLETE_BOOK = "공개할 도서의 저자와 권리 정보를 완성해 주세요.";
@@ -1657,11 +1742,16 @@ export async function validateStudioSave(parsed: Library, db: Db, publish: boole
     if (prior.get(p.id) !== p.modelId && model?.kind === "glb" && (!model.rigged || p.animation !== "clip" || !model.clips.includes(p.clip)))
       return "새 배치에는 뼈대 모델과 등록된 애니메이션을 선택해 주세요.";
   }
-  for (const book of parsed.books) if (book.cover) await readAsset(path.basename(book.cover));
-  for (const book of parsed.books) for (const item of book.floorAssets || []) await readAsset(path.basename(item.asset));
-  for (const book of parsed.books)
-    for (const chapter of book.chapters)
-      for (const item of chapter.floorDecals || []) if (item.asset.startsWith("/uploads/")) await readAsset(path.basename(item.asset));
+  // Cloud reads download each file whole, so only images new to the draft are checked.
+  const known = imageUrls(db.draft);
+  for (const url of imageUrls(parsed))
+    if (!known.has(url))
+      try {
+        await readAsset(path.basename(url));
+      } catch (e: any) {
+        if (e.code === "ENOENT") return "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요.";
+        throw e;
+      }
   return null;
 }
 ```
@@ -1710,14 +1800,13 @@ export const logout = guarded(async (request) => {
 ```ts
 import { guarded, ok } from "../http";
 import { readLibrary } from "../storage";
+import { publicLibrary } from "../publication";
 
 export const NO_STORE = { "Cache-Control": "no-store" };
 
 export const getLibrary = guarded(async () => {
   const { db } = await readLibrary();
-  const books = db.live.books.filter((b) => b.published);
-  const used = new Set(books.flatMap((b) => b.chapters.flatMap((c) => c.placements.map((p) => p.modelId))));
-  return ok({ books, models: db.live.models.filter((m) => used.has(m.id)), publishedAt: db.publishedAt }, { headers: NO_STORE });
+  return ok(publicLibrary(db), { headers: NO_STORE });
 });
 ```
 
@@ -2012,7 +2101,8 @@ export const modelsUpload = guarded(async (request) => {
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { sessionToken } from "../session";
-import { isCloud, publicAssetNames, readLibrary, signedAsset, uploadDir, validSession } from "../storage";
+import { isCloud, readLibrary, signedAsset, uploadDir, validSession } from "../storage";
+import { publicAssetNames } from "../publication";
 
 const NAME = /^[a-f0-9-]{36}\.(png|glb)$/;
 
@@ -2028,7 +2118,7 @@ export function uploadedFile(options: { allowSession: boolean }) {
       const { db } = await readLibrary();
       const allowed = publicAssetNames(db).has(filename) || (options.allowSession && (await validSession(sessionToken(request))));
       if (!allowed) return new Response(null, { status: 404 });
-      return new Response(null, { status: 307, headers: { Location: await signedAsset(`uploads/${filename}`), "Cache-Control": "private, no-store" } });
+      return new Response(null, { status: 307, headers: { Location: await signedAsset(`uploads/${filename}`), "Cache-Control": filename.endsWith(".png") ? "private, max-age=300" : "private, no-store" } });
     }
     try {
       const body = await readFile(path.join(uploadDir(), filename));
@@ -2954,10 +3044,10 @@ export default function HomePage() {
 ```tsx
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { Book, Model } from "@otb/shared";
+import type { Book, HeroSlide, Model } from "@otb/shared";
 import { api, Logo } from "@otb/ui";
 
-type LibraryResponse = { books: Book[]; models: Model[]; publishedAt: string };
+type LibraryResponse = { books: Book[]; models: Model[]; home: { hero: HeroSlide[] }; publishedAt: string };
 type State = { phase: "loading" } | { phase: "error"; message: string } | { phase: "ready"; library: LibraryResponse };
 
 export function ReaderBoot() {
