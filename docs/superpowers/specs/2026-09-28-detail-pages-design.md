@@ -150,7 +150,7 @@ main.detail-page.store-content#main-content[data-view="book"]
 
 ## 8. 홈 변경(기존 유지)
 
-`client/landing.js` 의 카드 링크 구조는 두 뎁스 구현과 같다. 도서 카드 `a.book-entry[href={detailUrl book}][data-book]`(`aria-label` "{책} — 작품 상세"), 장면 카드 `a.scene-card[href={detailUrl scene}][data-scene-book][data-scene-chapter]`(`aria-label` "{책} · {장면} — 장면 상세"), 히어로 `button[data-feature-book]`(문구 "작품 살펴보기", `aria-label` "{제목} 작품 상세"). `setupCatalog()` 의 `onOpen(target, bookId, sceneId)`, 초점 복원 선택자, 자동 재생 초점 보호도 그대로다. `client/index.html` 설명 메타도 이미 고쳤다.
+`client/landing.js` 의 카드 링크 구조는 두 뎁스 구현과 같다. 도서 카드 `a.book-entry[href={detailUrl book}][data-book]`(`aria-label` "{책} — 작품 상세"), 장면 카드 `a.scene-card[href={detailUrl scene}][data-scene-book][data-scene-chapter]`(`aria-label` "{책} · {장면} — 작품 상세"), 히어로 `button[data-feature-book]`(문구 "작품 살펴보기", `aria-label` "{제목} 작품 상세"). `setupCatalog()` 의 `onOpen(target, bookId, sceneId)`, 초점 복원 선택자, 자동 재생 초점 보호도 그대로다. `client/index.html` 설명 메타도 이미 고쳤다.
 
 ## 9. main.js 와 detail.js 정리
 
@@ -205,7 +205,7 @@ admin/
 | 링크 | 원작 정보 보기 ↗ |
 | 헤더 | 책장으로 |
 | 홈 히어로 카드 | 작품 살펴보기 |
-| `aria-label` | `{책} — 작품 상세` / `{책} · {장면} — 장면 상세` / `이어지는 장면` / 시트 닫기 "닫기"(기존 `modal()`) |
+| `aria-label` | `{책} — 작품 상세` / `{책} · {장면} — 작품 상세` / `이어지는 장면` / 시트 닫기 "닫기"(기존 `modal()`) |
 
 ## 12. 오류 처리
 

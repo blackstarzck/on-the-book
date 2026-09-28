@@ -98,6 +98,10 @@ try {
   await expect(page.locator('.detail-cta')).toBeHidden();
   await expect(page.locator('.detail-page img')).toHaveCount(0);
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
+  // The panel follows the scroll: at the bottom of the page it is pinned 24px below the viewport top.
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect.poll(() => page.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top))).toBe(24);
+  await page.evaluate(() => window.scrollTo(0, 0));
   pass('Book cards open the book detail with the first scene in the panel');
   // Choosing a scene swaps the panel in place: no curtain, no history entry, the address follows.
   const entries = await page.evaluate(() => history.length);
@@ -267,6 +271,21 @@ try {
   await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
   await page.unroute('**/api/studio');
   pass('Direct addresses resolve to the right screen and unusable parts are cleaned');
+
+  // The middle grid (851–1100px): a 340px panel that still sticks, no horizontal overflow, journey rows that do not spill.
+  const tablet = await browser.newContext({ viewport: { width: 1024, height: 800 } });
+  const wide = await tablet.newPage();
+  wide.on('pageerror', error => errors.push(error.message));
+  await wide.goto(`${server.url}/client/?book=alice`);
+  await expect(wide.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(wide.locator('.reader-curtain')).toHaveCount(0);
+  expect(Math.round(await wide.locator('.scene-panel').evaluate(element => element.getBoundingClientRect().width))).toBe(340);
+  expect(await wide.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await wide.locator('.journey-row').evaluateAll(rows => rows.every(row => row.scrollWidth <= row.clientWidth + 1))).toBe(true);
+  await wide.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect.poll(() => wide.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top))).toBe(24);
+  await tablet.close();
+  pass('1024px: the 340px panel sticks and nothing overflows');
 
   // More books exist only in this intercepted response, never in the saved library.
   const original = await (await fetch(`${server.url}/api/library`)).json();

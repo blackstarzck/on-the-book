@@ -1,5 +1,7 @@
 # 작품 상세·장면 상세 페이지 구현 계획
 
+> 2026-09-28: 이 계획의 결과물(두 뎁스: 작품 상세 → 장면 상세)은 같은 날 두 열 재설계 `2026-09-28-detail-two-column.md` 로 대체됐다. 기록용이며 실행하지 않는다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 책장 홈의 도서·장면·추천 카드가 작품 상세 또는 장면 상세 페이지로 이동하고, 그 페이지의 CTA 로만 3D 월드에 들어가게 한다.
