@@ -211,7 +211,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 ## 10. 사용자 앱 (apps/client) 과 @otb/reader
 
-- `ReaderApp` 컴포넌트가 URL 쿼리를 읽어 시작한다. `preview=draft` 면 `/api/studio`, 아니면 `/api/library`. 책이 없으면 "새로운 이야기를 준비하고 있어요." 화면.
+- `ReaderApp` 컴포넌트가 URL 쿼리를 읽어 시작한다. `preview=draft` 면 `/api/studio`, 아니면 `/api/library`. 책이 없으면 "새로운 이야기를 준비하고 있어요." 화면. 화면 상태는 넷이다: `/`(책장 홈), `?book=<id>`(작품 상세), `?book=<id>&scene=<chapterId>`(장면 상세), `?book=<id>&chapter=<chapterId>`(3D 월드). 상세 페이지의 구성·CTA·주소 해석·잘못된 id 처리는 2026-09-28 에 바닐라 client 에 추가한 `2026-09-28-detail-pages-design.md` 를 따르며, App Router 경로(`/books/[id]`)로 바꿀지는 6단계 계획에서 정한다.
 - 히어로: 현재 카피·버튼·장식·푸터. "책 속으로 들어가기" 로 탐험 시작.
 - 탐험: 상단 라인, 터치 패드(4방향), 이전·다음 챕터, 지도 버튼, 이동 힌트, 글 패널(제목·구분선·본문·페이지 버튼, 순차 등장 애니메이션). `history.replaceState` 로 쿼리 동기화, 진행 기록 저장.
 - 모달: 도움말, 챕터 본문 읽기, 책장, 이야기의 지도.
