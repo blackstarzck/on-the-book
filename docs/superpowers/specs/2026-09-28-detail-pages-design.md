@@ -247,7 +247,7 @@ admin/
 6. 홈에서 `.feature-card.is-active`(앨리스) 클릭 → 작품 상세. "책장으로" → `.feature-card.is-active` 에 초점, 5.6초 뒤에도 유지(기존).
 7. 주소 직접 열기(기존 7단계에 더해): `?book=alice&scene=alice-2` 는 2행 선택과 패널 2장면, 문서 제목은 책 제목. 나머지(`?book=nope`, `?scene=alice-2`, `?book=alice&chapter=nope`, `?book=alice&scene=nope&preview=draft`, 초안 미리보기의 빈 책장)는 기존 단정 유지.
 8. 홈 화면 관리 묶음("Studio covers…" 단계, 가로챈 응답): `[data-book="alice"]` → `.detail-cover img` 1개; 썸네일이 있는 장면 카드 → 패널 `.scene-panel .scene-image.has-image img` 1개, 그 자리의 폭/높이 비 1.6(±0.02).
-9. 휴대폰 반복(320·390·768): 카드 탭 → 상세, `aside.scene-panel` 은 보이지 않고 `.detail-cta` 가 화면 아래에 있으며 폭 전체(`left 0`, `right = innerWidth`). 여정 2행 탭 → `dialog.scene-sheet[open]` 안에 `#panel-scene-title` "작아지는 문, 커지는 세계", 하단 바 문구 "02 ·". 시트 안 CTA 탭 → `#world canvas`, 주소 `chapter=alice-2`. 768px 도 한 열이므로 같은 흐름이다.
+9. 휴대폰 반복(320·390·768): 카드 탭 → 상세, `aside.scene-panel` 은 보이지 않고 `.detail-cta` 가 화면 아래에 있으며 폭 전체(`left 0`, `right = innerWidth`). 여정 2행 탭 → `dialog.scene-sheet[open]` 안에 `#sheet-scene-title` "작아지는 문, 커지는 세계", 하단 바 문구 "02 ·". 시트 안 이전·다음 링크는 시트·여정 선택·하단 바를 함께 바꾸고, 시트 안 CTA 탭 → `#world canvas`, 주소 `chapter=<그 장면>`. 768px 도 한 열이므로 같은 흐름이다.
 
 ### 14.3 `tests/mobile-entry.mjs`(4321 포트)
 

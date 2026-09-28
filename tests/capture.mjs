@@ -17,6 +17,7 @@ try {
   await page.screenshot({ path: 'docs/preview/detail.png', fullPage: true });
   await page.locator('.scene-panel .detail-enter').click();
   await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.reader-curtain')).toHaveCount(0);
   await page.screenshot({ path: 'docs/preview/explore.png', fullPage: true });
   const mobile = await browser.newPage({ viewport: { width: 375, height: 812 } });
   await mobile.goto(`${base}/client/`);
