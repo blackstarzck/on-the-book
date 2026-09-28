@@ -9,7 +9,25 @@ import { overlapsTrigger, reactionSize, triggerCircles, mainModel } from '../sha
 import './workspace.css';
 
 export function shelfHTML(books) {
- return `<section class="book-library"><div class="library-heading"><div><small>ON THE BOOK / STUDIO</small><h1>이야기의 세계를 만드세요.</h1><p>책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.</p></div><button id="new-book" class="primary-button">＋ 새 도서 추가</button></div><div class="library-filter"><input id="book-search" aria-label="도서 검색" placeholder="도서 제목 검색"><select id="book-filter" aria-label="도서 상태"><option value="all">모든 도서</option><option value="draft">비공개 초안</option><option value="public">공개 대상</option></select></div><div class="book-shelf">${books.map((b,i)=>`<button class="book-tile" data-open-book="${b.id}" data-title="${esc(b.title.toLowerCase())}" data-state="${b.published?'public':'draft'}"><div class="book-cover" style="--cover-hue:${135+i*27}">${b.cover?`<img src="${esc(b.cover)}" alt="">`:`<span>ON THE BOOK</span><strong>${esc(b.title)}</strong><i>✧</i><small>${esc(b.author||'새로운 이야기')}</small>`}</div><div class="book-tile-info"><strong>${esc(b.title)}</strong><span>${b.chapters.length}개 챕터 · ${b.published?'공개 대상':'비공개 초안'}</span><em>월드 편집 ↗</em></div></button>`).join('')}</div><p id="shelf-empty" hidden>일치하는 도서가 없습니다. 새 도서를 추가해 시작하세요.</p></section>`;
+ return `<section class="book-library"><div class="library-heading"><div><small>ON THE BOOK / STUDIO</small><h1>이야기의 세계를 만드세요.</h1><p>책을 열고, 챕터를 나누고, 장면에 생명을 불어넣으세요.</p></div><button id="new-book" class="primary-button">＋ 새 도서 추가</button></div><div class="library-filter"><input id="book-search" aria-label="도서 검색" placeholder="도서 제목 검색"><select id="book-filter" aria-label="도서 상태"><option value="all">모든 도서</option><option value="draft">비공개 초안</option><option value="public">공개 대상</option></select></div><p class="shelf-hint">표지 왼쪽 위 손잡이를 끌거나 Alt+←→로 사용자 책장에 놓일 순서를 바꿔요. 검색·필터 중에는 바꿀 수 없어요.</p><div class="book-shelf">${books.map((b,i)=>`<div class="book-tile-row" data-book-row="${b.id}"><button class="book-tile" data-open-book="${b.id}" data-title="${esc(b.title.toLowerCase())}" data-state="${b.published?'public':'draft'}"><div class="book-cover" style="--cover-hue:${135+i*27}">${b.cover?`<img src="${esc(b.cover)}" alt="">`:`<span>ON THE BOOK</span><strong>${esc(b.title)}</strong><i>✧</i><small>${esc(b.author||'새로운 이야기')}</small>`}</div><div class="book-tile-info"><strong>${esc(b.title)}</strong><span>${b.chapters.length}개 챕터 · ${b.published?'공개 대상':'비공개 초안'}</span><em>월드 편집 ↗</em></div></button><button type="button" class="book-drag" draggable="true" data-book-drag="${b.id}" aria-label="${esc(b.title)} 순서 이동" title="끌어서 순서 변경 · Alt+←→"><svg viewBox="0 0 16 20" aria-hidden="true"><path d="M5 4h0m6 0h0M5 10h0m6 0h0M5 16h0m6 0h0"/></svg></button></div>`).join('')}</div><p id="shelf-empty" hidden>일치하는 도서가 없습니다. 새 도서를 추가해 시작하세요.</p></section>`;
+}
+
+// The shelf order is the order readers see ("기본순", and the first two books when no hero slide is set).
+// A tile is a <button>, so its drag handle sits beside it inside the row.
+export function bindShelfOrder(app, onReorder) {
+ const shelf=app.querySelector('.book-shelf');
+ const ids=()=>[...shelf.querySelectorAll('[data-book-row]')].map(row=>row.dataset.bookRow);
+ let dragged=null;
+ const clear=()=>{dragged=null;shelf.querySelectorAll('.dragging,.drop-before,.drop-after').forEach(row=>row.classList.remove('dragging','drop-before','drop-after'));};
+ const before=(row,e)=>e.clientX<row.getBoundingClientRect().left+row.offsetWidth/2;
+ shelf.querySelectorAll('[data-book-drag]').forEach(handle=>{
+   handle.ondragstart=e=>{dragged=handle.dataset.bookDrag;e.dataTransfer.setData('application/x-otb-book',dragged);e.dataTransfer.effectAllowed='move';handle.closest('.book-tile-row').classList.add('dragging');};
+   handle.ondragend=clear;
+   handle.onkeydown=e=>{if(!e.altKey||!['ArrowLeft','ArrowRight'].includes(e.key)||shelf.classList.contains('is-filtered'))return;e.preventDefault();const order=ids(),index=order.indexOf(handle.dataset.bookDrag),next=index+(e.key==='ArrowLeft'?-1:1);if(next<0||next>=order.length)return;[order[index],order[next]]=[order[next],order[index]];onReorder(order,handle.dataset.bookDrag);};
+ });
+ shelf.ondragover=e=>{if(!dragged)return;e.preventDefault();e.dataTransfer.dropEffect='move';const row=e.target.closest('[data-book-row]');shelf.querySelectorAll('.drop-before,.drop-after').forEach(r=>r.classList.remove('drop-before','drop-after'));if(row&&row.dataset.bookRow!==dragged)row.classList.add(before(row,e)?'drop-before':'drop-after');};
+ // Drops in the gaps between tiles are ignored rather than guessed.
+ shelf.ondrop=e=>{if(!dragged)return;e.preventDefault();const row=e.target.closest('[data-book-row]'),moved=dragged,current=ids();if(!row||row.dataset.bookRow===moved){clear();return;}const order=current.filter(id=>id!==moved);order.splice(order.indexOf(row.dataset.bookRow)+(before(row,e)?0:1),0,moved);clear();if(order.some((id,i)=>id!==current[i]))onReorder(order,moved);};
 }
 export function mountWorkspace(app, {book,chapter,models,selectedId,hooks}) {
  const zones=layout(book.chapters),zoneFor=id=>zones.find(z=>z.chapter.id===id);
