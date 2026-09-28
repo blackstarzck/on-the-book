@@ -5,20 +5,24 @@ import { api, esc, icon, icons, logo, modal, toast } from "../shared/ui.js";
 import "../shared/style.css";
 import { announcementBanner, landing, setupCatalog } from "./landing.js";
 import { bookCover, edition } from "./book-meta.js";
+import { bookDetail, sceneDetail, detailUrl } from "./detail.js";
+import "./detail.css";
 let library,
   book,
   chapter,
   world,
-  exploring = false,
+  // Which screen is on: the bookshelf ("home"), a book detail, a scene detail or the 3D world.
+  view = "home",
   sound = false,
   audioContext,
   ambient,
   saveTimer,
-  disposeCatalog;
+  disposeView;
 const catalogState = { query: "", category: "all", sort: "default", scroll: 0, selected: null };
 const draftPreview = new URLSearchParams(location.search).get("preview") === "draft";
 // The studio's Vercel project serves the reader for previews but has no /about page.
 const aboutLink = !draftPreview && import.meta.env.MODE !== "admin";
+const baseTitle = document.title;
 let progress;
 try {
   progress = JSON.parse(localStorage.getItem("otb-reader") || "{}");
@@ -44,25 +48,63 @@ function record() {
     progress[book.id] = { chapter: book.chapters[0].id };
   return progress[book.id];
 }
-function header() {
-  return `<header class="site-header${exploring ? " reader-header" : ""}"><a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>${!exploring ? `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>` : ""}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${exploring ? "text-button" : "icon-button"}" aria-label="${exploring ? "책장으로" : "책장 홈"}">${icon(exploring ? "arrow-left" : "book-open")}${exploring ? "책장으로" : ""}</button>${exploring ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
+// The address of the current screen, carrying the draft preview flag when it is on.
+function currentUrl() {
+  if (view === "home") return `${location.pathname}${draftPreview ? "?preview=draft" : ""}`;
+  return location.pathname + detailUrl({
+    book: book.id,
+    scene: view === "scene" ? chapter.id : undefined,
+    chapter: view === "world" ? chapter.id : undefined,
+    preview: draftPreview,
+  });
 }
-function render() {
-  disposeCatalog?.();
-  disposeCatalog = undefined;
-  world?.dispose();
-  world = undefined;
-  if (audioContext) exploring && sound ? audioContext.resume() : audioContext.suspend();
+// Which screen a query string asks for. Unknown ids fall back to the nearest screen;
+// `clean` says the address had unusable parts and should be rewritten.
+function resolveView(params) {
+  const selected = library.books.find(b => b.id === params.get("book"));
+  if (!selected) return { view: "home", book: library.books[0], chapter: library.books[0].chapters[0], clean: params.has("book") };
+  const explored = selected.chapters.find(c => c.id === params.get("chapter"));
+  if (explored) return { view: "world", book: selected, chapter: explored, clean: false };
+  const scene = selected.chapters.find(c => c.id === params.get("scene"));
+  if (scene) return { view: "scene", book: selected, chapter: scene, clean: false };
+  return { view: "book", book: selected, chapter: selected.chapters[0], clean: params.has("scene") || params.has("chapter") };
+}
+function applyResolved(state) {
+  view = state.view;
+  book = state.book;
+  chapter = state.chapter;
+  if (view === "world") { record().chapter = chapter.id; remember(); }
+  if (state.clean) history.replaceState(null, "", currentUrl());
+}
+function pageTitle() {
+  if (view === "book") return `${book.title} — On the Book`;
+  if (view === "scene") return `${chapter.title} · ${book.title} — On the Book`;
+  return baseTitle;
+}
+function header() {
+  const compact = view !== "home";
+  return `<header class="site-header${compact ? " reader-header" : ""}"><a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>${compact ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
+}
+function page() {
+  if (view === "home") return landing(library, progress, catalogState);
+  if (view === "book") return bookDetail({ book, progress, preview: draftPreview });
+  if (view === "scene") return sceneDetail({ book, chapter, library, preview: draftPreview });
   const index = book.chapters.indexOf(chapter);
-  app.innerHTML = `${exploring ? "" : announcementBanner()}${header()}${
-    exploring
-      ? `<main class="reader is-exploring"><div class="scene-wrap" id="world"></div>
+  return `<main class="reader is-exploring"><div class="scene-wrap" id="world"></div>
  <div class="explore-topline"><span class="live-dot"></span> ${esc(book.title)}<button id="reader-book-info" aria-label="${esc(book.title)} 작품 소개">작품 소개 ${icon("chevron-right")}</button></div>
  <div class="touch-pad" aria-label="이동 방향"><button data-dir="up" aria-label="앞으로 이동">↑</button><div><button data-dir="left" aria-label="왼쪽 이동">←</button><button data-dir="down" aria-label="뒤로 이동">↓</button><button data-dir="right" aria-label="오른쪽 이동">→</button></div></div>
  <div class="journey-controls"><button id="prev-chapter" class="icon-button" aria-label="이전 챕터" ${index === 0 ? "disabled" : ""}>${icon("arrow-left")}</button><button id="map-button" class="chapter-switch"><span><small>지금 걷고 있는 페이지</small>${String(index + 1).padStart(2, "0")} — ${esc(chapter.title)}</span></button><button id="next-chapter" class="icon-button" aria-label="다음 챕터" ${index === book.chapters.length - 1 ? "disabled" : ""}>${icon("arrow-right")}</button></div>
- <div class="move-hint">${icon("move")} 땅을 클릭 · 방향키로 이동 <span>물체 가까이 다가가 보세요</span></div></main>`
-      : landing(library, progress, catalogState)
-  }
+ <div class="move-hint">${icon("move")} 땅을 클릭 · 방향키로 이동 <span>물체 가까이 다가가 보세요</span></div></main>`;
+}
+function render() {
+  disposeView?.();
+  disposeView = undefined;
+  world?.dispose();
+  world = undefined;
+  const exploring = view === "world";
+  if (audioContext) exploring && sound ? audioContext.resume() : audioContext.suspend();
+  document.title = pageTitle();
+  app.innerHTML = `${view === "home" ? announcementBanner() : ""}${header()}${page()}
  <footer class="site-footer"><span>${exploring ? "문장 너머의 세계를, 천천히." : "오래된 이야기, 새로운 발견."}</span>${exploring ? `<div><span>땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상</span></div>` : ""}<span class="footer-brand">ON THE BOOK © 2026</span></footer>`;
   if (exploring) try {
     world = new Journey(document.querySelector("#world"), {
@@ -71,17 +113,15 @@ function render() {
       onChapter: syncChapter,
       onReading: showFloorReading,
       models: library.models,
-      hero: !exploring,
+      hero: false,
       onError: toast,
     });
     world.setActive(exploring);
-    if (exploring) {
-      const panel = document.createElement("aside"); panel.className = "floor-reading-controls"; panel.hidden = true;
-      panel.innerHTML = '<h2 id="floor-title"></h2><img class="story-divider" src="/ornaments/story-divider.png" alt="" aria-hidden="true"><p id="floor-accessible" tabindex="0" aria-label="이야기 본문" aria-live="polite"></p><div class="floor-pagination"><button id="floor-prev" class="icon-button" aria-label="이전 글귀">←</button><span id="floor-page"></span><button id="floor-next" class="icon-button" aria-label="다음 글귀">→</button></div>';
-      document.querySelector(".reader").append(panel);
-      panel.querySelector("#floor-prev").onclick = () => world.turnReadingPage(-1);
-      panel.querySelector("#floor-next").onclick = () => world.turnReadingPage(1);
-    }
+    const panel = document.createElement("aside"); panel.className = "floor-reading-controls"; panel.hidden = true;
+    panel.innerHTML = '<h2 id="floor-title"></h2><img class="story-divider" src="/ornaments/story-divider.png" alt="" aria-hidden="true"><p id="floor-accessible" tabindex="0" aria-label="이야기 본문" aria-live="polite"></p><div class="floor-pagination"><button id="floor-prev" class="icon-button" aria-label="이전 글귀">←</button><span id="floor-page"></span><button id="floor-next" class="icon-button" aria-label="다음 글귀">→</button></div>';
+    document.querySelector(".reader").append(panel);
+    panel.querySelector("#floor-prev").onclick = () => world.turnReadingPage(-1);
+    panel.querySelector("#floor-next").onclick = () => world.turnReadingPage(1);
   } catch (e) {
     document.querySelector("#world").innerHTML =
       `<div class="world-error"><h2>3D 화면을 불러오지 못했어요</h2><p>${esc(e.message)}</p><button id="fallback-read" class="primary-button">이야기 읽기</button></div>`;
@@ -97,9 +137,9 @@ function render() {
   document.querySelector("#help-button").onclick = help;
   const soundButton = document.querySelector("#sound-button");
   if (soundButton) soundButton.onclick = toggleSound;
-  if (!exploring) {
-    disposeCatalog = setupCatalog({ library, progress, state: catalogState, onEnter: enterBook, onTrailer: showTrailer, onHelp: help });
-  } else {
+  if (view === "home") {
+    disposeView = setupCatalog({ library, progress, state: catalogState, onEnter: enterBook, onOpen: openDetail, onTrailer: showTrailer, onHelp: help });
+  } else if (exploring) {
     document.querySelector("#reader-book-info").onclick = () => bookDetails(book.id);
     document.querySelector("#map-button").onclick = chapterMap;
     document.querySelector("#prev-chapter").onclick = () =>
@@ -119,7 +159,24 @@ function render() {
       button.onpointerup = button.onpointercancel = () =>
         world?.keys.delete(keys[button.dataset.dir]);
     }
+  } else {
+    disposeView = setupDetail();
   }
+}
+// One delegated click handler for a detail page: CTA buttons enter the world, links open another detail.
+function setupDetail() {
+  const abort = new AbortController();
+  document.querySelector(".detail-page").addEventListener("click", event => {
+    const target = event.target.closest("[data-enter], a[data-book], a[data-scene-book]");
+    if (!target) return;
+    if (target.dataset.enter) { enterBook(target.dataset.enter, target.dataset.enterChapter); return; }
+    // Modified clicks keep the browser's own behaviour, such as opening the link in a new tab.
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (target.dataset.sceneBook) openDetail("scene", target.dataset.sceneBook, target.dataset.sceneChapter);
+    else openDetail("book", target.dataset.book);
+  }, { signal: abort.signal });
+  return () => abort.abort();
 }
 function showFloorReading(state) {
   const panel = document.querySelector(".floor-reading-controls"); if (!panel) return;
@@ -138,11 +195,11 @@ function syncChapter(index) {
   document.querySelector("#map-button span").innerHTML = `<small>이야기의 지도</small>${String(index + 1).padStart(2, "0")} — ${esc(chapter.title)}`;
   document.querySelector("#prev-chapter").disabled = index === 0;
   document.querySelector("#next-chapter").disabled = index === book.chapters.length - 1;
-  history.replaceState(null, "", `?book=${book.id}&chapter=${chapter.id}${draftPreview ? "&preview=draft" : ""}`);
+  history.replaceState(null, "", currentUrl());
 }
 function goChapter(index) {
   if (index < 0 || index >= book.chapters.length) return;
-  if (exploring && world instanceof Journey) {
+  if (view === "world" && world instanceof Journey) {
     if (index === book.chapters.indexOf(chapter)) return;
     transitionPage(app, () => world.jump(index), { label: "다음 장면을 펼치는 중이에요…", focus: "#map-button" });
     return;
@@ -151,9 +208,9 @@ function goChapter(index) {
     chapter = book.chapters[index];
     record().chapter = chapter.id;
     remember();
-    exploring = true;
+    view = "world";
     render();
-    history.replaceState(null, "", `?book=${book.id}&chapter=${chapter.id}`);
+    history.replaceState(null, "", currentUrl());
   });
 }
 function nextChapter() { goChapter(book.chapters.indexOf(chapter) + 1); }
@@ -172,26 +229,35 @@ function readChapter() {
       )}</div><p class="source-note">${esc(book.rights)}<br><a href="${esc(book.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p>`,
   );
 }
-function readerUrl() {
-  const params = new URLSearchParams({ book: book.id, chapter: chapter.id });
-  if (draftPreview) params.set("preview", "draft");
-  return `${location.pathname}?${params}`;
-}
 async function enterBook(id, chapterId) {
   const selected = library.books.find(b => b.id === id);
   if (!selected) return;
   await transitionPage(app, () => {
     book = selected;
     chapter = book.chapters.find(c => c.id === chapterId) || book.chapters.find(c => c.id === progress[id]?.chapter) || book.chapters[0];
-    exploring = true;
+    view = "world";
     record().chapter = chapter.id;
     remember();
-    history.pushState(null, "", readerUrl());
+    history.pushState(null, "", currentUrl());
     render();
   }, { label: "이야기 속으로 들어가는 중이에요…" });
 }
+// Opens the book detail ("book") or a scene detail ("scene") in the same document, with a history entry.
+async function openDetail(target, bookId, sceneId) {
+  const selected = library.books.find(b => b.id === bookId);
+  if (!selected) return;
+  const scene = target === "scene" ? selected.chapters.find(c => c.id === sceneId) : null;
+  if (target === "scene" && !scene) return;
+  await transitionPage(app, () => {
+    view = scene ? "scene" : "book";
+    book = selected;
+    chapter = scene || selected.chapters[0];
+    history.pushState(null, "", currentUrl());
+    render();
+  }, { label: scene ? "장면을 펼치는 중이에요…" : "작품을 펼치는 중이에요…" });
+}
 async function openLibrary() {
-  if (!exploring) {
+  if (view === "home") {
     catalogState.query = "";
     catalogState.category = "all";
     render();
@@ -199,8 +265,8 @@ async function openLibrary() {
     return;
   }
   const changed = await transitionPage(app, () => {
-    exploring = false;
-    history.pushState(null, "", `${location.pathname}${draftPreview ? "?preview=draft" : ""}`);
+    view = "home";
+    history.pushState(null, "", currentUrl());
     render();
   }, { label: "책장으로 돌아가는 중이에요…", focus: "#catalog-title" });
   if (changed) restoreCatalogPosition();
@@ -209,20 +275,13 @@ function restoreCatalogPosition() {
   window.scrollTo({ top: catalogState.scroll, behavior: "instant" });
   if (catalogState.selected) document.querySelector(`[data-enter="${CSS.escape(catalogState.selected)}"]`)?.focus({ preventScroll: true });
 }
+// Work information inside the 3D world. The bookshelf reaches the same information through the book detail page.
 function bookDetails(id) {
   const selected = library.books.find(b => b.id === id);
   if (!selected) return;
-  const saved = selected.chapters.find(c => c.id === progress[id]?.chapter);
-  const d = modal(`<div class="book-detail-heading">${bookCover(selected)}<div><span class="eyebrow">${edition(selected).category} · ${selected.chapters.length}개의 장면</span><h2 id="book-detail-title">${esc(selected.title)}</h2><p>${esc(selected.author)} · ${selected.year}</p><p>${esc(selected.englishTitle)}</p></div></div><p class="book-detail-copy">${esc(selected.description)}</p><h3>이 책에서 만날 장면</h3><ol class="book-detail-chapters">${selected.chapters.map(c => `<li>${esc(c.title)}</li>`).join("")}</ol><p class="source-note">${esc(selected.rights)}<br><a href="${esc(selected.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p><button class="primary-button book-detail-enter">${exploring ? "이야기로 돌아가기" : saved ? "마지막 장면에서 이어 읽기" : "이야기 속으로 들어가기"} ${icon("arrow-up-right")}</button>`);
+  const d = modal(`<div class="book-detail-heading">${bookCover(selected)}<div><span class="eyebrow">${edition(selected).category} · ${selected.chapters.length}개의 장면</span><h2 id="book-detail-title">${esc(selected.title)}</h2><p>${esc(selected.author)} · ${selected.year}</p><p>${esc(selected.englishTitle)}</p></div></div><p class="book-detail-copy">${esc(selected.description)}</p><h3>이 책에서 만날 장면</h3><ol class="book-detail-chapters">${selected.chapters.map(c => `<li>${esc(c.title)}</li>`).join("")}</ol><p class="source-note">${esc(selected.rights)}<br><a href="${esc(selected.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p><button class="primary-button book-detail-enter">이야기로 돌아가기 ${icon("arrow-up-right")}</button>`);
   d.setAttribute("aria-labelledby", "book-detail-title");
-  d.querySelector(".book-detail-enter").onclick = () => {
-    d.close();
-    if (!exploring) {
-      catalogState.scroll = scrollY;
-      catalogState.selected = id;
-      enterBook(id);
-    }
-  };
+  d.querySelector(".book-detail-enter").onclick = () => d.close();
 }
 function showTrailer() {
   const d = modal('<h2 id="trailer-title">먼저 만나는 온더북</h2><video src="/trailer-web.mp4" controls playsinline preload="none" aria-label="On the Book 브랜드 트레일러"></video><p class="trailer-error" role="status" hidden>영상을 불러오지 못했어요. 책장에서는 계속 작품을 둘러볼 수 있어요.</p>');
@@ -275,7 +334,7 @@ async function toggleSound() {
 }
 document.addEventListener("visibilitychange", () => {
   if (audioContext)
-    document.hidden || !exploring ? audioContext.suspend() : sound && audioContext.resume();
+    document.hidden || view !== "world" ? audioContext.suspend() : sound && audioContext.resume();
 });
 let navigationVersion = 0;
 window.addEventListener("popstate", async () => {
@@ -285,20 +344,12 @@ window.addEventListener("popstate", async () => {
   while (app.inert) await new Promise(resolve => setTimeout(resolve, 40));
   if (version !== navigationVersion) return;
   document.querySelectorAll("dialog[open]").forEach(d => d.close());
-  const params = new URLSearchParams(location.search);
-  const selected = library.books.find(b => b.id === params.get("book"));
-  const selectedChapter = selected?.chapters.find(c => c.id === params.get("chapter"));
+  const state = resolveView(new URLSearchParams(location.search));
   const changed = await transitionPage(app, () => {
-    exploring = Boolean(selectedChapter);
-    if (exploring) {
-      book = selected;
-      chapter = selectedChapter;
-      record().chapter = chapter.id;
-      remember();
-    }
+    applyResolved(state);
     render();
-  }, { focus: selectedChapter ? undefined : "#catalog-title" });
-  if (changed && !exploring && version === navigationVersion) restoreCatalogPosition();
+  }, { focus: state.view === "home" ? "#catalog-title" : undefined });
+  if (changed && view === "home" && version === navigationVersion) restoreCatalogPosition();
 });
 async function init() {
   if (draftPreview) document.documentElement.dataset.draftPreview = "true";
@@ -315,14 +366,7 @@ async function init() {
       return;
     }
     const params = new URLSearchParams(location.search);
-    book =
-      library.books.find((b) => b.id === params.get("book")) ||
-      library.books[0];
-    chapter =
-      book.chapters.find((c) => c.id === params.get("chapter")) ||
-      book.chapters[0];
-    exploring = book.chapters.some(c => c.id === params.get("chapter"));
-    if (exploring) { record().chapter = chapter.id; remember(); }
+    applyResolved(resolveView(params));
     await transitionPage(app, render, { initial: true });
     if (draftPreview && params.get('model') && world instanceof Journey) {
       const object = world.objects.find(o => o.p.id === params.get('model'));
@@ -336,6 +380,3 @@ async function init() {
   }
 }
 init();
-
-
-

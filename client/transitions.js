@@ -38,7 +38,9 @@ function reveal(app) {
   animate(app.querySelector(".scene-wrap"), [{ opacity: 0 }, { opacity: 1 }], { duration: 700 });
   const groups = app.querySelector(".library-page")
     ? [".site-header", ".featured-section", ".quick-menu", ".catalog", ".scene-section, .experience-banner", ".site-footer"]
-    : [".site-header", ".journey-controls", ".touch-pad, .move-hint", ".site-footer"];
+    : app.querySelector(".detail-page")
+      ? [".site-header", ".detail-crumbs, .detail-hero", ".detail-cta", ".detail-section, .detail-source", ".site-footer"]
+      : [".site-header", ".journey-controls", ".touch-pad, .move-hint", ".site-footer"];
   groups.forEach((selector, index) => {
     for (const element of app.querySelectorAll(selector)) {
       animate(element, [{ opacity: 0, translate: "0 14px" }, { opacity: 1, translate: "0 0" }], {
@@ -76,7 +78,7 @@ export async function transitionPage(app, update, { initial = false, label, focu
   }
   if (!initial) {
     const target = focus ? app.querySelector(focus)
-      : app.querySelector("#library-title") || app.querySelector("#world canvas, #fallback-read");
+      : app.querySelector("#library-title") || app.querySelector("#detail-title") || app.querySelector("#world canvas, #fallback-read");
     if (target) {
       if (!target.hasAttribute("tabindex")) target.tabIndex = -1;
       target.focus({ preventScroll: true });
