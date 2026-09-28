@@ -42,6 +42,8 @@
 .theme-chip[data-theme="gold"], .scene-image[data-theme="gold"] { background: #dcca98; }
 .detail-hero--scene { display: block; }
 .detail-hero--scene .scene-image { display: block; width: 100%; height: clamp(180px, 26vw, 340px); aspect-ratio: auto; border-radius: 10px; }
+/* A registered thumbnail keeps its 16:10 shape (at most 768×480) instead of filling the wide band. */
+.detail-hero--scene .scene-image.has-image { width: min(100%, 768px); height: auto; aspect-ratio: 16 / 10; }
 .detail-hero--scene .scene-number { font-size: 14px; color: #3a4a40; }
 /* A studio thumbnail fills the slot and the theme tint stays behind it. Inside .has-image, landing.css turns
    .scene-number into a light pill with dark text, so the number stays readable over any photo. */

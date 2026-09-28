@@ -327,6 +327,13 @@ try {
   await home.locator('a.scene-card', { has: home.locator('.scene-image.has-image') }).click();
   await expect(home.locator('.detail-page[data-view="scene"]')).toBeVisible();
   await expect(home.locator('.detail-hero--scene .scene-image.has-image img')).toHaveCount(1);
+  // With a thumbnail the hero slot keeps the picture's 16:10 shape, at most 768 px wide.
+  const thumbBox = await home.locator('.detail-hero--scene .scene-image.has-image').evaluate(element => {
+    const r = element.getBoundingClientRect();
+    return { width: r.width, height: r.height };
+  });
+  expect(thumbBox.width).toBeLessThanOrEqual(768);
+  expect(Math.abs(thumbBox.width / thumbBox.height - 1.6)).toBeLessThan(0.02);
   await expect.poll(() => loaded(home.locator('.detail-hero--scene .scene-image img'))).toBe(true);
   await home.screenshot({ path: 'test-results/catalog/managed-scene-detail.png' });
   await home.getByRole('button', { name: '책장으로', exact: true }).click();

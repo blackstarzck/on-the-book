@@ -132,7 +132,7 @@ CTA `.detail-cta`
 - `<nav aria-label="현재 위치">`: `<a href="{detailUrl book}" data-book>이상한 나라의 앨리스</a>` › `<span aria-current="page">장면 02</span>`. 책장 항목은 두지 않는다. 헤더의 "책장으로"가 그 역할이다.
 
 히어로 `.detail-hero.detail-hero--scene`
-- 위: `.scene-image.image-placeholder[data-theme]`(가로 전체, 높이 `clamp(180px, 26vw, 340px)`; 등록된 썸네일은 `object-fit: cover` 로 가운데가 보이도록 채운다). 배경은 테마 칩 색이고 홈 장면 카드처럼 왼쪽 아래에 `.scene-number` "02" 를 둔다. 홈 카드에서 눌러 온 그림이 이어지는 느낌을 준다.
+- 위: `.scene-image.image-placeholder[data-theme]`(가로 전체, 높이 `clamp(180px, 26vw, 340px)`; 등록된 썸네일이 있으면 자리가 16:10 비율, 최대 768×480px 로 바뀌어 사진이 잘리지 않고, 없을 때만 띠로 남는다). 배경은 테마 칩 색이고 홈 장면 카드처럼 왼쪽 아래에 `.scene-number` "02" 를 둔다. 홈 카드에서 눌러 온 그림이 이어지는 느낌을 준다.
 - 장면 썸네일(`chapter.thumbnail`)이 등록되어 있으면 `.has-image` 를 더하고 그 `<img>`(`alt=""`)가 자리를 채운다. 테마 색은 사진 뒤에 남고, `.scene-number` 는 홈 카드와 같은 밝은 알약 모양이라 사진 위에서도 읽힌다. 이름표는 `aria-label="{장면 제목} 장면 이미지"`(예: "작아지는 문, 커지는 세계 장면 이미지")다. 썸네일이 없으면 `aria-label="장면 이미지 준비 중"` 인 빈 자리다.
 - 아래: `.eyebrow` "`장면 02 / 06 · 이상한 나라의 앨리스`", `h1#detail-title` 장면 제목, `p` 부제(`chapter.subtitle`, 비어 있으면 생략).
 
