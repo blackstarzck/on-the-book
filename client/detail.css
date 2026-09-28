@@ -6,6 +6,7 @@
 .detail-crumbs a:hover { color: var(--accent); text-decoration: none; }
 .detail-crumbs [aria-current] { white-space: nowrap; }
 .detail-hero { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 30px; align-items: center; margin-top: 12px; }
+/* An uploaded cover fills its .catalog-cover slot through landing.css's `.catalog-cover img` rule. */
 .detail-cover { display: block; width: 180px; }
 .detail-copy { min-width: 0; }
 .detail-copy .eyebrow { margin-bottom: 14px; font-size: 12px; letter-spacing: .08em; color: #75867a; }
@@ -42,6 +43,9 @@
 .detail-hero--scene { display: block; }
 .detail-hero--scene .scene-image { display: block; width: 100%; height: clamp(180px, 26vw, 340px); aspect-ratio: auto; border-radius: 10px; }
 .detail-hero--scene .scene-number { font-size: 14px; color: #3a4a40; }
+/* A studio thumbnail fills the slot and the theme tint stays behind it. Inside .has-image, landing.css turns
+   .scene-number into a light pill with dark text, so the number stays readable over any photo. */
+.detail-hero--scene .scene-image.has-image img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .detail-hero--scene .detail-copy { margin-top: 22px; }
 #detail-preview .reading-text { max-width: 680px; margin: 0; }
 .detail-note { margin: 14px 0 0; font-size: 13px; }

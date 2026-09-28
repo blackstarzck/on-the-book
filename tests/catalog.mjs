@@ -307,6 +307,21 @@ try {
   await expect(home.locator('[data-book="oz"]')).toBeVisible();
   await home.locator('.catalog-filters [data-category="all"]').click();
   await home.screenshot({ path: 'test-results/catalog/managed-home.png', fullPage: true });
+  // The detail pages show the same studio cover and chapter thumbnail.
+  await home.locator('[data-book="alice"]').click();
+  await expect(home.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(home.locator('.detail-cover img')).toHaveCount(1);
+  await expect.poll(() => loaded(home.locator('.detail-cover img'))).toBe(true);
+  await home.screenshot({ path: 'test-results/catalog/managed-book-detail.png' });
+  await home.getByRole('button', { name: '책장으로', exact: true }).click();
+  await expect(home.locator('.library-page')).toBeVisible();
+  await home.locator('a.scene-card', { has: home.locator('.scene-image.has-image') }).click();
+  await expect(home.locator('.detail-page[data-view="scene"]')).toBeVisible();
+  await expect(home.locator('.detail-hero--scene .scene-image.has-image img')).toHaveCount(1);
+  await expect.poll(() => loaded(home.locator('.detail-hero--scene .scene-image img'))).toBe(true);
+  await home.screenshot({ path: 'test-results/catalog/managed-scene-detail.png' });
+  await home.getByRole('button', { name: '책장으로', exact: true }).click();
+  await expect(home.locator('.library-page')).toBeVisible();
   const single = await managedPage(desktop, { ...managed, home: { hero: [managed.home.hero[1]] } });
   await expect(single.locator('.feature-card')).toHaveCount(1);
   await expect(single.locator('.feature-arrow, .feature-controls')).toHaveCount(0);

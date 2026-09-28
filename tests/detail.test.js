@@ -5,7 +5,8 @@ import { seed } from "../server/seed.js";
 import { librarySchema } from "../shared/schema.js";
 import { detailUrl, bookDetail, sceneDetail } from "../client/detail.js";
 
-// /api/library serves the seed after schema parsing, which fills mainPlacementId, floorEnabled and cover.
+// /api/library serves the seed after schema parsing, which fills mainPlacementId, floorEnabled, cover and
+// thumbnail. The seed registers no cover or chapter thumbnail, so its pages keep the empty image slots.
 const library = librarySchema.parse(seed);
 const alice = library.books.find(b => b.id === "alice");
 const count = (html, needle) => html.split(needle).length - 1;
@@ -51,6 +52,14 @@ test("bookDetail shows the work information and a single entry button when nothi
   assert.doesNotMatch(html, /이어 읽기|처음부터 시작하기|마지막에 머문 장면/);
   assert.match(html, /<h2 id="detail-source-title">원작 정보<\/h2>/);
   assert.match(html, /href="https:\/\/www\.gutenberg\.org\/ebooks\/11" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗/);
+});
+
+test("bookDetail shows the studio cover when one is registered", () => {
+  const cover = "/uploads/0123456789abcdef0123456789abcdef.png";
+  const html = bookDetail({ book: { ...alice, cover }, progress: {} });
+  assert.ok(html.includes(`<span class="detail-cover"><span class="catalog-cover image-placeholder"><img src="${cover}"`));
+  assert.equal(count(html, "<img"), 1);
+  assert.doesNotMatch(html, /표지 이미지 준비 중/);
 });
 
 test("bookDetail lists every chapter as a scene link with its theme, number and main model", () => {
@@ -112,6 +121,16 @@ test("sceneDetail shows the scene, the first paragraph only and the placements w
   assert.match(html, /<a class="neighbor-all" href="\?book=alice" data-book="alice">작품 전체 보기<\/a>/);
   assert.match(html, /<h2 id="detail-source-title">원작 정보<\/h2>/);
   assert.doesNotMatch(html, /<img/);
+});
+
+test("sceneDetail shows the studio thumbnail over the theme tint when one is registered", () => {
+  const thumbnail = "/uploads/fedcba9876543210fedcba9876543210.png";
+  const html = sceneDetail({ book: alice, chapter: { ...alice.chapters[1], thumbnail }, library });
+  assert.match(html, /class="scene-image image-placeholder has-image" data-theme="night"/);
+  assert.match(html, /role="img" aria-label="작아지는 문, 커지는 세계 장면 이미지">/);
+  assert.ok(html.includes(`aria-label="작아지는 문, 커지는 세계 장면 이미지"><img src="${thumbnail}" alt="" decoding="async" draggable="false"><span class="scene-number">02</span></span>`));
+  assert.equal(count(html, "<img"), 1);
+  assert.doesNotMatch(html, /장면 이미지 준비 중/);
 });
 
 test("sceneDetail drops the missing neighbour and the floor-reading note when the floor is off", () => {

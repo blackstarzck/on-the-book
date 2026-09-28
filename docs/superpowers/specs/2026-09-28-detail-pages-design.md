@@ -10,7 +10,7 @@
 
 - 도서 카드는 **작품 상세**로, 장면 카드는 **장면 상세**로 이동한다. 두 페이지의 CTA 가 3D 월드 진입의 유일한 입구다.
 - 구조는 A 안이다. 기존 SPA(`client/main.js`) 안에 화면 상태를 추가하고 주소는 쿼리로 구분한다. 별도 진입점이나 경로형 주소는 쓰지 않는다.
-- 표지와 장면 이미지는 홈과 같이 **자리만 비워 둔다.** 등록된 표지(`book.cover`)와 모델 썸네일이 있어도 표시하지 않는다.
+- 표지와 장면 이미지는 처음에 홈과 같이 자리만 비워 두기로 했다. 2026-09-28 main 의 홈 화면 관리(PR #2)로 책장이 관리자가 올린 표지(`book.cover`)와 장면 썸네일(`chapter.thumbnail`)을 보여 주게 되어, 상세 페이지도 **등록된 표지와 장면 썸네일을 보여 주고** 등록되지 않은 칸은 이름표(`aria-label`)가 달린 빈 자리로 둔다. 모델 썸네일은 표시하지 않는다.
 
 기준 스택은 현재 client(Vite 멀티 페이지 + 바닐라 JS + npm `three` 0.180)다. React·Next 전환은 전환 스펙 6단계에서 하며, 이 설계의 주소 규칙과 화면 구성을 그때 그대로 옮긴다.
 
@@ -24,7 +24,7 @@
 
 비범위
 - 서버, `shared/schema.js`, 관리자 화면, `client/vercel.json`, `server/index.js` 변경. 상세 페이지가 쓰는 정보는 모두 `/api/library` 응답에 이미 있다.
-- 표지·장면 이미지·모델 썸네일 표시. 라이브 3D 미리보기(`World` 의 `hero` 모드)도 넣지 않는다. 카드마다 캔버스를 띄우면 진입이 느려지고 CTA 의 "본격 진입" 의미가 약해진다.
+- 라이브 3D 미리보기(`World` 의 `hero` 모드)는 넣지 않는다. 카드마다 캔버스를 띄우면 진입이 느려지고 CTA 의 "본격 진입" 의미가 약해진다.
 - 3D 월드 안의 "작품 소개" 모달과 "이야기의 지도" 모달의 내용·동작 변경. 모달은 탐험을 끊지 않기 위해 그대로 둔다.
 - 새 저장 데이터. 방문한 장면 기록 같은 것을 추가하지 않고 기존 `otb-reader` 의 `{ [bookId]: { chapter } }` 만 읽는다.
 - 홈의 검색·분류·정렬·빠른 메뉴·트레일러·이용 가이드 변경. 소개 페이지(`/about`) 변경.
@@ -106,7 +106,7 @@
 `client/detail.js` 의 `bookDetail({ book, progress, preview })` 가 마크업 문자열을 돌려준다.
 
 히어로 `.detail-hero`
-- 왼쪽: `bookCover()` 자리(`.catalog-cover.image-placeholder`, 2:2.85, `role="img" aria-label="표지 이미지 준비 중"`). 데스크톱 180px, 600px 이하 112px, 370px 이하에서는 위로 올라가 가운데 130px.
+- 왼쪽: `bookCover(book)` 자리(`.catalog-cover.image-placeholder`, 2:2.85). 표지(`book.cover`)가 등록되어 있으면 그 `<img>`(`alt=""`)가 자리를 채우고, 없으면 `role="img" aria-label="표지 이미지 준비 중"` 인 빈 자리다. 데스크톱 180px, 600px 이하 112px, 370px 이하에서는 위로 올라가 가운데 130px.
 - 오른쪽: `.eyebrow` "`{분류} · {장면 수}개의 장면 · {출간연도}`"(분류는 `edition(book).category`), `h1#detail-title` 제목, `p` "`{영문 제목} · {저자}`", `p.detail-description` 소개(`book.description`).
 
 CTA `.detail-cta`
@@ -132,7 +132,8 @@ CTA `.detail-cta`
 - `<nav aria-label="현재 위치">`: `<a href="{detailUrl book}" data-book>이상한 나라의 앨리스</a>` › `<span aria-current="page">장면 02</span>`. 책장 항목은 두지 않는다. 헤더의 "책장으로"가 그 역할이다.
 
 히어로 `.detail-hero.detail-hero--scene`
-- 위: `.scene-image.image-placeholder[data-theme]`(16:10, `role="img" aria-label="장면 이미지 준비 중"`). 배경은 테마 칩 색이고 홈 장면 카드처럼 왼쪽 아래에 `.scene-number` "02" 를 둔다. 홈 카드에서 눌러 온 그림이 이어지는 느낌을 준다.
+- 위: `.scene-image.image-placeholder[data-theme]`(16:10, `role="img"`). 배경은 테마 칩 색이고 홈 장면 카드처럼 왼쪽 아래에 `.scene-number` "02" 를 둔다. 홈 카드에서 눌러 온 그림이 이어지는 느낌을 준다.
+- 장면 썸네일(`chapter.thumbnail`)이 등록되어 있으면 `.has-image` 를 더하고 그 `<img>`(`alt=""`)가 자리를 채운다. 테마 색은 사진 뒤에 남고, `.scene-number` 는 홈 카드와 같은 밝은 알약 모양이라 사진 위에서도 읽힌다. 이름표는 `aria-label="{장면 제목} 장면 이미지"`(예: "작아지는 문, 커지는 세계 장면 이미지")다. 썸네일이 없으면 `aria-label="장면 이미지 준비 중"` 인 빈 자리다.
 - 아래: `.eyebrow` "`장면 02 / 06 · 이상한 나라의 앨리스`", `h1#detail-title` 장면 제목, `p` 부제(`chapter.subtitle`, 비어 있으면 생략).
 
 CTA `.detail-cta`
@@ -219,7 +220,7 @@ README.md                                                                       
 | 섹션 설명 | 장면을 고르면 그 장면의 이야기를 먼저 볼 수 있어요. / 가까이 다가가면 움직여요. |
 | 배지 | 마지막에 머문 장면 / 장면의 중심 |
 | 안내 | 이어지는 글은 3D 안에서 장면의 중심 모델에 다가가면 바닥 글귀로 읽을 수 있어요. |
-| 이미지 자리 | 표지 이미지 준비 중 / 장면 이미지 준비 중 |
+| 이미지 자리 | 표지 이미지 준비 중 / 장면 이미지 준비 중 / 썸네일이 있으면 `{장면} 장면 이미지` |
 | 링크 | 작품 전체 보기 / 원작 정보 보기 ↗ |
 | 헤더 | 책장으로 |
 | 홈 히어로 카드 | 작품 살펴보기 |
@@ -254,6 +255,7 @@ README.md                                                                       
 - `bookDetail`: 제목·영문 제목·저자·연도·분류·장면 수·소개가 들어 있다. 저장 없음이면 "이야기 속으로 들어가기" 하나, 저장 있음이면 "이어 읽기"와 `02 · …`, "처음부터 시작하기", 그 행에만 "마지막에 머문 장면" 배지. 여정 행은 챕터 수만큼이고 `href` 가 `detailUrl` 과 같다. 대표 모델 이름이 행에 있다.
 - `sceneDetail`: 첫 문단만 있고 둘째 문단은 없다. `floorEnabled: false` 면 안내 문구가 없다. 본문이 빈 챕터는 미리 읽기 섹션이 없다. 배치는 대표 배치가 첫 항목이고 "장면의 중심" 배지가 하나다. 첫 장면은 이전 링크가, 마지막 장면은 다음 링크가 없다. 배치가 없는 챕터는 만나는 것들 섹션이 없다.
 - 모든 마크업은 `esc()` 를 거친다. 제목에 `<` 가 든 가짜 책으로 확인한다.
+- 표지와 장면 썸네일: 표지(`cover`)를 넣은 앨리스의 `bookDetail` 은 `.detail-cover` 안에 그 `<img>` 하나를 그리고 "표지 이미지 준비 중"이 없다. 썸네일(`thumbnail`)을 넣은 2장의 `sceneDetail` 은 `scene-image image-placeholder has-image`, 그 `<img>`, `aria-label="작아지는 문, 커지는 세계 장면 이미지"` 를 가진다. 시드에는 표지와 썸네일이 없으므로 나머지 시드 기반 검사는 `<img>` 가 없음을 확인한다.
 
 ### 14.2 브라우저 검사 `tests/catalog.mjs`(4336 포트)
 
@@ -266,6 +268,7 @@ README.md                                                                       
 5. 새 단계: 홈에서 `[data-scene-chapter="alice-3"]` 클릭 → `.detail-page[data-view="scene"]`, 주소 `book=alice&scene=alice-3`, `#detail-preview .reading-text p` 가 한 문단, `.figure-list li` 3개, 첫 항목에 "장면의 중심", 이전 링크가 "02", 다음 링크가 "04". CTA 클릭 → `#world canvas`, 주소 `chapter=alice-3`.
 6. 새 단계: 홈에서 `.feature-card.is-active`(첫 슬라이드, 앨리스) 클릭 → `.detail-page[data-view="book"]`, `#detail-title` 이 "이상한 나라의 앨리스". "책장으로" → 홈이 다시 그려지면 첫 슬라이드가 활성이므로 `.feature-card.is-active` 에 초점이 돌아온다. 스크롤 위치가 저장값으로 복원된다. 저장한 선택자의 요소가 없거나 `inert` 라 초점을 받지 못하면 `openLibrary()` 가 먼저 준 `#catalog-title` 초점이 남는다. 이 경우는 검사하지 않는다.
 7. 새 단계: 주소를 직접 열어 해석 규칙을 확인한다. `?book=alice` 와 `?book=alice&scene=alice-2` 는 각 상세와 문서 제목, `?book=nope` 와 `?scene=alice-2` 는 홈과 `/client/` 로 정리된 주소, `?book=alice&chapter=nope` 는 작품 상세와 `?book=alice`, `?book=alice&scene=nope&preview=draft` 는 작품 상세와 `?book=alice&preview=draft`, 그리고 여정 첫 행의 `href` 에 `preview=draft` 가 남아 있는지 본다.
+8. 홈 화면 관리 묶음(main 에서 합쳐진 "Studio covers…" 단계, 가로챈 `/api/library` 응답) 안에서: 표지가 있는 `[data-book="alice"]` → 작품 상세의 `.detail-cover img` 1개 → "책장으로", 썸네일이 있는 장면 카드(`a.scene-card` 중 `.scene-image.has-image` 를 가진 것) → 장면 상세의 `.detail-hero--scene .scene-image.has-image img` 1개 → "책장으로".
 
 ### 14.3 `tests/mobile-entry.mjs`(4321 포트)
 
@@ -301,6 +304,6 @@ README.md                                                                       
 - 홈의 도서 카드·장면 카드·추천 히어로 카드·읽던 이야기 카드가 모두 상세 페이지로 이동하고, 홈에서 3D 월드로 바로 들어가는 경로가 없다.
 - `?book=alice` 와 `?book=alice&scene=alice-2` 를 새로고침·새 탭·뒤로가기로 열어도 같은 화면이 나온다. `?book=alice&chapter=alice-1` 은 지금처럼 3D 월드다.
 - 작품 상세 CTA 가 저장된 장면 유무에 따라 문구와 도착 장면을 바꾸고, 장면 상세 CTA 가 그 장면으로 들어간다.
-- 표지와 장면 이미지 자리는 비어 있고 테마 색만 다르다.
+- 등록된 표지·장면 썸네일은 보이고, 없는 칸은 비어 있으며 장면 자리는 테마 색만 다르다.
 - 3D 월드 안의 작품 소개 모달과 이야기의 지도는 이전과 같이 동작한다.
 - 14.5 의 검사가 통과하고 스크린샷 네 장이 있다. README, `index.html`, 전환 스펙 10절이 갱신되어 있다.

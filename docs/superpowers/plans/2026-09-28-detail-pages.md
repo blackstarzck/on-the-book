@@ -22,7 +22,7 @@
 
 - 기준 스택: 현재 client 의 Vite 멀티 페이지 + 바닐라 JS + npm `three` 0.180. React, TypeScript, 새 npm 의존성을 추가하지 않는다.
 - 바꾸지 않는 것: `server/**`, `shared/schema.js`, `admin/**`, `client/vercel.json`, `vite.config.js`, 3D 월드 안 "작품 소개"·"이야기의 지도" 모달의 마크업, `otb-reader` 저장 구조 `{ [bookId]: { chapter } }`.
-- 표지·장면 이미지는 자리만 둔다. `book.cover`, 모델 `thumbnail` 을 표시하지 않고 `<img>` 를 만들지 않는다.
+- 표지·장면 이미지는 자리만 둔다. `book.cover`, 모델 `thumbnail` 을 표시하지 않고 `<img>` 를 만들지 않는다. 2026-09-28 main 의 홈 화면 관리(PR #2)를 합친 뒤에는 책장처럼 등록된 표지(`book.cover`)와 장면 썸네일(`chapter.thumbnail`)을 상세 페이지에도 `<img>` 로 표시하고, 없는 칸만 빈 자리로 둔다(스펙 1·6·7절).
 - `client/detail.js` 와 `client/book-meta.js` 는 CSS·이미지·`document` 를 쓰지 않는다. `node --test` 가 import 하기 때문이다.
 - 주소 규칙: `home` `/client/`, `book` `?book=<id>`, `scene` `?book=<id>&scene=<chapterId>`, `world` `?book=<id>&chapter=<chapterId>`. `?preview=draft` 는 모든 주소에 이어 붙인다. 주소 문자열은 `detailUrl()` 한 곳에서만 만든다.
 - 문구는 스펙 11절 표의 것을 그대로 쓴다. 커튼 "작품을 펼치는 중이에요…"·"장면을 펼치는 중이에요…", CTA "이야기 속으로 들어가기"·"이어 읽기"·"처음부터 시작하기"·"이 장면부터 걷기", 섹션 "이 책의 여정"·"원작 정보"·"미리 읽기"·"이 장면에서 만나는 것들"·"이어지는 장면", 배지 "마지막에 머문 장면"·"장면의 중심", 안내 "이어지는 글은 3D 안에서 장면의 중심 모델에 다가가면 바닥 글귀로 읽을 수 있어요.", 설명 "장면을 고르면 그 장면의 이야기를 먼저 볼 수 있어요."·"가까이 다가가면 움직여요.", 이미지 자리 "표지 이미지 준비 중"·"장면 이미지 준비 중", 링크 "작품 전체 보기"·"원작 정보 보기 ↗", 히어로 카드 "작품 살펴보기".
