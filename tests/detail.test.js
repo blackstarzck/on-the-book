@@ -131,6 +131,9 @@ test("sceneDetail shows the studio thumbnail over the theme tint when one is reg
   assert.ok(html.includes(`aria-label="작아지는 문, 커지는 세계 장면 이미지"><img src="${thumbnail}" alt="" decoding="async" draggable="false"><span class="scene-number">02</span></span>`));
   assert.equal(count(html, "<img"), 1);
   assert.doesNotMatch(html, /장면 이미지 준비 중/);
+  const spiky = sceneDetail({ book: alice, chapter: { ...alice.chapters[1], title: 'a"<b>', thumbnail }, library });
+  assert.match(spiky, /aria-label="a&quot;&lt;b&gt; 장면 이미지"/);
+  assert.doesNotMatch(spiky, /aria-label="a"<b>/);
 });
 
 test("sceneDetail drops the missing neighbour and the floor-reading note when the floor is off", () => {

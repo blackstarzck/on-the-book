@@ -43,7 +43,7 @@
 
 주소 해석은 `init()` 과 `popstate` 가 같은 함수 `resolveView(params)` 를 쓴다. 우선순위는 다음과 같다.
 
-1. `book` 이 공개 도서에 없으면 `home`. 주소는 `history.replaceState` 로 `preview` 만 남기고 지운다.
+1. `book` 이 공개 도서에 없으면 `home`. 주소는 `history.replaceState` 로 `preview` 만 남기고 지운다. 초안 미리보기(`?preview=draft`)에서는 비공개 도서도 `library.books` 에 있으므로 그 상세와 월드 주소가 열리고, 홈 책장에만 공개 도서가 보인다.
 2. `chapter` 가 그 책의 챕터면 `world`.
 3. 아니면 `scene` 이 그 책의 챕터면 `scene`.
 4. 아니면 `book`. `scene` 이나 `chapter` 가 잘못된 값이면 주소를 `?book=` 으로 고쳐 둔다.
@@ -132,7 +132,7 @@ CTA `.detail-cta`
 - `<nav aria-label="현재 위치">`: `<a href="{detailUrl book}" data-book>이상한 나라의 앨리스</a>` › `<span aria-current="page">장면 02</span>`. 책장 항목은 두지 않는다. 헤더의 "책장으로"가 그 역할이다.
 
 히어로 `.detail-hero.detail-hero--scene`
-- 위: `.scene-image.image-placeholder[data-theme]`(16:10, `role="img"`). 배경은 테마 칩 색이고 홈 장면 카드처럼 왼쪽 아래에 `.scene-number` "02" 를 둔다. 홈 카드에서 눌러 온 그림이 이어지는 느낌을 준다.
+- 위: `.scene-image.image-placeholder[data-theme]`(가로 전체, 높이 `clamp(180px, 26vw, 340px)`; 등록된 썸네일은 `object-fit: cover` 로 가운데가 보이도록 채운다). 배경은 테마 칩 색이고 홈 장면 카드처럼 왼쪽 아래에 `.scene-number` "02" 를 둔다. 홈 카드에서 눌러 온 그림이 이어지는 느낌을 준다.
 - 장면 썸네일(`chapter.thumbnail`)이 등록되어 있으면 `.has-image` 를 더하고 그 `<img>`(`alt=""`)가 자리를 채운다. 테마 색은 사진 뒤에 남고, `.scene-number` 는 홈 카드와 같은 밝은 알약 모양이라 사진 위에서도 읽힌다. 이름표는 `aria-label="{장면 제목} 장면 이미지"`(예: "작아지는 문, 커지는 세계 장면 이미지")다. 썸네일이 없으면 `aria-label="장면 이미지 준비 중"` 인 빈 자리다.
 - 아래: `.eyebrow` "`장면 02 / 06 · 이상한 나라의 앨리스`", `h1#detail-title` 장면 제목, `p` 부제(`chapter.subtitle`, 비어 있으면 생략).
 
@@ -230,7 +230,7 @@ README.md                                                                       
 
 - 잘못된 `book`·`scene`·`chapter` 값은 3절의 규칙으로 가까운 화면에 떨어지고 주소를 고쳐 둔다.
 - `progress[book.id].chapter` 가 이제 없는 챕터를 가리키면 저장된 장면이 없는 것으로 본다(기존 `find` 동작).
-- 공개 도서가 없으면 기존 "새로운 이야기를 준비하고 있어요." 화면이다. 상세 주소로 들어와도 같다.
+- 공개 도서가 없으면 기존 "새로운 이야기를 준비하고 있어요." 화면이다. 초안 미리보기에서 공개 도서가 없어도 비공개 도서의 상세·월드 주소는 열리고, 홈 주소만 그 화면을 보인다.
 - 3D 진입 뒤의 WebGL 실패 처리는 `render()` 의 `world` 갈래에 있는 기존 대체 화면 그대로다.
 - 앵커를 새 탭으로 열면 `init()` 이 주소를 해석해 같은 상세를 그린다. `?preview=draft` 는 `detailUrl()` 이 붙여 준다.
 - 초안 미리보기에서는 진행 기록을 저장하지 않지만 읽기는 한다(기존). 이전에 저장된 장면이 있으면 "이어 읽기" CTA 가 나올 수 있다. 3D 안 모달도 같은 규칙이므로 그대로 둔다.
@@ -280,7 +280,7 @@ README.md                                                                       
 
 ### 14.5 회귀
 
-`npm test`, `npm run build`, `node tests/catalog.mjs`, `node tests/mobile-entry.mjs`, `npm run test:about` 을 통과해야 한다. `browser.mjs`, `floor-reading.mjs`, `collision.mjs`, `admin-parity.mjs`, `floor-editor.mjs` 는 `?book&chapter` 주소로 바로 들어가므로 이 변경에 영향받지 않는다. 이 중 `browser.mjs`, `workspace.mjs`, `floor-reading.mjs` 는 이 작업 전부터 실패하는 항목이 있어 회귀 판단에서 제외한다.
+`npm test`, `npm run build`, `node tests/catalog.mjs`, `node tests/mobile-entry.mjs`, `node tests/home-admin.mjs`, `npm run test:about` 을 통과해야 한다. `home-admin.mjs` 는 이제 홈 책장 카드의 `[data-book]` 선택자를 쓴다. `browser.mjs`, `floor-reading.mjs`, `collision.mjs`, `admin-parity.mjs`, `floor-editor.mjs` 는 `?book&chapter` 주소로 바로 들어가므로 이 변경에 영향받지 않는다. 이 중 `browser.mjs`, `workspace.mjs`, `floor-reading.mjs` 는 이 작업 전부터 실패하는 항목이 있어 회귀 판단에서 제외한다.
 
 스크린샷은 1440×960 과 390×844 에서 작품 상세와 장면 상세를 각각 찍어 10절의 네 파일로 둔다. 소개 페이지 스크린샷(`about-desktop.png`, `about-mobile.png`)과 같은 이름 규칙이다.
 

@@ -232,6 +232,15 @@ try {
   await expect(page).toHaveURL(/\?book=alice&preview=draft$/);
   await expect(page.locator('.journey-row').first()).toHaveAttribute('href', '?book=alice&scene=alice-1&preview=draft');
   await expect(page).toHaveTitle('이상한 나라의 앨리스 — On the Book');
+  // Draft preview: an empty public shelf still lets the studio preview an unpublished book's detail by address.
+  const draft = await (await fetch(`${server.url}/api/library`)).json();
+  await page.route('**/api/studio', route => route.fulfill({ json: { library: { ...draft, books: draft.books.map(book => ({ ...book, published: false })) } } }));
+  await page.goto(`${server.url}/client/?preview=draft`);
+  await expect(page.getByText('새로운 이야기를 준비하고 있어요.')).toBeVisible();
+  await page.goto(`${server.url}/client/?book=alice&preview=draft`);
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
+  await page.unroute('**/api/studio');
   pass('Direct addresses resolve to the right screen and unusable parts are cleaned');
 
   // More books exist only in this intercepted response, never in the saved library.
