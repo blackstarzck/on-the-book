@@ -190,6 +190,11 @@ function setupDetail() {
 function selectScene(sceneId, { sheet = false } = {}) {
   const next = book.chapters.find(c => c.id === sceneId);
   if (!next) return;
+  // A neighbour link is replaced with the panel; remember which side it was on to keep the keyboard there.
+  const active = document.activeElement;
+  const nav = active?.closest?.(".neighbor-nav");
+  const side = nav ? (active === nav.lastElementChild ? "lastElementChild" : "firstElementChild") : null;
+  const inSheet = Boolean(active?.closest?.(".scene-sheet"));
   chapter = next;
   sceneAddressed = true;
   history.replaceState(null, "", currentUrl());
@@ -205,12 +210,18 @@ function selectScene(sceneId, { sheet = false } = {}) {
     sceneSheet.insertAdjacentHTML("beforeend", scenePanel({ ...options, prefix: "sheet" }));
     sceneSheet.scrollTop = 0;
   } else if (sheet) {
-    sceneSheet = modal(scenePanel({ ...options, prefix: "sheet" }));
-    sceneSheet.classList.add("scene-sheet");
-    sceneSheet.setAttribute("aria-labelledby", "sheet-scene-title");
-    sceneSheet.addEventListener("close", () => { sceneSheet = null; }, { once: true });
+    const dialog = modal(scenePanel({ ...options, prefix: "sheet" }));
+    dialog.classList.add("scene-sheet");
+    dialog.setAttribute("aria-labelledby", "sheet-scene-title");
+    dialog.addEventListener("close", () => { if (sceneSheet === dialog) sceneSheet = null; }, { once: true });
+    sceneSheet = dialog;
   }
   icons();
+  if (side) {
+    const root = inSheet && sceneSheet?.open ? sceneSheet : panel;
+    const link = root.querySelector(".neighbor-nav")?.[side];
+    (link?.matches("a") ? link : root.querySelector(".detail-enter"))?.focus();
+  }
 }
 function showFloorReading(state) {
   const panel = document.querySelector(".floor-reading-controls"); if (!panel) return;

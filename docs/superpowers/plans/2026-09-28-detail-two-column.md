@@ -216,7 +216,7 @@ test("scenePanel marks the saved scene and keeps its ids unique with a prefix", 
   assert.match(sheet, /<h2 id="sheet-scene-title">/);
   assert.match(sheet, /id="sheet-figures" aria-labelledby="sheet-figures-title"/);
   assert.match(sheet, /id="sheet-preview" aria-labelledby="sheet-preview-title"/);
-  assert.doesNotMatch(sheet, /panel-/);
+  assert.doesNotMatch(sheet, /id="panel-|aria-labelledby="panel-/);
 });
 
 test("scenePanel shows the studio thumbnail over the theme tint when one is registered", () => {
@@ -551,6 +551,11 @@ function setupDetail() {
 function selectScene(sceneId, { sheet = false } = {}) {
   const next = book.chapters.find(c => c.id === sceneId);
   if (!next) return;
+  // A neighbour link is replaced with the panel; remember which side it was on to keep the keyboard there.
+  const active = document.activeElement;
+  const nav = active?.closest?.(".neighbor-nav");
+  const side = nav ? (active === nav.lastElementChild ? "lastElementChild" : "firstElementChild") : null;
+  const inSheet = Boolean(active?.closest?.(".scene-sheet"));
   chapter = next;
   sceneAddressed = true;
   history.replaceState(null, "", currentUrl());
@@ -566,12 +571,18 @@ function selectScene(sceneId, { sheet = false } = {}) {
     sceneSheet.insertAdjacentHTML("beforeend", scenePanel({ ...options, prefix: "sheet" }));
     sceneSheet.scrollTop = 0;
   } else if (sheet) {
-    sceneSheet = modal(scenePanel({ ...options, prefix: "sheet" }));
-    sceneSheet.classList.add("scene-sheet");
-    sceneSheet.setAttribute("aria-labelledby", "sheet-scene-title");
-    sceneSheet.addEventListener("close", () => { sceneSheet = null; }, { once: true });
+    const dialog = modal(scenePanel({ ...options, prefix: "sheet" }));
+    dialog.classList.add("scene-sheet");
+    dialog.setAttribute("aria-labelledby", "sheet-scene-title");
+    dialog.addEventListener("close", () => { if (sceneSheet === dialog) sceneSheet = null; }, { once: true });
+    sceneSheet = dialog;
   }
   icons();
+  if (side) {
+    const root = inSheet && sceneSheet?.open ? sceneSheet : panel;
+    const link = root.querySelector(".neighbor-nav")?.[side];
+    (link?.matches("a") ? link : root.querySelector(".detail-enter"))?.focus();
+  }
 }
 ```
 
@@ -909,18 +920,25 @@ Expected: 데스크톱은 왼쪽에 표지·여정(2행 강조), 오른쪽에 �
     expect(bar.left).toBe(0);
     expect(bar.right).toBe(bar.width);
     // A journey row opens the scene sheet with the same panel content and moves the bar to that scene.
-    const ozSecond = original.books.find(b => b.id === 'oz').chapters[1].title;
+    const ozChapters = original.books.find(b => b.id === 'oz').chapters;
     await mobile.locator('.journey-row[data-scene="oz-2"]').tap();
-    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozSecond);
+    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozChapters[1].title);
     await expect(mobile.locator('.detail-cta-scene')).toContainText('02');
     await expect(mobile).toHaveURL(/scene=oz-2$/);
-    await mobile.locator('dialog.scene-sheet .close-modal').tap();
-    await expect(mobile.locator('dialog.scene-sheet')).toHaveCount(0);
-    await expect(mobile.locator('.journey-row[data-scene="oz-2"]')).toBeFocused();
-    const after = await measure();
-    expect(after.reachable).toBe(true);
-    await mobile.touchscreen.tap(after.x, after.y);
+    // The sheet's own neighbour links move the sheet, the journey selection and the bar together; focus follows.
+    await mobile.locator('dialog.scene-sheet .neighbor-link[data-scene="oz-3"]').tap();
+    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozChapters[2].title);
+    await expect(mobile.locator('.journey-row[aria-current="true"]')).toHaveAttribute('data-scene', 'oz-3');
+    await expect(mobile.locator('.detail-cta-scene')).toContainText('03');
+    await expect(mobile).toHaveURL(/scene=oz-3$/);
+    await expect(mobile.locator('dialog.scene-sheet .detail-enter')).toBeFocused();
+    await mobile.locator('dialog.scene-sheet .neighbor-link[data-scene="oz-2"]').tap();
+    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozChapters[1].title);
+    await expect(mobile.locator('dialog.scene-sheet .neighbor-link[data-scene="oz-1"]')).toBeFocused();
+    // The sheet's CTA closes the sheet and enters that scene.
+    await mobile.locator('dialog.scene-sheet .detail-enter').tap();
     await expect(mobile.locator('#world canvas')).toBeVisible();
+    await expect(mobile.locator('dialog.scene-sheet')).toHaveCount(0);
     await expect(mobile).toHaveURL(/chapter=oz-2/);
     await expect(mobile.locator('.reader-curtain')).toHaveCount(0);
     const target = await mobile.locator('#next-chapter').evaluate(element => {
@@ -933,7 +951,7 @@ Expected: 데스크톱은 왼쪽에 표지·여정(2행 강조), 오른쪽에 �
     await expect(mobile.locator('#map-button')).toContainText('03');
 ```
 
-바꾼 뒤 파일에 `data-view="scene"`, `.detail-cta .primary-button')).click()`, `.detail-hero--scene`, `neighbor-all` 이 남아 있지 않은지 `grep -n` 으로 확인한다. `pass(` 는 18곳이어야 한다(A 가 한 곳 늘었다).
+바꾼 뒤 파일에 `data-view="scene"`, `.detail-cta .primary-button')).click()`, `.detail-hero--scene`, `neighbor-all` 이 남아 있지 않은지 `grep -n` 으로 확인한다. 실행하면 PASS 줄이 18개여야 한다(A 가 한 줄 늘었다. 소스의 `pass(` 는 16곳이고 휴대폰 반복문의 한 곳이 세 번 출력된다).
 
 - [ ] **Step 6: 브라우저 검사와 단위 검사**
 

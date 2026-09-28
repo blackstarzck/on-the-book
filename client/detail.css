@@ -43,8 +43,8 @@
 .scene-panel .scene-image, .scene-sheet .scene-image { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 10px; }
 .scene-panel .scene-number, .scene-sheet .scene-number { font-size: 13px; color: #3a4a40; }
 .scene-panel .eyebrow, .scene-sheet .eyebrow { margin: 16px 0 8px; font-size: 12px; letter-spacing: .08em; color: #75867a; }
-.scene-panel h2, .scene-sheet h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; }
-.scene-panel .detail-meta, .scene-sheet .detail-meta { margin: 0 0 10px; font-size: 14px; }
+.scene-panel h2, .scene-sheet h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
+.scene-panel .detail-meta, .scene-sheet .detail-meta { margin: 0 0 10px; font-size: 14px; color: #6b7567; }
 .scene-panel > .journey-badge, .scene-sheet > .journey-badge { display: inline-block; margin-bottom: 12px; }
 .scene-panel .detail-enter, .scene-sheet .detail-enter { width: 100%; margin: 6px 0 4px; justify-content: space-between; }
 .panel-section { padding-top: 18px; margin-top: 18px; border-top: 1px solid #edf0ec; }
@@ -58,7 +58,7 @@
 .figure-copy strong { font-size: 14px; font-weight: 650; }
 .figure-copy .journey-badge { align-self: flex-start; }
 .figure-story { font-size: 12px; line-height: 1.65; color: #6b776f; }
-.panel-section .reading-text { margin: 0; font-size: 14px; line-height: 1.9; }
+.panel-section .reading-text { margin: 0; font-size: 14px; }
 .detail-note { margin: 10px 0 0; font-size: 12px; }
 .neighbor-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #edf0ec; font-size: 13px; }
 .neighbor-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #3f5a49; }

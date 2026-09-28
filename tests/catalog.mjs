@@ -112,6 +112,7 @@ try {
   await page.locator('.scene-panel .neighbor-link[data-scene="alice-3"]').click();
   await expect(page.locator('.scene-panel #panel-scene-title')).toHaveText('버섯 숲의 수수께끼');
   await expect(page).toHaveURL(/scene=alice-3$/);
+  await expect(page.locator('.scene-panel .neighbor-link[data-scene="alice-4"]')).toBeFocused();
   await page.locator('.journey-row[data-scene="alice-1"]').click();
   await expect(page).toHaveURL(/scene=alice-1$/);
   await expect(page.locator('.scene-panel .detail-enter')).toHaveAttribute('data-enter-chapter', 'alice-1');
@@ -351,7 +352,8 @@ try {
     const r = element.getBoundingClientRect();
     return { width: r.width, height: r.height };
   });
-  expect(thumbBox.width).toBeLessThanOrEqual(400);
+  expect(thumbBox.width).toBeGreaterThan(300);
+  expect(thumbBox.width).toBeLessThanOrEqual(360);
   expect(Math.abs(thumbBox.width / thumbBox.height - 1.6)).toBeLessThan(0.02);
   await expect.poll(() => loaded(home.locator('.scene-panel .scene-image img'))).toBe(true);
   await home.screenshot({ path: 'test-results/catalog/managed-book-detail.png' });
@@ -422,18 +424,25 @@ try {
     expect(bar.left).toBe(0);
     expect(bar.right).toBe(bar.width);
     // A journey row opens the scene sheet with the same panel content and moves the bar to that scene.
-    const ozSecond = original.books.find(b => b.id === 'oz').chapters[1].title;
+    const ozChapters = original.books.find(b => b.id === 'oz').chapters;
     await mobile.locator('.journey-row[data-scene="oz-2"]').tap();
-    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozSecond);
+    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozChapters[1].title);
     await expect(mobile.locator('.detail-cta-scene')).toContainText('02');
     await expect(mobile).toHaveURL(/scene=oz-2$/);
-    await mobile.locator('dialog.scene-sheet .close-modal').tap();
-    await expect(mobile.locator('dialog.scene-sheet')).toHaveCount(0);
-    await expect(mobile.locator('.journey-row[data-scene="oz-2"]')).toBeFocused();
-    const after = await measure();
-    expect(after.reachable).toBe(true);
-    await mobile.touchscreen.tap(after.x, after.y);
+    // The sheet's own neighbour links move the sheet, the journey selection and the bar together; focus follows.
+    await mobile.locator('dialog.scene-sheet .neighbor-link[data-scene="oz-3"]').tap();
+    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozChapters[2].title);
+    await expect(mobile.locator('.journey-row[aria-current="true"]')).toHaveAttribute('data-scene', 'oz-3');
+    await expect(mobile.locator('.detail-cta-scene')).toContainText('03');
+    await expect(mobile).toHaveURL(/scene=oz-3$/);
+    await expect(mobile.locator('dialog.scene-sheet .detail-enter')).toBeFocused();
+    await mobile.locator('dialog.scene-sheet .neighbor-link[data-scene="oz-2"]').tap();
+    await expect(mobile.locator('dialog.scene-sheet[open] #sheet-scene-title')).toHaveText(ozChapters[1].title);
+    await expect(mobile.locator('dialog.scene-sheet .neighbor-link[data-scene="oz-1"]')).toBeFocused();
+    // The sheet's CTA closes the sheet and enters that scene.
+    await mobile.locator('dialog.scene-sheet .detail-enter').tap();
     await expect(mobile.locator('#world canvas')).toBeVisible();
+    await expect(mobile.locator('dialog.scene-sheet')).toHaveCount(0);
     await expect(mobile).toHaveURL(/chapter=oz-2/);
     await expect(mobile.locator('.reader-curtain')).toHaveCount(0);
     const target = await mobile.locator('#next-chapter').evaluate(element => {
