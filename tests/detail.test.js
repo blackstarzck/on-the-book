@@ -144,3 +144,7 @@ test("sceneDetail keeps the draft preview flag on every link", () => {
   assert.equal(count(html, "&amp;preview=draft"), 4);
   assert.match(html, /href="\?book=alice&amp;preview=draft" data-book="alice">이상한 나라의 앨리스/);
 });
+
+test("sceneDetail refuses a chapter that is not part of the book", () => {
+  assert.throws(() => sceneDetail({ book: alice, chapter: { ...alice.chapters[0], id: "elsewhere" }, library }), /elsewhere/);
+});

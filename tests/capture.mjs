@@ -11,6 +11,7 @@ try {
   await page.locator('[data-book="alice"]').click();
   await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
+  await page.mouse.move(0, 0);
   await page.screenshot({ path: 'docs/preview/detail.png', fullPage: true });
   await page.locator('.detail-cta .primary-button').click();
   await expect(page.locator('canvas')).toBeVisible();

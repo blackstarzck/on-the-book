@@ -206,8 +206,8 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
       // Modified clicks keep the browser's own behaviour, such as opening the link in a new tab.
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
-      if (link.dataset.sceneBook) open("scene", link.dataset.sceneBook, link.dataset.sceneChapter, `[data-scene-chapter="${link.dataset.sceneChapter}"]`);
-      else open("book", link.dataset.book, undefined, `[data-book="${link.dataset.book}"]`);
+      if (link.dataset.sceneBook) open("scene", link.dataset.sceneBook, link.dataset.sceneChapter, `[data-scene-chapter="${CSS.escape(link.dataset.sceneChapter)}"]`);
+      else open("book", link.dataset.book, undefined, `[data-book="${CSS.escape(link.dataset.book)}"]`);
       return;
     }
     const button = event.target.closest("button");
@@ -223,7 +223,7 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
       startHeroTimer();
     }
     if (button.hasAttribute("data-reset")) { showCatalog("all"); search.focus(); }
-    if (button.dataset.featureBook) open("book", button.dataset.featureBook, undefined, `[data-feature-book="${button.dataset.featureBook}"]`);
+    if (button.dataset.featureBook) open("book", button.dataset.featureBook, undefined, `[data-feature-book="${CSS.escape(button.dataset.featureBook)}"]`);
     if (button.hasAttribute("data-help")) onHelp();
     if (button.hasAttribute("data-scenes")) showScenes();
     if (button.dataset.rail) rail.scrollBy({ left: Number(button.dataset.rail) * rail.clientWidth * .8, behavior: motion() });

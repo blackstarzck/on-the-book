@@ -99,11 +99,11 @@
 - 상세 페이지의 뼈대는 `<main class="detail-page store-content" id="main-content" data-view="book|scene">` 이다. `.store-content` 를 함께 써서 홈과 같은 1280px 폭과 좌우 여백을 쓴다. `main` 은 `display: flex; flex-direction: column` 이며 직계 자식은 순서대로 `.detail-crumbs`(장면 상세만), `.detail-hero`, `.detail-cta`, `.detail-section`(0개 이상), `.detail-source` 다.
 - 등장 순서: `transitions.js` 의 `reveal()` 에 `.detail-page` 가 있을 때의 그룹 `[".site-header", ".detail-crumbs, .detail-hero", ".detail-cta", ".detail-section, .detail-source", ".site-footer"]` 를 추가한다.
 - 전환 후 초점: `transitionPage()` 의 기본 초점 대상을 `#library-title` → `#detail-title` → `#world canvas, #fallback-read` 순으로 찾도록 늘린다. `focus` 옵션은 넘기지 않는다. 그래야 기존 규칙대로 화면 맨 위로 스크롤한 뒤 제목에 초점이 간다. `#detail-title` 은 `tabindex="-1"` 인 `h1` 이다.
-- CTA 블록 `.detail-cta` 는 페이지에 하나만 둔다. 데스크톱에서는 히어로 바로 아래 흐름에 놓는다. 작품 상세에서는 왼쪽 여백을 히어로의 글 열(표지 180px + 간격 30px)에 맞추고, 히어로가 세로로 쌓이는 장면 상세에서는 왼쪽에 맞춘다. 600px 이하에서는 `order: 99; position: sticky; bottom: 0` 으로 `main` 의 마지막에 내려가 화면 아래에 고정된다. 배경은 `--paper`, 위쪽 1px 경계선, `padding-bottom: env(safe-area-inset-bottom)` 을 더한다. 문서 순서는 히어로 → CTA → 본문 그대로라 키보드 순서도 자연스럽다. 버튼을 두 번 만들지 않는다.
+- CTA 블록 `.detail-cta` 는 페이지에 하나만 둔다. 데스크톱에서는 히어로 바로 아래 흐름에 놓는다. 작품 상세에서는 왼쪽 여백을 히어로의 글 열(표지 180px + 간격 30px)에 맞추고, 히어로가 세로로 쌓이는 장면 상세에서는 왼쪽에 맞춘다. 600px 이하에서는 `order: 99; position: sticky; bottom: 0` 으로 `main` 의 마지막에 내려가 화면 아래에 고정된다. 배경은 페이지 배경과 같은 `#fff`, 위쪽 1px 경계선, `padding-bottom: env(safe-area-inset-bottom)` 을 더한다. 문서 순서는 히어로 → CTA → 본문 그대로라 키보드 순서도 자연스럽다. 버튼을 두 번 만들지 않는다.
 
 ## 6. 작품 상세
 
-`client/detail.js` 의 `bookDetail({ book, library, progress, preview })` 가 마크업 문자열을 돌려준다.
+`client/detail.js` 의 `bookDetail({ book, progress, preview })` 가 마크업 문자열을 돌려준다.
 
 히어로 `.detail-hero`
 - 왼쪽: `bookCover()` 자리(`.catalog-cover.image-placeholder`, 2:2.85, `role="img" aria-label="표지 이미지 준비 중"`). 데스크톱 180px, 600px 이하 112px, 370px 이하에서는 위로 올라가 가운데 130px.
@@ -126,7 +126,7 @@ CTA `.detail-cta`
 
 ## 7. 장면 상세
 
-`sceneDetail({ book, chapter, library, progress, preview })` 가 마크업을 돌려준다.
+`sceneDetail({ book, chapter, library, preview })` 가 마크업을 돌려준다. `chapter` 가 `book.chapters` 에 없으면 예외를 던진다.
 
 브레드크럼 `.detail-crumbs`
 - `<nav aria-label="현재 위치">`: `<a href="{detailUrl book}" data-book>이상한 나라의 앨리스</a>` › `<span aria-current="page">장면 02</span>`. 책장 항목은 두지 않는다. 헤더의 "책장으로"가 그 역할이다.
@@ -263,8 +263,9 @@ README.md                                                                       
 2. 3D 안 이동·챕터 이동(기존). "책장으로" → `.catalog-card` 2개(기존).
 3. "읽던 작품 이어 보기" → `[data-book="alice"]` 클릭 → CTA 에 "이어 읽기"와 "02" → 클릭 → `#map-button` 에 "02"(기존 단정). `reload` 뒤에도 "02"(기존).
 4. `goBack()` → `.detail-page[data-view="book"]`(지금은 `.library-page` 를 단정한다). 한 번 더 `goBack()` → `.library-page`. `goForward()` 두 번 → `#map-button` "02".
-5. 새 단계: 홈에서 `[data-scene-chapter="alice-2"]` 클릭 → `.detail-page[data-view="scene"]`, 주소 `book=alice&scene=alice-2`, `#detail-preview p` 가 한 문단, `.figure-list li` 3개, 첫 항목에 "장면의 중심", 이전 링크가 "01", 다음 링크가 "03". CTA 클릭 → `#world canvas`, 주소 `chapter=alice-2`.
+5. 새 단계: 홈에서 `[data-scene-chapter="alice-3"]` 클릭 → `.detail-page[data-view="scene"]`, 주소 `book=alice&scene=alice-3`, `#detail-preview .reading-text p` 가 한 문단, `.figure-list li` 3개, 첫 항목에 "장면의 중심", 이전 링크가 "02", 다음 링크가 "04". CTA 클릭 → `#world canvas`, 주소 `chapter=alice-3`.
 6. 새 단계: 홈에서 `.feature-card.is-active`(첫 슬라이드, 앨리스) 클릭 → `.detail-page[data-view="book"]`, `#detail-title` 이 "이상한 나라의 앨리스". "책장으로" → 홈이 다시 그려지면 첫 슬라이드가 활성이므로 `.feature-card.is-active` 에 초점이 돌아온다. 스크롤 위치가 저장값으로 복원된다. 저장한 선택자의 요소가 없거나 `inert` 라 초점을 받지 못하면 `openLibrary()` 가 먼저 준 `#catalog-title` 초점이 남는다. 이 경우는 검사하지 않는다.
+7. 새 단계: 주소를 직접 열어 해석 규칙을 확인한다. `?book=alice` 와 `?book=alice&scene=alice-2` 는 각 상세와 문서 제목, `?book=nope` 와 `?scene=alice-2` 는 홈과 `/client/` 로 정리된 주소, `?book=alice&chapter=nope` 는 작품 상세와 `?book=alice`, `?book=alice&scene=nope&preview=draft` 는 작품 상세와 `?book=alice&preview=draft`, 그리고 여정 첫 행의 `href` 에 `preview=draft` 가 남아 있는지 본다.
 
 ### 14.3 `tests/mobile-entry.mjs`(4321 포트)
 

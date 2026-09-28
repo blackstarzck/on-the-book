@@ -54,6 +54,7 @@ export function bookDetail({ book, progress = {}, preview = false }) {
 
 export function sceneDetail({ book, chapter, library, preview = false }) {
   const index = book.chapters.findIndex(c => c.id === chapter.id);
+  if (index < 0) throw new Error(`Chapter ${chapter.id} is not part of ${book.id}`);
   const previous = book.chapters[index - 1], next = book.chapters[index + 1];
   const paragraphs = chapter.body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   const main = mainPlacement(chapter);

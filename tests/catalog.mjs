@@ -180,6 +180,7 @@ try {
   await expect(page.locator('#map-button')).toContainText('03');
   await expect(page).toHaveURL(/book=alice&chapter=alice-3/);
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
+  pass('Blank image slots; scene cards open the scene detail and its CTA enters that chapter');
   await page.getByRole('button', { name: '히어로 자동 재생 중지', exact: true }).click();
   if (await page.locator('.feature-card.is-active').getAttribute('data-feature-book') !== 'alice') {
     await page.getByRole('button', { name: '이전 추천 작품', exact: true }).click();
@@ -194,6 +195,7 @@ try {
   await page.waitForTimeout(5600);
   await expect(page.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
   await expect(page.locator('.feature-card.is-active')).toBeFocused();
+  pass('The hero opens the book detail and the restored focus survives autoplay');
   await page.getByRole('button', { name: '히어로 자동 재생 중지', exact: true }).click();
   if (await page.locator('.feature-card.is-active').getAttribute('data-feature-book') !== 'oz') {
     await page.getByRole('button', { name: '다음 추천 작품', exact: true }).click();
@@ -204,7 +206,33 @@ try {
   await expect(page.locator('#detail-title')).toHaveText('오즈의 마법사');
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
   await expect(page.locator('.library-page')).toBeVisible();
-  pass('Blank image slots, scene cards open the scene detail and the hero opens the book detail');
+  pass('The second hero slide opens its book detail');
+
+  // Direct addresses: first load resolves the view and cleans unusable parts. No focus move on a cold load.
+  await page.goto(`${server.url}/client/?book=alice`);
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
+  await expect(page).toHaveTitle('이상한 나라의 앨리스 — On the Book');
+  await expect(page.locator('.header-search')).toHaveCount(0);
+  await page.goto(`${server.url}/client/?book=alice&scene=alice-2`);
+  await expect(page.locator('.detail-page[data-view="scene"]')).toBeVisible();
+  await expect(page.locator('#detail-title')).toHaveText('작아지는 문, 커지는 세계');
+  await expect(page).toHaveTitle('작아지는 문, 커지는 세계 · 이상한 나라의 앨리스 — On the Book');
+  await page.goto(`${server.url}/client/?book=nope`);
+  await expect(page.locator('.library-page')).toBeVisible();
+  await expect(page).toHaveURL(/\/client\/$/);
+  await page.goto(`${server.url}/client/?scene=alice-2`);
+  await expect(page.locator('.library-page')).toBeVisible();
+  await expect(page).toHaveURL(/\/client\/$/);
+  await page.goto(`${server.url}/client/?book=alice&chapter=nope`);
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(page).toHaveURL(/\?book=alice$/);
+  await page.goto(`${server.url}/client/?book=alice&scene=nope&preview=draft`);
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(page).toHaveURL(/\?book=alice&preview=draft$/);
+  await expect(page.locator('.journey-row').first()).toHaveAttribute('href', '?book=alice&scene=alice-1&preview=draft');
+  await expect(page).toHaveTitle('이상한 나라의 앨리스 — On the Book');
+  pass('Direct addresses resolve to the right screen and unusable parts are cleaned');
 
   // More books exist only in this intercepted response, never in the saved library.
   const original = await (await fetch(`${server.url}/api/library`)).json();
