@@ -51,3 +51,31 @@ export function bookDetail({ book, progress = {}, preview = false }) {
     ${sourceNote(book)}
   </main>`;
 }
+
+export function sceneDetail({ book, chapter, library, preview = false }) {
+  const index = book.chapters.findIndex(c => c.id === chapter.id);
+  const previous = book.chapters[index - 1], next = book.chapters[index + 1];
+  const paragraphs = chapter.body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const main = mainPlacement(chapter);
+  const figures = main ? [main, ...chapter.placements.filter(p => p !== main)] : [];
+  const colorOf = placement => library.models.find(m => m.id === placement.modelId)?.color || "var(--accent)";
+  const bookHref = `href="${esc(detailUrl({ book: book.id, preview }))}" data-book="${esc(book.id)}"`;
+  const sceneLink = (target, label) =>
+    `<a class="neighbor-link" href="${esc(detailUrl({ book: book.id, scene: target.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(target.id)}">${label}</a>`;
+  // Only the first paragraph is shown here; the rest waits on the floor inside the 3D world.
+  const previewSection = paragraphs.length
+    ? `<section class="detail-section" id="detail-preview" aria-labelledby="detail-preview-title">${sectionHeading("detail-preview-title", "미리 읽기")}<div class="reading-text"><p>${esc(paragraphs[0])}</p></div>${paragraphs.length > 1 && chapter.floorEnabled !== false ? '<p class="muted detail-note">이어지는 글은 3D 안에서 장면의 중심 모델에 다가가면 바닥 글귀로 읽을 수 있어요.</p>' : ""}</section>`
+    : "";
+  const figureSection = figures.length
+    ? `<section class="detail-section" id="detail-figures" aria-labelledby="detail-figures-title">${sectionHeading("detail-figures-title", "이 장면에서 만나는 것들", "가까이 다가가면 움직여요.")}<ul class="figure-list">${figures.map(p => `<li><span class="figure-chip" style="background:${esc(colorOf(p))}" aria-hidden="true"></span><span class="figure-copy"><strong>${esc(p.title)}</strong>${p === main ? '<span class="journey-badge">장면의 중심</span>' : ""}${p.story ? `<span class="figure-story">${esc(p.story)}</span>` : ""}</span></li>`).join("")}</ul></section>`
+    : "";
+  return `<main class="detail-page store-content" id="main-content" data-view="scene">
+    <nav class="detail-crumbs" aria-label="현재 위치"><a ${bookHref}>${esc(book.title)}</a><span aria-hidden="true">›</span><span aria-current="page">장면 ${two(index + 1)}</span></nav>
+    <section class="detail-hero detail-hero--scene" aria-labelledby="detail-title"><span class="scene-image image-placeholder" data-theme="${esc(chapter.theme)}" role="img" aria-label="장면 이미지 준비 중"><span class="scene-number">${two(index + 1)}</span></span><div class="detail-copy"><span class="eyebrow">장면 ${two(index + 1)} / ${two(book.chapters.length)} · ${esc(book.title)}</span><h1 id="detail-title" tabindex="-1">${esc(chapter.title)}</h1>${chapter.subtitle ? `<p class="detail-meta">${esc(chapter.subtitle)}</p>` : ""}</div></section>
+    <div class="detail-cta">${enterButton(book, chapter, "이 장면부터 걷기")}</div>
+    ${previewSection}
+    ${figureSection}
+    <section class="detail-section" id="detail-neighbors"><nav class="neighbor-nav" aria-label="이어지는 장면">${previous ? sceneLink(previous, `${icon("arrow-left")} ${two(index)} ${esc(previous.title)}`) : "<span></span>"}<a class="neighbor-all" ${bookHref}>작품 전체 보기</a>${next ? sceneLink(next, `${two(index + 2)} ${esc(next.title)} ${icon("arrow-right")}`) : "<span></span>"}</nav></section>
+    ${sourceNote(book)}
+  </main>`;
+}

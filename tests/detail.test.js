@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { edition, bookCover } from "../client/book-meta.js";
 import { seed } from "../server/seed.js";
 import { librarySchema } from "../shared/schema.js";
-import { detailUrl, bookDetail } from "../client/detail.js";
+import { detailUrl, bookDetail, sceneDetail } from "../client/detail.js";
 
 // /api/library serves the seed after schema parsing, which fills mainPlacementId, floorEnabled and cover.
 const library = librarySchema.parse(seed);
@@ -82,4 +82,65 @@ test("bookDetail escapes text and survives a chapter without placements", () => 
   assert.doesNotMatch(html, /<b>앨리스/);
   assert.doesNotMatch(html, /journey-model/);
   assert.match(html, /1개의 장면/);
+});
+
+test("sceneDetail shows the scene, the first paragraph only and the placements with the main one first", () => {
+  const html = sceneDetail({ book: alice, chapter: alice.chapters[1], library });
+  assert.match(html, /<main class="detail-page store-content" id="main-content" data-view="scene">/);
+  assert.match(html, /<nav class="detail-crumbs" aria-label="현재 위치"><a href="\?book=alice" data-book="alice">이상한 나라의 앨리스<\/a><span aria-hidden="true">›<\/span><span aria-current="page">장면 02<\/span><\/nav>/);
+  assert.match(html, /<span class="scene-image image-placeholder" data-theme="night" role="img" aria-label="장면 이미지 준비 중"><span class="scene-number">02<\/span><\/span>/);
+  assert.match(html, /<span class="eyebrow">장면 02 \/ 06 · 이상한 나라의 앨리스<\/span>/);
+  assert.match(html, /<h1 id="detail-title" tabindex="-1">작아지는 문, 커지는 세계<\/h1><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p>/);
+  assert.match(html, /class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기/);
+  assert.match(html, /<h2 id="detail-preview-title">미리 읽기<\/h2>/);
+  assert.match(html, /<div class="reading-text"><p>굴 아래에는 문이 가득한 긴 복도가 있었습니다\./);
+  assert.doesNotMatch(html, /작은 병과 케이크를 만난 앨리스/);
+  assert.match(html, /<p class="muted detail-note">이어지는 글은 3D 안에서 장면의 중심 모델에 다가가면 바닥 글귀로 읽을 수 있어요\.<\/p>/);
+  assert.match(html, /<h2 id="detail-figures-title">이 장면에서 만나는 것들<\/h2><p>가까이 다가가면 움직여요\.<\/p>/);
+  assert.equal(count(html, 'class="figure-chip"'), 3);
+  assert.match(html, /<strong>정원으로 가는 열쇠<\/strong><span class="journey-badge">장면의 중심<\/span><span class="figure-story">아주 작은 문 너머에 햇살 가득한 정원이 기다립니다\.<\/span>/);
+  assert.equal(count(html, "장면의 중심"), 2);
+  assert.match(html, /class="figure-chip" style="background:#d4aa56"/);
+  assert.equal(count(html, 'class="neighbor-link"'), 2);
+  assert.match(html, /href="\?book=alice&amp;scene=alice-1" data-scene-book="alice" data-scene-chapter="alice-1"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 01 흰 토끼를 따라서<\/a>/);
+  assert.match(html, /href="\?book=alice&amp;scene=alice-3" data-scene-book="alice" data-scene-chapter="alice-3">03 버섯 숲의 수수께끼 <i data-lucide="arrow-right" aria-hidden="true"><\/i><\/a>/);
+  assert.match(html, /<a class="neighbor-all" href="\?book=alice" data-book="alice">작품 전체 보기<\/a>/);
+  assert.match(html, /<h2 id="detail-source-title">원작 정보<\/h2>/);
+  assert.doesNotMatch(html, /<img/);
+});
+
+test("sceneDetail drops the missing neighbour and the floor-reading note when the floor is off", () => {
+  const first = sceneDetail({ book: alice, chapter: alice.chapters[0], library });
+  assert.equal(count(first, 'class="neighbor-link"'), 1);
+  assert.match(first, /data-scene-chapter="alice-2">02 작아지는 문, 커지는 세계/);
+  assert.match(first, /장면 01 \/ 06/);
+  const last = sceneDetail({ book: alice, chapter: alice.chapters[5], library });
+  assert.equal(count(last, 'class="neighbor-link"'), 1);
+  assert.match(last, /data-scene-chapter="alice-5"/);
+  const silent = sceneDetail({ book: alice, chapter: { ...alice.chapters[1], floorEnabled: false }, library });
+  assert.match(silent, /굴 아래에는 문이 가득한/);
+  assert.doesNotMatch(silent, /바닥 글귀로 읽을 수 있어요/);
+  assert.match(silent, /장면 02 \/ 06/);
+});
+
+test("sceneDetail omits the sections that have nothing to show and escapes the placement colour", () => {
+  const bare = { ...alice.chapters[2], body: "", placements: [], mainPlacementId: null };
+  const html = sceneDetail({ book: alice, chapter: bare, library });
+  assert.doesNotMatch(html, /id="detail-preview"/);
+  assert.doesNotMatch(html, /id="detail-figures"/);
+  assert.match(html, /id="detail-neighbors"/);
+  assert.match(html, /data-scene-chapter="alice-2"/);
+  assert.match(html, /data-scene-chapter="alice-4"/);
+  const single = sceneDetail({ book: alice, chapter: { ...alice.chapters[2], body: "한 문단만 있어요." }, library });
+  assert.match(single, /<div class="reading-text"><p>한 문단만 있어요\.<\/p><\/div>/);
+  assert.doesNotMatch(single, /바닥 글귀로 읽을 수 있어요/);
+  const unknownModel = sceneDetail({ book: alice, chapter: { ...alice.chapters[2], placements: [{ ...alice.chapters[2].placements[0], modelId: "missing\">" }] }, library });
+  assert.match(unknownModel, /style="background:var\(--accent\)"/);
+  assert.doesNotMatch(unknownModel, /missing">/);
+});
+
+test("sceneDetail keeps the draft preview flag on every link", () => {
+  const html = sceneDetail({ book: alice, chapter: alice.chapters[1], library, preview: true });
+  assert.equal(count(html, "&amp;preview=draft"), 4);
+  assert.match(html, /href="\?book=alice&amp;preview=draft" data-book="alice">이상한 나라의 앨리스/);
 });
