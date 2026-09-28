@@ -98,10 +98,6 @@ try {
   await expect(page.locator('.detail-cta')).toBeHidden();
   await expect(page.locator('.detail-page img')).toHaveCount(0);
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
-  // The panel follows the scroll: at the bottom of the page it is pinned 24px below the viewport top.
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect.poll(() => page.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top))).toBe(24);
-  await page.evaluate(() => window.scrollTo(0, 0));
   pass('Book cards open the book detail with the first scene in the panel');
   // Choosing a scene swaps the panel in place: no curtain, no history entry, the address follows.
   const entries = await page.evaluate(() => history.length);
@@ -272,21 +268,6 @@ try {
   await page.unroute('**/api/studio');
   pass('Direct addresses resolve to the right screen and unusable parts are cleaned');
 
-  // The middle grid (851–1100px): a 340px panel that still sticks, no horizontal overflow, journey rows that do not spill.
-  const tablet = await browser.newContext({ viewport: { width: 1024, height: 800 } });
-  const wide = await tablet.newPage();
-  wide.on('pageerror', error => errors.push(error.message));
-  await wide.goto(`${server.url}/client/?book=alice`);
-  await expect(wide.locator('.detail-page[data-view="book"]')).toBeVisible();
-  await expect(wide.locator('.reader-curtain')).toHaveCount(0);
-  expect(Math.round(await wide.locator('.scene-panel').evaluate(element => element.getBoundingClientRect().width))).toBe(340);
-  expect(await wide.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  expect(await wide.locator('.journey-row').evaluateAll(rows => rows.every(row => row.scrollWidth <= row.clientWidth + 1))).toBe(true);
-  await wide.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect.poll(() => wide.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top))).toBe(24);
-  await tablet.close();
-  pass('1024px: the 340px panel sticks and nothing overflows');
-
   // More books exist only in this intercepted response, never in the saved library.
   const original = await (await fetch(`${server.url}/api/library`)).json();
   await page.route('**/api/library', route => route.fulfill({ json: {
@@ -299,6 +280,32 @@ try {
   await page.screenshot({ path: 'test-results/catalog/expanded-fixture-only.png', fullPage: true });
   pass('18-book responsive grid without changing real library');
   await context.close();
+
+  // A long journey (18 chapters, intercepted response only): the panel sticks at 24px while the left column scrolls,
+  // at the 400px grid (1440) and the 340px grid (1024). Sticky can only be seen while the scroll stays inside the
+  // grid row, so the check scrolls to the middle of the page, not the bottom.
+  const tall = {
+    ...original,
+    books: original.books.map(b => b.id !== 'alice' ? b : { ...b, chapters: [...b.chapters, ...b.chapters, ...b.chapters].map((c, i) => ({ ...c, id: `alice-tall-${i}` })) }),
+  };
+  for (const [width, height, panelWidth] of [[1440, 1000, 400], [1024, 800, 340]]) {
+    const grid = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
+    const long = await grid.newPage();
+    long.on('pageerror', error => errors.push(error.message));
+    await long.route('**/api/library', route => route.fulfill({ json: tall }));
+    await long.goto(`${server.url}/client/?book=alice`);
+    await expect(long.locator('.journey-row')).toHaveCount(18);
+    await expect(long.locator('.reader-curtain')).toHaveCount(0);
+    expect(Math.round(await long.locator('.scene-panel').evaluate(element => element.getBoundingClientRect().width))).toBe(panelWidth);
+    expect(await long.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await long.locator('.journey-row').evaluateAll(rows => rows.every(row => row.scrollWidth <= row.clientWidth + 1))).toBe(true);
+    const resting = await long.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top));
+    expect(resting).toBeGreaterThan(24);
+    await long.evaluate(() => window.scrollTo(0, 400));
+    await expect.poll(() => long.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top))).toBe(24);
+    await grid.close();
+  }
+  pass('The scene panel sticks beside a long journey at 1440px and 1024px');
 
   // Studio-managed images, slides and categories, again only in intercepted responses.
   const upload = c => `/uploads/${c.repeat(8)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(12)}.png`;
