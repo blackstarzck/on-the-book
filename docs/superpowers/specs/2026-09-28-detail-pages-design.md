@@ -102,7 +102,7 @@ main.detail-page.store-content#main-content[data-view="book"]
 ```
 
 - 1101px 이상: `grid-template-columns: minmax(0, 1fr) 400px`, 열 간격 48px. 851~1100px: 오른쪽 열 340px, 간격 32px. 850px 이하: 한 열. `.store-content` 로 홈과 같은 1280px 폭과 좌우 여백을 쓴다.
-- 오른쪽 `aside.scene-panel` 은 `position: sticky; top: 24px; align-self: start; max-height: calc(100dvh - 48px); overflow-y: auto` 다. 패널이 화면보다 길면 패널 안에서만 스크롤된다. 흰 배경, 1px 경계선(`#e7ebe7`), 모서리 14px, 안쪽 여백 20px.
+- 오른쪽 `aside.scene-panel` 은 `position: sticky; top: 24px; align-self: start; max-height: calc(100dvh - 48px); overflow-y: auto` 다. 패널이 화면보다 길면 패널 안에서만 스크롤되고, 스크롤바는 보이지 않게 숨긴다(`scrollbar-width: none`, 사파리용 `::-webkit-scrollbar`). 흰 배경, 1px 경계선(`#e7ebe7`), 모서리 14px, 안쪽 여백 20px.
 - 850px 이하에서는 `aside.scene-panel` 을 `display: none` 으로 숨긴다. 같은 내용은 여정 행을 눌렀을 때 장면 시트(7절)로 보인다. 하단 고정 바 `.detail-cta` 는 851px 이상에서 `display: none` 이다. 그래서 어떤 폭에서도 보이는 CTA 는 하나이고, 숨긴 쪽은 접근성 트리에서도 빠진다.
 - 등장 순서: `transitions.js` 의 `reveal()` 에서 `.detail-page` 그룹은 `[".site-header", ".detail-hero", "#detail-journey, .detail-source", ".scene-panel, .detail-cta", ".site-footer"]` 다.
 - 전환 후 초점은 `h1#detail-title`(책 제목, `tabindex="-1"`). `transitionPage()` 의 기본 초점 대상 순서 `#library-title` → `#detail-title` → `#world canvas, #fallback-read` 는 기존과 같다.
@@ -141,7 +141,7 @@ main.detail-page.store-content#main-content[data-view="book"]
 패널의 제목 위계: 페이지의 `h1` 은 책 제목 하나이고 패널 제목은 `h2`, 패널 안 묶음은 `h3` 이다. 여정과 원작 정보의 `h2` 와 나란하다.
 
 850px 이하의 장면 시트
-- 여정 행을 누르면 기존 `modal()` 로 `<dialog class="modal scene-sheet">` 를 열고 그 안에 `scenePanel()` 결과를 넣는다. 시트는 화면 아래에서 올라오는 모양(`position: fixed; inset: auto 0 0 0; max-height: 88dvh; border-radius: 18px 18px 0 0`)이고 안쪽 스크롤을 가진다. 닫기 버튼·배경 클릭·Esc 는 `modal()` 의 기존 동작이며 닫히면 초점이 누른 행으로 돌아간다(`modal()` 이 이전 초점을 복원한다).
+- 여정 행을 누르면 기존 `modal()` 로 `<dialog class="modal scene-sheet">` 를 열고 그 안에 `scenePanel()` 결과를 넣는다. 시트는 화면 아래에서 올라오는 모양(`position: fixed; inset: auto 0 0 0; max-height: 88dvh; border-radius: 18px 18px 0 0`)이고 안쪽 스크롤을 가지며, 패널처럼 스크롤바는 숨긴다. 닫기 버튼·배경 클릭·Esc 는 `modal()` 의 기존 동작이며 닫히면 초점이 누른 행으로 돌아간다(`modal()` 이 이전 초점을 복원한다).
 - 시트 안의 CTA·이전·다음은 패널과 같은 마크업이라 `setupDetail()` 의 위임 처리기(9절)가 `document` 수준에서 함께 받는다. 시트에서 이전·다음을 누르면 시트 내용과 왼쪽 선택이 함께 바뀐다.
 - 주소로 `?book=&scene=` 을 열었을 때 시트를 자동으로 열지는 않는다. 선택된 행 강조와 하단 바가 그 장면을 가리킨다.
 

@@ -36,8 +36,10 @@
 .detail-source { padding-top: 34px; margin-top: 34px; border-top: 1px solid #edf0ec; }
 .detail-source h2 { margin: 0 0 10px; font-size: 15px; color: #4f5f56; }
 .detail-source .source-note { padding: 0; border: 0; font-size: 12px !important; line-height: 1.8; color: #7f8982; }
-/* The scene panel follows the scroll; when it is taller than the screen it scrolls inside. */
-.scene-panel { position: sticky; top: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; padding: 20px; border: 1px solid #e7ebe7; border-radius: 14px; background: #fff; }
+/* The scene panel follows the scroll; when it is taller than the screen it scrolls inside, with no visible scrollbar. */
+.scene-panel { position: sticky; top: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; scrollbar-width: none; padding: 20px; border: 1px solid #e7ebe7; border-radius: 14px; background: #fff; }
+/* Safari before 18.2 ignores scrollbar-width. The phone sheet below hides its scrollbar the same way. */
+.scene-panel::-webkit-scrollbar, .scene-sheet::-webkit-scrollbar { display: none; }
 /* Panel and sheet share their inner layout. The image slot is always 16:10; a thumbnail fills it (landing.css:
    `.scene-image img` covers the slot and `.scene-image.has-image .scene-number` becomes a light pill). */
 .scene-panel .scene-image, .scene-sheet .scene-image { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 10px; }
@@ -70,7 +72,7 @@
 /* The phone bar exists in the markup at every width but only shows in the one-column layout. */
 .detail-cta { display: none; }
 /* The phone's scene sheet reuses the modal dialog, pinned to the bottom edge. */
-.scene-sheet { position: fixed; inset: auto 0 0 0; width: auto; max-width: none; max-height: 88dvh; margin: 0; padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; border: 0; border-radius: 18px 18px 0 0; background: #fff; }
+.scene-sheet { position: fixed; inset: auto 0 0 0; width: auto; max-width: none; max-height: 88dvh; margin: 0; padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; scrollbar-width: none; border: 0; border-radius: 18px 18px 0 0; background: #fff; }
 /* The scene image is `position: relative` (landing.css, for its badge); without a higher stacking order the
    close button (also positioned, but earlier in the DOM) would paint underneath it and miss taps. */
 .scene-sheet .close-modal { z-index: 1; }
