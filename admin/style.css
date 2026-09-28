@@ -1232,3 +1232,28 @@
 .model-thumbnail img { width:100%; height:100%; object-fit:contain; }
 .thumbnail-preview { width:100%; max-height:180px; object-fit:contain; border-radius:6px; }
 .thumbnail-preview[hidden] { display:none; }
+
+/* Image fields for book covers, chapter thumbnails and hero photos. */
+.image-field { display:grid; gap:8px; padding:14px; margin:0 0 16px; border:1px dashed #bacaac; border-radius:7px; background:#f4f7ee; }
+.image-field-label { font-size:11px; font-weight:500; color:#64765a; }
+.image-field .thumbnail-preview { max-height:160px; background:#fffef8; }
+.image-field-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.image-field-actions .outline-button { position:relative; min-height:34px; cursor:pointer; }
+.image-field-actions .outline-button:focus-within { outline:2px solid #86a990; outline-offset:2px; }
+.image-field-actions input[type="file"] { position:absolute; inset:0; width:100%; opacity:0; cursor:pointer; }
+.image-field .field-hint { margin:0; }
+
+/* Home tab: hero slides in the order readers see them. */
+.home-slides { display:grid; gap:18px; }
+.home-slides-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.home-slides-heading h2 { font-size:20px; letter-spacing:-0.6px; margin:0; }
+.home-slides-heading h2 span { font-size:12px; color:#88927c; margin-left:6px; letter-spacing:0; }
+.slide-card { display:grid; grid-template-columns:48px minmax(0, 1.1fr) minmax(0, 1fr); gap:22px; padding:22px; border:1px solid #d8e0cc; border-radius:8px; background:#fbfcf6; }
+.slide-order { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.slide-order b { font-size:13px; color:#6f8a5f; }
+.slide-media .thumbnail-preview { aspect-ratio:12 / 5; max-height:none; object-fit:cover; }
+.slide-warning { color:#aa6c5b; margin:-6px 0 12px; }
+@media (max-width: 900px) {
+  .slide-card { grid-template-columns:40px minmax(0, 1fr); }
+  .slide-media, .slide-fields { grid-column:2; }
+}

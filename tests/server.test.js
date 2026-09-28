@@ -148,6 +148,37 @@ test("valid animated GLB is saved and malformed upload is rejected", async () =>
     400,
   );
 });
+const uploadPng = async () => {
+  const fd = new FormData();
+  fd.append("image", new Blob([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=", "base64")], { type: "image/png" }), "image.png");
+  const uploaded = await fetch(server.url + "/api/floor/upload", { method: "POST", headers: { "X-On-The-Book": "studio" }, body: fd });
+  assert.equal(uploaded.status, 201);
+  return (await uploaded.json()).url;
+};
+test("readers get hero slides and chapter thumbnails of published books only", async () => {
+  const image = await uploadPng();
+  const state = await (await request("/api/studio")).json();
+  const [shown, hidden] = state.library.books;
+  shown.published = true;
+  hidden.published = false;
+  shown.chapters[0].thumbnail = image;
+  state.library.home = { hero: [
+    { id: "hero-hidden", bookId: hidden.id, image },
+    { id: "hero-shown", bookId: shown.id, image, kicker: "새로 공개" },
+  ] };
+  const saved = await request("/api/studio", "PUT", { library: state.library, version: state.version, publish: true });
+  assert.equal(saved.status, 200, await saved.text());
+  const live = await (await request("/api/library")).json();
+  assert.deepEqual(live.home.hero.map((s) => [s.id, s.kicker, s.focus]), [["hero-shown", "새로 공개", "center"]]);
+  assert.equal(live.books[0].chapters[0].thumbnail, image);
+});
+test("an image that was never uploaded cannot be saved", async () => {
+  const state = await (await request("/api/studio")).json();
+  state.library.books[0].chapters[1].thumbnail = "/uploads/00000000-0000-0000-0000-000000000000.png";
+  const res = await request("/api/studio", "PUT", { library: state.library, version: state.version });
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).error, "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요.");
+});
 test("configured administrator password protects reads/writes and session logout", async () => {
   const s = await startServer(4275, "test-only-password");
   try {

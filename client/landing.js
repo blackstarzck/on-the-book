@@ -1,4 +1,5 @@
 import { esc, icon, icons } from "../shared/ui.js";
+import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
 import openBookClay from "./assets/quick-menu/open-book-clay.png";
 import fantasySparklesClay from "./assets/quick-menu/fantasy-sparkles-clay.png";
 import adventureMapClay from "./assets/quick-menu/adventure-map-clay.png";
@@ -16,35 +17,53 @@ const quickIcons = {
   help: helpClay,
 };
 
+// Categories are typed in the studio, so names such as "constructor" must not reach Object.prototype.
+const iconFor = (name) => (Object.hasOwn(quickIcons, name) ? quickIcons[name] : openBookClay);
+
 function clayIcon(name) {
-  return `<img src="${quickIcons[name] || openBookClay}" alt="" aria-hidden="true" decoding="async">`;
+  return `<img src="${iconFor(name)}" alt="" aria-hidden="true" decoding="async">`;
 }
 
 export function edition(book) {
-  return { category: ({ alice: "판타지", oz: "모험" })[book.id] || "문학" };
+  return { category: bookCategory(book) };
 }
 
-// Image slots are deliberately empty, including when a cover exists in the library.
-export function bookCover() {
-  return '<span class="catalog-cover image-placeholder" role="img" aria-label="표지 이미지 준비 중"></span>';
+// Books without an uploaded cover keep the empty slot.
+export function bookCover(book) {
+  if (!book?.cover) return '<span class="catalog-cover image-placeholder" role="img" aria-label="표지 이미지 준비 중"></span>';
+  return `<span class="catalog-cover image-placeholder"><img src="${esc(book.cover)}" alt="" loading="lazy" decoding="async" draggable="false"></span>`;
 }
 
 function bookCard(book) {
   return `<article class="catalog-card"><button class="book-entry" data-enter="${esc(book.id)}" aria-label="${esc(book.title)} — 3D 공간에서 읽기">
-    <span class="cover-stage">${bookCover()}</span>
+    <span class="cover-stage">${bookCover(book)}</span>
     <strong class="book-title">${esc(book.title)}</strong>
     <span class="book-author">${esc(book.author)}</span>
     </button></article>`;
 }
 
-function feature(book, index) {
-  const artwork = quickIcons[edition(book).category] || openBookClay;
+function feature(slide, index) {
+  const { book } = slide;
   const active = index === 0;
-  return `<button class="feature-card feature-card-${index % 2}${active ? " is-active" : ""}" data-feature-book="${esc(book.id)}" data-feature-index="${index}" aria-label="${esc(book.title)} 추천 작품 시작" aria-hidden="${String(!active)}" tabindex="${active ? 0 : -1}">
-    <span class="feature-copy"><span class="feature-kicker">${index ? "한 걸음, 새로운 모험" : "오늘의 이야기"}</span><strong>${esc(book.title)}</strong><span class="feature-description">${esc(book.description)}</span><span class="feature-action">이야기 속으로 ${icon("arrow-right")}</span></span>
-    <span class="feature-art" aria-hidden="true"><span class="feature-art-card"></span><span class="feature-art-ring"></span><img src="${artwork}" alt="" decoding="async" draggable="false"></span>
+  const title = slide.title || book.title;
+  // Slides are stacked in one place, so lazy loading would fetch every photo at once;
+  // later photos keep data-src until their slide comes up (see loadPhoto).
+  const photo = slide.image ? `<img class="feature-photo" ${active ? "src" : "data-src"}="${esc(slide.image)}" data-focus="${esc(slide.focus || "center")}" alt="" decoding="async" draggable="false">` : "";
+  const art = slide.image ? "" : `<span class="feature-art" aria-hidden="true"><span class="feature-art-card"></span><span class="feature-art-ring"></span><img src="${iconFor(edition(book).category)}" alt="" decoding="async" draggable="false"></span>`;
+  return `<button class="feature-card feature-card-${index % 2}${slide.image ? " feature-card--photo" : ""}${active ? " is-active" : ""}" data-feature-book="${esc(book.id)}" data-feature-index="${index}" aria-label="${esc(title)} 추천 작품 시작" aria-hidden="${String(!active)}" tabindex="${active ? 0 : -1}">
+    ${photo}<span class="feature-copy"><span class="feature-kicker">${esc(heroKicker(slide, index))}</span><strong>${esc(title)}</strong><span class="feature-description">${esc(slide.description || book.description)}</span><span class="feature-action">이야기 속으로 ${icon("arrow-right")}</span></span>
+    ${art}
     <span class="feature-number">ON THE BOOK · ${String(index + 1).padStart(2, "0")}</span>
   </button>`;
+}
+
+function featured(slides) {
+  const heading = (text) => `<h1 class="reader-sr-only" id="library-title" tabindex="-1">${text}</h1>`;
+  if (!slides.length) return heading("책장");
+  const controls = slides.length > 1
+    ? `<button class="feature-arrow feature-prev" data-feature-direction="-1" aria-label="이전 추천 작품">${icon("arrow-left")}</button><button class="feature-arrow feature-next" data-feature-direction="1" aria-label="다음 추천 작품">${icon("arrow-right")}</button><div class="feature-controls"><button data-feature-autoplay aria-label="히어로 자동 재생 중지"><span aria-hidden="true">Ⅱ</span></button><span class="feature-progress" role="status" aria-live="polite"><b>1</b> / ${slides.length}</span><span class="feature-swipe-hint">SWIPE</span></div>`
+    : "";
+  return `<section class="featured-section discovery-content" aria-label="추천 작품">${heading("추천 작품")}<div class="feature-carousel" data-feature-carousel><div class="feature-grid" role="region" aria-roledescription="carousel" aria-label="추천 작품 슬라이드" tabindex="0">${slides.map(feature).join("")}</div>${controls}</div></section>`;
 }
 
 export function announcementBanner() {
@@ -56,12 +75,12 @@ export function landing(library, progress, state) {
   const scenes = library.books.flatMap(b => b.chapters.map((c, i) => ({ book: b, chapter: c, index: i })));
   return `<main class="library-page" id="main-content">
     <div class="store-content">
-      <section class="featured-section discovery-content" aria-label="추천 작품"><h1 class="reader-sr-only" id="library-title" tabindex="-1">추천 작품</h1><div class="feature-carousel" data-feature-carousel><div class="feature-grid" role="region" aria-roledescription="carousel" aria-label="추천 작품 슬라이드" tabindex="0">${library.books.slice(0, 2).map(feature).join("")}</div><button class="feature-arrow feature-prev" data-feature-direction="-1" aria-label="이전 추천 작품">${icon("arrow-left")}</button><button class="feature-arrow feature-next" data-feature-direction="1" aria-label="다음 추천 작품">${icon("arrow-right")}</button><div class="feature-controls"><button data-feature-autoplay aria-label="히어로 자동 재생 중지"><span aria-hidden="true">Ⅱ</span></button><span class="feature-progress" role="status" aria-live="polite"><b>1</b> / ${Math.min(library.books.length, 2)}</span><span class="feature-swipe-hint">SWIPE</span></div></div></section>
-      <div class="quick-menu discovery-content" role="group" aria-label="빠른 탐색"><button data-quick-view="all" aria-label="전체 작품 둘러보기"><span>${clayIcon("all")}</span>전체 작품</button>${categories.map(c => `<button data-quick-category="${c}" aria-label="${c} 도서 보기"><span>${clayIcon(c)}</span>${c}</button>`).join("")}<button data-quick-view="reading" aria-label="읽던 작품 이어 보기"><span>${clayIcon("reading")}</span>읽던 이야기</button><button data-scenes><span>${clayIcon("scenes")}</span>장면 둘러보기</button><button data-help><span>${clayIcon("help")}</span>이용 가이드</button></div>
+      ${featured(heroSlides(library.books, library.home))}
+      <div class="quick-menu discovery-content" role="group" aria-label="빠른 탐색"><button data-quick-view="all" aria-label="전체 작품 둘러보기"><span>${clayIcon("all")}</span>전체 작품</button>${categories.map(c => `<button data-quick-category="${esc(c)}" aria-label="${esc(c)} 도서 보기"><span>${clayIcon(c)}</span>${esc(c)}</button>`).join("")}<button data-quick-view="reading" aria-label="읽던 작품 이어 보기"><span>${clayIcon("reading")}</span>읽던 이야기</button><button data-scenes><span>${clayIcon("scenes")}</span>장면 둘러보기</button><button data-help><span>${clayIcon("help")}</span>이용 가이드</button></div>
       <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기 <span>${library.books.length}</span></h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label></div>
-        <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="도서 분류"><button data-category="all" aria-pressed="true">전체</button>${categories.map(c => `<button data-category="${c}" aria-pressed="false">${c}</button>`).join("")}</div><p role="status" aria-live="polite" id="catalog-status"></p></div><div id="book-grid" class="catalog-grid catalog-grid--many"></div>
+        <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="도서 분류"><button data-category="all" aria-pressed="true">전체</button>${categories.map(c => `<button data-category="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}</div><p role="status" aria-live="polite" id="catalog-status"></p></div><div id="book-grid" class="catalog-grid catalog-grid--many"></div>
       </section>
-      <section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면으로 바로 들어가 보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div><div class="scene-rail" tabindex="0" role="region" aria-label="책 속 장면 목록">${scenes.map(({ book, chapter, index }) => `<button class="scene-card" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${esc(chapter.title)} 장면 열기"><span class="scene-image image-placeholder" aria-hidden="true"><span class="scene-number">${String(index + 1).padStart(2, "0")}</span><span class="scene-arrow">${icon("arrow-up-right")}</span></span><span class="scene-book">${esc(book.title)}</span><strong>${esc(chapter.title)}</strong><span class="scene-subtitle">${esc(chapter.subtitle)}</span></button>`).join("")}</div></section>
+      <section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면으로 바로 들어가 보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div><div class="scene-rail" tabindex="0" role="region" aria-label="책 속 장면 목록">${scenes.map(({ book, chapter, index }) => `<button class="scene-card" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${esc(chapter.title)} 장면 열기"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<span class="scene-number">${String(index + 1).padStart(2, "0")}</span><span class="scene-arrow">${icon("arrow-up-right")}</span></span><span class="scene-book">${esc(book.title)}</span><strong>${esc(chapter.title)}</strong><span class="scene-subtitle">${esc(chapter.subtitle)}</span></button>`).join("")}</div></section>
       <section class="experience-banner discovery-content" aria-labelledby="experience-title"><div><span class="section-eyebrow">A DIFFERENT WAY TO READ</span><h2 id="experience-title">읽는 즐거움에, 걷는 설렘을 더하다.</h2><p>책을 고르고, 장면을 걷고, 이야기 곁에 잠시 머물러 보세요.</p><button id="trailer-button">온더북 미리보기 ${icon("arrow-up-right")}</button></div><div class="experience-steps"><span><b>01</b> 책을 고르고</span><span><b>02</b> 장면을 걷고</span><span><b>03</b> 이야기를 만나요</span></div></section>
     </div>
   </main>`;
@@ -74,35 +93,45 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
   const search = document.querySelector("#book-search");
   const sort = page.querySelector("#book-sort");
   const rail = page.querySelector(".scene-rail");
+  // The hero is absent when no published book is left (possible in the studio's draft preview).
   const hero = page.querySelector("[data-feature-carousel]");
-  const heroTrack = hero.querySelector(".feature-grid");
-  const heroSlides = [...hero.querySelectorAll(".feature-card")];
-  const heroProgress = hero.querySelector(".feature-progress b");
+  const heroTrack = hero?.querySelector(".feature-grid");
+  const heroCards = hero ? [...hero.querySelectorAll(".feature-card")] : [];
+  const heroProgress = hero?.querySelector(".feature-progress b");
   let heroIndex = 0;
   let heroTimer;
-  let heroPaused = matchMedia("(prefers-reduced-motion: reduce)").matches || heroSlides.length < 2;
+  let heroPaused = matchMedia("(prefers-reduced-motion: reduce)").matches || heroCards.length < 2;
   let pointerStart;
   let suppressHeroClickUntil = 0;
   sort.value = state.sort;
   const motion = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
+  const loadPhoto = card => {
+    const photo = card?.querySelector(".feature-photo[data-src]");
+    if (!photo) return;
+    photo.src = photo.dataset.src;
+    photo.removeAttribute("data-src");
+  };
   const renderHero = () => {
-    heroSlides.forEach((slide, index) => {
+    heroCards.forEach((slide, index) => {
       const active = index === heroIndex;
       slide.classList.toggle("is-active", active);
       slide.setAttribute("aria-hidden", String(!active));
       slide.tabIndex = active ? 0 : -1;
       slide.inert = !active;
     });
-    heroProgress.textContent = String(heroIndex + 1);
+    // Fetch the shown photo and the next one, so autoplay rarely waits for a download.
+    loadPhoto(heroCards[heroIndex]);
+    loadPhoto(heroCards[(heroIndex + 1) % heroCards.length]);
+    if (heroProgress) heroProgress.textContent = String(heroIndex + 1);
   };
   const startHeroTimer = () => {
     clearInterval(heroTimer);
-    if (!heroPaused) heroTimer = setInterval(() => { heroIndex = (heroIndex + 1) % heroSlides.length; renderHero(); }, 5200);
+    if (!heroPaused) heroTimer = setInterval(() => { heroIndex = (heroIndex + 1) % heroCards.length; renderHero(); }, 5200);
   };
   const showHero = direction => {
-    if (heroSlides.length < 2) return;
-    if (heroSlides[heroIndex].contains(document.activeElement)) heroTrack.focus({ preventScroll: true });
-    heroIndex = (heroIndex + direction + heroSlides.length) % heroSlides.length;
+    if (heroCards.length < 2) return;
+    if (heroCards[heroIndex].contains(document.activeElement)) heroTrack.focus({ preventScroll: true });
+    heroIndex = (heroIndex + direction + heroCards.length) % heroCards.length;
     renderHero();
     startHeroTimer();
   };
@@ -160,12 +189,12 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
   search.addEventListener("input", () => { state.query = search.value; update(); }, options);
   sort.addEventListener("change", () => { state.sort = sort.value; update(); }, options);
   rail.addEventListener("scroll", updateRail, { ...options, passive: true });
-  heroTrack.addEventListener("pointerdown", event => {
+  heroTrack?.addEventListener("pointerdown", event => {
     if (event.button !== 0) return;
     pointerStart = { x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, id: event.pointerId };
     try { heroTrack.setPointerCapture?.(event.pointerId); } catch {}
   }, options);
-  heroTrack.addEventListener("pointermove", event => {
+  heroTrack?.addEventListener("pointermove", event => {
     if (!pointerStart || pointerStart.id !== event.pointerId) return;
     const x = event.clientX - pointerStart.x;
     const y = event.clientY - pointerStart.y;
@@ -173,22 +202,22 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
     pointerStart.lastY = event.clientY;
     if (Math.abs(x) <= Math.abs(y) || Math.abs(x) < 5) return;
   }, options);
-  heroTrack.addEventListener("pointerup", event => {
+  heroTrack?.addEventListener("pointerup", event => {
     if (!pointerStart || pointerStart.id !== event.pointerId) return;
     finishSwipe(event.clientX, event.clientY);
   }, options);
-  heroTrack.addEventListener("pointercancel", () => {
+  heroTrack?.addEventListener("pointercancel", () => {
     if (!pointerStart) return;
     finishSwipe(pointerStart.lastX, pointerStart.lastY);
   }, options);
-  heroTrack.addEventListener("dragstart", event => event.preventDefault(), { ...options, capture: true });
-  heroTrack.addEventListener("click", event => {
+  heroTrack?.addEventListener("dragstart", event => event.preventDefault(), { ...options, capture: true });
+  heroTrack?.addEventListener("click", event => {
     if (performance.now() > suppressHeroClickUntil) return;
     event.preventDefault();
     event.stopPropagation();
     suppressHeroClickUntil = 0;
   }, { ...options, capture: true });
-  hero.addEventListener("keydown", event => {
+  hero?.addEventListener("keydown", event => {
     if (!['ArrowLeft', 'ArrowRight'].includes(event.key) || event.target.closest('.feature-controls')) return;
     event.preventDefault();
     showHero(event.key === 'ArrowRight' ? 1 : -1);
