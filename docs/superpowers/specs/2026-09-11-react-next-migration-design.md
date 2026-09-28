@@ -213,7 +213,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 ## 10. 사용자 앱 (apps/client) 과 @otb/reader
 
-- `ReaderApp` 컴포넌트가 URL 쿼리를 읽어 시작한다. `preview=draft` 면 `/api/studio`, 아니면 `/api/library`. 책이 없으면 "새로운 이야기를 준비하고 있어요." 화면. 화면 상태는 넷이다: `/`(책장 홈), `?book=<id>`(작품 상세), `?book=<id>&scene=<chapterId>`(장면 상세), `?book=<id>&chapter=<chapterId>`(3D 월드). 상세 페이지의 구성·CTA·주소 해석·잘못된 id 처리는 2026-09-28 에 바닐라 client 에 추가한 `2026-09-28-detail-pages-design.md` 를 따르며, App Router 경로(`/books/[id]`)로 바꿀지는 6단계 계획에서 정한다.
+- `ReaderApp` 컴포넌트가 URL 쿼리를 읽어 시작한다. `preview=draft` 면 `/api/studio`, 아니면 `/api/library`. 책이 없으면 "새로운 이야기를 준비하고 있어요." 화면. 화면 상태는 셋이다: `/`(책장 홈), `?book=<id>`(작품 상세. `&scene=<chapterId>` 는 오른쪽 장면 패널의 선택이며 히스토리 항목을 만들지 않는다), `?book=<id>&chapter=<chapterId>`(3D 월드). 상세 페이지의 구성·CTA·주소 해석·잘못된 id 처리는 2026-09-28 에 바닐라 client 에 추가한 `2026-09-28-detail-pages-design.md` 를 따르며, App Router 경로(`/books/[id]`)로 바꿀지는 6단계 계획에서 정한다.
 - 책장 홈(2026-09-23 교체, 동작 기준은 `client/landing.js` 와 `tests/catalog.mjs`): 띠 배너, 추천 슬라이드(`heroSlides` — 사진 슬라이드는 카드 전체 사진·어두운 그라데이션·흰 글자, 사진이 없으면 분류 아이콘, 보여 줄 슬라이드가 없으면 앞 두 권, 1개면 화살표·재생 버튼 없음, 뒤 슬라이드 사진은 차례가 올 때 로드, 누르면 연결된 책의 작품 상세), 빠른 메뉴, 검색·분류·정렬 책장(표지 이미지), 장면 목록(장면 썸네일), 체험 배너와 트레일러. 초안 미리보기의 홈은 공개 대상 책만 보여 준다.
 - 탐험: 상단 라인, 터치 패드(4방향), 이전·다음 챕터, 지도 버튼, 이동 힌트, 글 패널(제목·구분선·본문·페이지 버튼, 순차 등장 애니메이션). `history.replaceState` 로 쿼리 동기화, 진행 기록 저장.
 - 모달: 도움말, 챕터 본문 읽기, 작품 소개, 트레일러, 이야기의 지도.

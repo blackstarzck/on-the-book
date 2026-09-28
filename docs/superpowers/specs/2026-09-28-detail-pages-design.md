@@ -95,7 +95,7 @@ main.detail-page.store-content#main-content[data-view="book"]
     section.detail-hero           표지·분류·제목·저자·소개
     section.detail-section#detail-journey   이 책의 여정(장면 목록)
     section.detail-source         원작 정보
-  aside.scene-panel[aria-labelledby="scene-panel-title"]   오른쪽 열. sticky
+  aside.scene-panel[aria-labelledby="panel-scene-title"]   오른쪽 열. sticky
     (7절의 패널 내용)
   div.detail-cta                  850px 이하에서만 보이는 하단 고정 바
   p.reader-sr-only[role="status"]#scene-status   장면 선택 안내
@@ -132,10 +132,10 @@ main.detail-page.store-content#main-content[data-view="book"]
 
 순서와 내용
 1. 이미지 `.scene-image.image-placeholder[data-theme]`: 패널 폭 전체, **항상 16:10**(`aspect-ratio: 16 / 10`), 모서리 10px, 배경은 테마 칩 색, 왼쪽 아래 `.scene-number` "02". 썸네일(`chapter.thumbnail`)이 있으면 `.has-image` 를 더하고 `<img>`(`alt=""`, `object-fit: cover`)가 자리를 채우며 번호는 밝은 알약 모양으로 위에 남는다. 이름표는 썸네일이 있으면 `aria-label="{장면 제목} 장면 이미지"`, 없으면 `"장면 이미지 준비 중"`. 패널이 좁아(340~400px) 16:10 이미지가 그대로 들어가므로 예전의 가로 띠와 잘림 문제가 없다.
-2. `.eyebrow` "`장면 02 / 06`", `h2#scene-panel-title` 장면 제목, `p.detail-meta` 부제(비어 있으면 생략). 저장된 장면이면 제목 아래에 배지 "마지막에 머문 장면".
+2. `.eyebrow` "`장면 02 / 06`", `h2#panel-scene-title` 장면 제목, `p.detail-meta` 부제(비어 있으면 생략). 저장된 장면이면 제목 아래에 배지 "마지막에 머문 장면".
 3. CTA: `<button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 ↗</button>`, 패널 폭 전체. 저장된 장면과 같아도 문구는 바꾸지 않는다. 어느 장면이든 들어가면 그 장면이 저장된 장면이 된다(기존 규칙).
-4. 이 장면에서 만나는 것들 `#detail-figures`: `h3` "이 장면에서 만나는 것들", 설명 "가까이 다가가면 움직여요.", `<ul class="figure-list">` 한 열. 배치는 대표 배치(`mainPlacementId`)가 먼저, 나머지는 원래 순서. 각 `li`: 색 칩 `.figure-chip`(모델 `color`, 없으면 `--accent`), `strong` 제목, `span.figure-story` 이야기(비어 있으면 생략), 대표 배치에만 배지 "장면의 중심". 배치가 없으면 이 묶음을 만들지 않는다.
-5. 미리 읽기 `#detail-preview`: `h3` "미리 읽기", `chapter.body` 를 `\n\n` 으로 나눈 첫 문단만 `.reading-text p`. 문단이 둘 이상이고 `chapter.floorEnabled !== false` 이면 `p.muted` "이어지는 글은 3D 안에서 장면의 중심 모델에 다가가면 바닥 글귀로 읽을 수 있어요.". 본문이 비어 있으면 이 묶음을 만들지 않는다. `floorText` 는 쓰지 않는다.
+4. 이 장면에서 만나는 것들 `#panel-figures`: `h3` "이 장면에서 만나는 것들", 설명 "가까이 다가가면 움직여요.", `<ul class="figure-list">` 한 열. 배치는 대표 배치(`mainPlacementId`)가 먼저, 나머지는 원래 순서. 각 `li`: 색 칩 `.figure-chip`(모델 `color`, 없으면 `--accent`), `strong` 제목, `span.figure-story` 이야기(비어 있으면 생략), 대표 배치에만 배지 "장면의 중심". 배치가 없으면 이 묶음을 만들지 않는다.
+5. 미리 읽기 `#panel-preview`: `h3` "미리 읽기", `chapter.body` 를 `\n\n` 으로 나눈 첫 문단만 `.reading-text p`. 문단이 둘 이상이고 `chapter.floorEnabled !== false` 이면 `p.muted` "이어지는 글은 3D 안에서 장면의 중심 모델에 다가가면 바닥 글귀로 읽을 수 있어요.". 본문이 비어 있으면 이 묶음을 만들지 않는다. `floorText` 는 쓰지 않는다.
 6. 이어지는 장면 `nav.neighbor-nav[aria-label="이어지는 장면"]`: 왼쪽 "← 01 흰 토끼를 따라서", 오른쪽 "03 버섯 숲의 수수께끼 →". 링크는 `a.neighbor-link[href={detailUrl scene}][data-scene]` 이고 여정 행과 같은 규칙으로 선택을 바꾼다. 첫 장면은 이전을, 마지막 장면은 다음을 만들지 않는다. "작품 전체 보기"와 브레드크럼은 없다. 작품이 바로 왼쪽에 있기 때문이다.
 
 패널의 제목 위계: 페이지의 `h1` 은 책 제목 하나이고 패널 제목은 `h2`, 패널 안 묶음은 `h3` 이다. 여정과 원작 정보의 `h2` 와 나란하다.
@@ -220,7 +220,7 @@ admin/
 
 - 전환 후 초점은 `h1#detail-title`. 장면 선택 뒤 초점은 누른 요소에 남고 `#scene-status`(`role="status"`, 시각적으로 숨김)가 선택을 알린다.
 - 선택된 여정 행은 `aria-current="true"`. 여정 목록은 `ol`, 행 글자는 한 링크라 스크린 리더가 한 덩어리로 읽는다. 칩과 아이콘은 `aria-hidden`.
-- 패널은 `aside[aria-labelledby="scene-panel-title"]`, 이어지는 장면은 `nav[aria-label]`. 이미지 자리는 `role="img"` 와 `aria-label`.
+- 패널은 `aside[aria-labelledby="panel-scene-title"]`, 이어지는 장면은 `nav[aria-label]`. 이미지 자리는 `role="img"` 와 `aria-label`.
 - 장면 시트는 `dialog.showModal()` 이라 초점이 안에 갇히고 Esc 로 닫힌다. 닫으면 초점이 누른 행으로 돌아간다.
 - 하단 바는 `env(safe-area-inset-bottom)` 을 더하고, 페이지 끝에 바 높이만큼 여백을 두어 원작 정보가 가려지지 않게 한다.
 - 새 애니메이션은 없다. 등장 순서는 `transitions.js` 가 `prefers-reduced-motion` 을 처리한다. 시트가 올라오는 움직임도 `prefers-reduced-motion: reduce` 에서는 즉시 나타난다.
@@ -233,21 +233,21 @@ admin/
 
 - `detailUrl`(기존 검사 유지).
 - `bookDetail`: 저장 없음이면 여정 1행이 `aria-current="true"` 이고 패널 제목이 1장면, CTA `data-enter-chapter="alice-1"`. 저장(`alice-2`)이면 2행이 선택·배지, 패널이 2장면, 패널 제목 아래 배지. `chapter` 인자로 3장면을 넘기면 3행 선택·패널 3장면(주소로 연 경우). 히어로에 버튼이 없다(`data-enter` 는 패널과 하단 바에만, 합계 2개). 여정 행 `href` 가 `detailUrl` 과 같다. 표지가 있으면 `.detail-cover img` 하나, 없으면 "표지 이미지 준비 중". 제목에 `<` 가 든 가짜 책으로 이스케이프 확인.
-- `scenePanel`: 16:10 이미지 자리와 번호, 썸네일이 있으면 `has-image`·`<img>`·`aria-label="{제목} 장면 이미지"`(`"`·`<` 가 든 제목의 이스케이프 포함), 없으면 "장면 이미지 준비 중". `h2#scene-panel-title`. CTA 하나. 대표 배치가 먼저이고 "장면의 중심" 배지가 하나, 배치 없으면 묶음 없음. 첫 문단만, `floorEnabled: false` 면 안내 없음, 본문 없으면 묶음 없음. 첫 장면은 이전이, 마지막 장면은 다음이 없다. 저장된 장면이면 배지. 없는 챕터는 예외.
+- `scenePanel`: 16:10 이미지 자리와 번호, 썸네일이 있으면 `has-image`·`<img>`·`aria-label="{제목} 장면 이미지"`(`"`·`<` 가 든 제목의 이스케이프 포함), 없으면 "장면 이미지 준비 중". `h2#panel-scene-title`. CTA 하나. 대표 배치가 먼저이고 "장면의 중심" 배지가 하나, 배치 없으면 묶음 없음. 첫 문단만, `floorEnabled: false` 면 안내 없음, 본문 없으면 묶음 없음. 첫 장면은 이전이, 마지막 장면은 다음이 없다. 저장된 장면이면 배지. 없는 챕터는 예외.
 - `sceneBar`: `02 · 작아지는 문, 커지는 세계` 와 `data-enter-chapter="alice-2"`.
 - 모든 링크가 `preview: true` 에서 `&preview=draft` 를 유지한다.
 
 ### 14.2 브라우저 검사 `tests/catalog.mjs`(4336 포트)
 
-1. 검색·분류·정렬 단계(기존) 뒤: `[data-book="alice"]` 클릭 → `.detail-page[data-view="book"]`, `#detail-title` "이상한 나라의 앨리스", 초점 `#detail-title`, 주소 `?book=alice`, `.journey-row` 6개 중 `[aria-current="true"]` 가 `alice-1`, `.scene-panel #scene-panel-title` "흰 토끼를 따라서", 상세 안 `img` 0개(시드). 여정 2행 클릭 → 커튼 없음(`.reader-curtain` 0), 주소 `?book=alice&scene=alice-2`, `history.length` 변화 없음(클릭 전후 `page.evaluate(() => history.length)` 비교), 패널 제목 "작아지는 문, 커지는 세계", `aria-current` 가 2행으로, `#scene-status` 에 "02". 패널 "03 …" 다음 링크 클릭 → 3장면, 주소 `scene=alice-3`. 여정 1행 클릭 → 1장면, 주소 `scene=alice-1`. 패널 CTA 클릭 → `#world canvas`, 주소 `book=alice&chapter=alice-1`. 이어서 기존 "작품 소개" 모달 검사와 3D 안 이동·다음 챕터(02) 검사가 그대로 이어진다.
+1. 검색·분류·정렬 단계(기존) 뒤: `[data-book="alice"]` 클릭 → `.detail-page[data-view="book"]`, `#detail-title` "이상한 나라의 앨리스", 초점 `#detail-title`, 주소 `?book=alice`, `.journey-row` 6개 중 `[aria-current="true"]` 가 `alice-1`, `.scene-panel #panel-scene-title` "흰 토끼를 따라서", 상세 안 `img` 0개(시드). 여정 2행 클릭 → 커튼 없음(`.reader-curtain` 0), 주소 `?book=alice&scene=alice-2`, `history.length` 변화 없음(클릭 전후 `page.evaluate(() => history.length)` 비교), 패널 제목 "작아지는 문, 커지는 세계", `aria-current` 가 2행으로, `#scene-status` 에 "02". 패널 "03 …" 다음 링크 클릭 → 3장면, 주소 `scene=alice-3`. 여정 1행 클릭 → 1장면, 주소 `scene=alice-1`. 패널 CTA 클릭 → `#world canvas`, 주소 `book=alice&chapter=alice-1`. 이어서 기존 "작품 소개" 모달 검사와 3D 안 이동·다음 챕터(02) 검사가 그대로 이어진다.
 2. 3D 안 이동·챕터 이동(기존). "책장으로" → `.catalog-card` 2개(기존).
 3. "읽던 작품 이어 보기" → `[data-book="alice"]` 클릭 → 저장된 2장면 행이 선택·배지, 패널 제목 "작아지는 문, 커지는 세계"와 배지 "마지막에 머문 장면", 주소는 `?book=alice`(기본 선택이라 `scene` 없음). CTA 클릭 → `#map-button` 에 "02". `reload` 뒤에도 "02".
 4. `goBack()` → 작품 상세(선택 유지, 주소에 `scene`), 한 번 더 → `.library-page`, `goForward()` 두 번 → 월드.
-5. 홈에서 `[data-scene-chapter="alice-3"]` 클릭 → `.detail-page[data-view="book"]`, 주소 `?book=alice&scene=alice-3`, 3행 선택, 패널 제목 "버섯 숲의 수수께끼", `#detail-preview .reading-text p` 한 문단, `.figure-list li` 3개, 첫 항목 "장면의 중심", 이전 "02", 다음 "04". CTA → 월드 `chapter=alice-3`.
+5. 홈에서 `[data-scene-chapter="alice-3"]` 클릭 → `.detail-page[data-view="book"]`, 주소 `?book=alice&scene=alice-3`, 3행 선택, 패널 제목 "버섯 숲의 수수께끼", `#panel-preview .reading-text p` 한 문단, `.figure-list li` 3개, 첫 항목 "장면의 중심", 이전 "02", 다음 "04". CTA → 월드 `chapter=alice-3`.
 6. 홈에서 `.feature-card.is-active`(앨리스) 클릭 → 작품 상세. "책장으로" → `.feature-card.is-active` 에 초점, 5.6초 뒤에도 유지(기존).
 7. 주소 직접 열기(기존 7단계에 더해): `?book=alice&scene=alice-2` 는 2행 선택과 패널 2장면, 문서 제목은 책 제목. 나머지(`?book=nope`, `?scene=alice-2`, `?book=alice&chapter=nope`, `?book=alice&scene=nope&preview=draft`, 초안 미리보기의 빈 책장)는 기존 단정 유지.
 8. 홈 화면 관리 묶음("Studio covers…" 단계, 가로챈 응답): `[data-book="alice"]` → `.detail-cover img` 1개; 썸네일이 있는 장면 카드 → 패널 `.scene-panel .scene-image.has-image img` 1개, 그 자리의 폭/높이 비 1.6(±0.02).
-9. 휴대폰 반복(320·390·768): 카드 탭 → 상세, `aside.scene-panel` 은 보이지 않고 `.detail-cta` 가 화면 아래에 있으며 폭 전체(`left 0`, `right = innerWidth`). 여정 2행 탭 → `dialog.scene-sheet[open]` 안에 `#scene-panel-title` "작아지는 문, 커지는 세계", 하단 바 문구 "02 ·". 시트 안 CTA 탭 → `#world canvas`, 주소 `chapter=alice-2`. 768px 도 한 열이므로 같은 흐름이다.
+9. 휴대폰 반복(320·390·768): 카드 탭 → 상세, `aside.scene-panel` 은 보이지 않고 `.detail-cta` 가 화면 아래에 있으며 폭 전체(`left 0`, `right = innerWidth`). 여정 2행 탭 → `dialog.scene-sheet[open]` 안에 `#panel-scene-title` "작아지는 문, 커지는 세계", 하단 바 문구 "02 ·". 시트 안 CTA 탭 → `#world canvas`, 주소 `chapter=alice-2`. 768px 도 한 열이므로 같은 흐름이다.
 
 ### 14.3 `tests/mobile-entry.mjs`(4321 포트)
 
@@ -255,7 +255,7 @@ admin/
 
 ### 14.4 `tests/home-admin.mjs`, `tests/capture.mjs`
 
-`home-admin.mjs` 는 홈 카드 선택자(`[data-book]`)만 쓰므로 그대로 통과해야 한다. `capture.mjs` 는 `[data-book="alice"]` 클릭 뒤 `.detail-page` 를 `docs/preview/detail.png` 로 찍고(마우스는 `(0, 0)` 으로 옮긴 뒤), 패널 CTA `.scene-panel .primary-button` 을 눌러 `explore.png` 를 찍는다.
+`home-admin.mjs` 는 홈 카드 선택자(`[data-book]`)만 쓰므로 그대로 통과해야 한다. `capture.mjs` 는 `[data-book="alice"]` 클릭 뒤 `.detail-page` 를 `docs/preview/detail.png` 로 찍고(마우스는 `(0, 0)` 으로 옮긴 뒤), 패널 CTA `.scene-panel .detail-enter` 을 눌러 `explore.png` 를 찍는다.
 
 ### 14.5 회귀
 
