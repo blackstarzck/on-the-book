@@ -12,6 +12,7 @@
 
 **계획 작성 중 확인해 둔 사실:**
 - 워크트리에는 `node_modules` 가 없었다. `npm ci` 로 설치한다(16초, 134개 패키지).
+- 계획 기준 커밋은 `f9071e7`(2026-09-28 origin/main 과 같음)이다. 실행 전에 main 이 움직였으면 앱의 `sync_with_base_branch` 로 들여온 뒤 "찾을 코드"가 그대로인지 다시 확인한다. 같은 날 다른 세션의 `claude/supabase-storage`(미커밋)가 정적 GLB 허용으로 `admin/workspace.js` 의 `eligible`·모델 타일과 `admin/main.js` 의 `editModel` 을 바꿨고, PR #3(상세 페이지)은 README·ADMIN-GUIDE·전환 스펙·`tests/home-admin.mjs` 를 바꾼다.
 - 작업 트리의 기존 파일은 CRLF 줄 끝이다(git `autocrlf`). 이 계획의 "찾을 코드"는 줄 끝을 LF 로 맞춰 비교하면 모두 파일에 한 번씩만 나온다(2026-09-28 확인). 편집 도구로 바꾸고, `sed` 같은 줄 단위 도구로 여러 줄을 바꾸지 않는다.
 - 브라우저 검사는 `startServer()` 가 `server/index.js --production` 으로 띄운 완성본(`dist`)을 쓴다. 코드를 바꾼 뒤에는 `npm run build` 를 먼저 한다.
 - `admin/index.html` 의 스크립트를 `/admin/main.js` 로 바꿔도 `npx vite build` 결과는 `<script type="module" crossorigin src="/assets/admin-….js">` 로 같다. 임시로 서버에 6.6절 미들웨어를 넣어 보니 개발·완성본 모두 `/admin/`, `/admin/models`, `/admin/settings/`, `/admin/books/alice`, `/admin/books/alice/` 는 200 과 `<div id="app"></div>`, `/admin/zzz`, `/admin/books/`, `/admin/books/alice/edit` 는 404, 개발 모드 `/admin/main.js` 는 200 `text/javascript` 였다(확인 후 되돌림).
