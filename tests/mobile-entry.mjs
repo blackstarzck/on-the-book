@@ -54,19 +54,25 @@ try {
       await cdp.detach();
     }
     // The library is scrollable; bring the selected cover into view before touching it.
-    await page.locator('[data-enter="alice"] .cover-stage').evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
-    await page.locator('[data-enter="alice"] .cover-stage').scrollIntoViewIfNeeded();
-    await tapVisible('[data-enter="alice"] .cover-stage');
+    await page.locator('[data-book="alice"] .cover-stage').evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.locator('[data-book="alice"] .cover-stage').scrollIntoViewIfNeeded();
+    await tapVisible('[data-book="alice"] .cover-stage');
+    await expect(page.locator('.reader-curtain')).toHaveCount(0);
+    await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    // The pinned CTA must be tappable without scrolling, like the chapter controls below.
+    await tapVisible('.detail-cta .primary-button');
     await expect(page.locator('.reader-curtain')).toHaveCount(0);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.locator('.library-page')).toHaveCount(0);
+    await expect(page.locator('.detail-page')).toHaveCount(0);
     await page.waitForFunction(() => document.querySelector('.journey-controls').getAnimations().length === 0);
     expect(await page.evaluate(() => scrollY)).toBe(0);
     await tapVisible('#next-chapter');
     await expect(page.locator('.reader-curtain')).toHaveCount(0);
     await expect(page.locator('#map-button')).toContainText('02');
     expect(errors).toEqual([]);
-    console.log(`PASS ${viewport.width}x${viewport.height}: book cover opens directly and chapter controls fit the viewport`);
+    console.log(`PASS ${viewport.width}x${viewport.height}: book cover opens the detail, its pinned CTA enters the world and chapter controls fit the viewport`);
     await context.close();
   }
 } finally {

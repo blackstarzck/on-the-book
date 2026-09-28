@@ -13,7 +13,7 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await context.route('**/assets/client-*.js', async route => {
     const response = await route.fetch();
-    const body = (await response.text()).replace(/([\w$]+)\.setActive\(([\w$]+)\)/, (match, name) => `${match},(window.__testWorld=${name})`);
+    const body = (await response.text()).replace(/([\w$]+)\.setActive\(([^)]*)\)/, (match, name) => `${match},(window.__testWorld=${name})`);
     await route.fulfill({ response, body });
   });
   await page.goto(`${server.url}/client/`);
@@ -84,7 +84,17 @@ try {
   await page.getByRole('button', { name: '전체 도서 보기', exact: true }).click();
   pass('Search, category, sort and empty results');
 
-  await page.locator('[data-enter="alice"]').click();
+  await page.locator('[data-book="alice"]').click();
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
+  await expect(page.locator('#detail-title')).toBeFocused();
+  await expect(page).toHaveURL(/\?book=alice$/);
+  await expect(page.locator('.journey-row')).toHaveCount(6);
+  await expect(page.locator('.detail-cta .primary-button')).toHaveText(/이야기 속으로 들어가기/);
+  await expect(page.locator('.detail-cover img, .detail-page img')).toHaveCount(0);
+  await expect(page.locator('.reader-curtain')).toHaveCount(0);
+  pass('Book cards open the book detail page');
+  await page.locator('.detail-cta .primary-button').click();
   await expect(page.locator('#world canvas')).toBeVisible();
   await expect(page.locator('dialog[open]')).toHaveCount(0);
   await expect(page).toHaveURL(/book=alice&chapter=alice-1/);
@@ -113,18 +123,30 @@ try {
   await expect(page.locator('canvas')).toHaveCount(0);
   await page.getByRole('button', { name: '읽던 작품 이어 보기', exact: true }).click();
   await expect(page.locator('.book-title')).toHaveText('이상한 나라의 앨리스');
-  await page.locator('[data-enter="alice"]').click();
+  await page.locator('[data-book="alice"]').click();
+  await expect(page.locator('.detail-cta .primary-button')).toContainText('이어 읽기');
+  await expect(page.locator('.detail-cta .primary-button')).toContainText('02');
+  await expect(page.locator('.journey-badge', { hasText: '마지막에 머문 장면' })).toHaveCount(1);
+  await expect(page.locator('.detail-restart')).toHaveText('처음부터 시작하기');
+  await page.locator('.detail-cta .primary-button').click();
   await expect(page.locator('#map-button')).toContainText('02');
   await page.reload();
   await expect(page.locator('#map-button')).toContainText('02');
   await page.goBack();
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await page.goBack();
   await expect(page.locator('.library-page')).toBeVisible();
   await page.goForward();
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await page.goForward();
   await expect(page.locator('#map-button')).toContainText('02');
-  pass('Direct 3D entry, movement, chapters, saved progress and browser history');
+  pass('Detail CTA resumes the saved chapter; history keeps the detail page between home and world');
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
   await page.getByRole('button', { name: '전체', exact: true }).click();
-  await page.locator('[data-enter="oz"]').click();
+  await page.locator('[data-book="oz"]').click();
+  await expect(page.locator('#detail-title')).toHaveText('오즈의 마법사');
+  await expect(page.locator('.journey-row')).toHaveCount(3);
+  await page.locator('.detail-cta .primary-button').click();
   await expect(page.locator('#world canvas')).toBeVisible();
   await expect(page).toHaveURL(/book=oz&chapter=oz-1/);
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
@@ -141,18 +163,42 @@ try {
   await page.keyboard.press('Home');
   await expect(page.locator('[data-rail="-1"]')).toBeDisabled();
   await page.locator('[data-scene-chapter="alice-3"]').click();
+  await expect(page.locator('.detail-page[data-view="scene"]')).toBeVisible();
+  await expect(page).toHaveURL(/book=alice&scene=alice-3$/);
+  await expect(page.locator('#detail-title')).toHaveText('버섯 숲의 수수께끼');
+  await expect(page.locator('#detail-title')).toBeFocused();
+  await expect(page.locator('.detail-crumbs a')).toHaveText('이상한 나라의 앨리스');
+  await expect(page.locator('#detail-preview .reading-text p')).toHaveCount(1);
+  await expect(page.locator('.figure-list li')).toHaveCount(3);
+  await expect(page.locator('.figure-list li').first()).toContainText('장면의 중심');
+  await expect(page.locator('.neighbor-link').first()).toContainText('02');
+  await expect(page.locator('.neighbor-link').last()).toContainText('04');
+  await expect(page.locator('.detail-page img')).toHaveCount(0);
+  await page.locator('.detail-cta .primary-button').click();
   await expect(page.locator('#map-button')).toContainText('03');
   await expect(page).toHaveURL(/book=alice&chapter=alice-3/);
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
+  await page.getByRole('button', { name: '히어로 자동 재생 중지', exact: true }).click();
+  if (await page.locator('.feature-card.is-active').getAttribute('data-feature-book') !== 'alice') {
+    await page.getByRole('button', { name: '이전 추천 작품', exact: true }).click();
+  }
+  await page.locator('.feature-card.is-active').evaluate(element => element.click());
+  await expect(page).toHaveURL(/\?book=alice$/);
+  await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
+  await page.getByRole('button', { name: '책장으로', exact: true }).click();
+  await expect(page.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
+  await expect(page.locator('.feature-card.is-active')).toBeFocused();
   await page.getByRole('button', { name: '히어로 자동 재생 중지', exact: true }).click();
   if (await page.locator('.feature-card.is-active').getAttribute('data-feature-book') !== 'oz') {
     await page.getByRole('button', { name: '다음 추천 작품', exact: true }).click();
   }
   await expect(page.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'oz');
   await page.locator('.feature-card.is-active').evaluate(element => element.click());
-  await expect(page).toHaveURL(/book=oz&chapter=oz-1/);
+  await expect(page).toHaveURL(/\?book=oz$/);
+  await expect(page.locator('#detail-title')).toHaveText('오즈의 마법사');
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
-  pass('Blank image slots, featured entry and scene carousel with direct chapter entry');
+  await expect(page.locator('.library-page')).toBeVisible();
+  pass('Blank image slots, scene cards open the scene detail and the hero opens the book detail');
 
   // More books exist only in this intercepted response, never in the saved library.
   const original = await (await fetch(`${server.url}/api/library`)).json();
@@ -185,7 +231,25 @@ try {
     expect(mobileType.title).toBeGreaterThanOrEqual(16);
     expect(mobileType.scene).toBeGreaterThanOrEqual(15);
     await mobile.screenshot({ path: `test-results/catalog/mobile-${width}.png`, fullPage: true });
-    await mobile.locator('[data-enter="oz"]').tap();
+    await mobile.locator('[data-book="oz"]').tap();
+    await expect(mobile.locator('.detail-page[data-view="book"]')).toBeVisible();
+    await expect(mobile.locator('.reader-curtain')).toHaveCount(0);
+    // The CTA must be reachable without scrolling: pinned at the bottom on phones, under the hero on tablets.
+    const cta = await mobile.locator('.detail-cta .primary-button').evaluate(element => {
+      const r = element.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
+      return { x, y, visible: r.top >= 0 && r.bottom <= innerHeight, reachable: element.contains(document.elementFromPoint(x, y)) };
+    });
+    expect(cta.visible).toBe(true);
+    expect(cta.reachable).toBe(true);
+    if (width <= 600) {
+      const bar = await mobile.locator('.detail-cta').evaluate(element => {
+        const r = element.getBoundingClientRect();
+        return { left: r.left, right: r.right, width: innerWidth };
+      });
+      expect(bar.left).toBe(0);
+      expect(bar.right).toBe(bar.width);
+    }
+    await mobile.touchscreen.tap(cta.x, cta.y);
     await expect(mobile.locator('#world canvas')).toBeVisible();
     await expect(mobile.locator('.reader-curtain')).toHaveCount(0);
     const target = await mobile.locator('#next-chapter').evaluate(element => {

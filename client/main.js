@@ -88,7 +88,7 @@ function header() {
   return `<header class="site-header${compact ? " reader-header" : ""}"><a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>${compact ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
 }
 function page() {
-  if (view === "home") return landing(library, progress, catalogState);
+  if (view === "home") return landing(library, progress, catalogState, draftPreview);
   if (view === "book") return bookDetail({ book, progress, preview: draftPreview });
   if (view === "scene") return sceneDetail({ book, chapter, library, preview: draftPreview });
   const index = book.chapters.indexOf(chapter);
@@ -141,7 +141,7 @@ function render() {
   const soundButton = document.querySelector("#sound-button");
   if (soundButton) soundButton.onclick = toggleSound;
   if (view === "home") {
-    disposeView = setupCatalog({ library, progress, state: catalogState, onEnter: enterBook, onOpen: openDetail, onTrailer: showTrailer, onHelp: help });
+    disposeView = setupCatalog({ library, progress, state: catalogState, preview: draftPreview, onOpen: openDetail, onTrailer: showTrailer, onHelp: help });
   } else if (exploring) {
     document.querySelector("#reader-book-info").onclick = () => bookDetails(book.id);
     document.querySelector("#map-button").onclick = chapterMap;
@@ -275,7 +275,8 @@ async function openLibrary() {
 }
 function restoreCatalogPosition() {
   window.scrollTo({ top: catalogState.scroll, behavior: "instant" });
-  if (catalogState.selected) document.querySelector(`[data-enter="${CSS.escape(catalogState.selected)}"]`)?.focus({ preventScroll: true });
+  // `selected` is the CSS selector of the card that opened the detail. An inert hero slide simply keeps the title focus.
+  if (catalogState.selected) document.querySelector(catalogState.selected)?.focus({ preventScroll: true });
 }
 // Work information inside the 3D world. The bookshelf reaches the same information through the book detail page.
 function bookDetails(id) {
