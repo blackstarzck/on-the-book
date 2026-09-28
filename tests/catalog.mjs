@@ -84,6 +84,8 @@ try {
   await page.getByRole('button', { name: '전체 도서 보기', exact: true }).click();
   pass('Search, category, sort and empty results');
 
+  await expect(page.locator('[data-book="alice"]')).toHaveAttribute('href', '?book=alice');
+  await expect(page.locator('[data-scene-chapter="alice-3"]')).toHaveAttribute('href', '?book=alice&scene=alice-3');
   await page.locator('[data-book="alice"]').click();
   await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
   await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
@@ -186,6 +188,10 @@ try {
   await expect(page).toHaveURL(/\?book=alice$/);
   await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
+  await expect(page.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
+  await expect(page.locator('.feature-card.is-active')).toBeFocused();
+  // Autoplay (5.2 s) must not steal the restored focus.
+  await page.waitForTimeout(5600);
   await expect(page.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
   await expect(page.locator('.feature-card.is-active')).toBeFocused();
   await page.getByRole('button', { name: '히어로 자동 재생 중지', exact: true }).click();

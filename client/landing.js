@@ -90,7 +90,12 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
   };
   const startHeroTimer = () => {
     clearInterval(heroTimer);
-    if (!heroPaused) heroTimer = setInterval(() => { heroIndex = (heroIndex + 1) % heroSlides.length; renderHero(); }, 5200);
+    // Autoplay must not advance while the carousel holds focus: renderHero() would make the focused slide inert and drop focus.
+    if (!heroPaused) heroTimer = setInterval(() => {
+      if (hero.contains(document.activeElement)) return;
+      heroIndex = (heroIndex + 1) % heroSlides.length;
+      renderHero();
+    }, 5200);
   };
   const showHero = direction => {
     if (heroSlides.length < 2) return;

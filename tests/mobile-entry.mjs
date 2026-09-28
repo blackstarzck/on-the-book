@@ -57,8 +57,8 @@ try {
     await page.locator('[data-book="alice"] .cover-stage').evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await page.locator('[data-book="alice"] .cover-stage').scrollIntoViewIfNeeded();
     await tapVisible('[data-book="alice"] .cover-stage');
-    await expect(page.locator('.reader-curtain')).toHaveCount(0);
     await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+    await expect(page.locator('.reader-curtain')).toHaveCount(0);
     expect(await page.evaluate(() => scrollY)).toBe(0);
     // The pinned CTA must be tappable without scrolling, like the chapter controls below.
     await tapVisible('.detail-cta .primary-button');

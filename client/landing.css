@@ -86,7 +86,7 @@ body { background: #fff; color: #242a27; font-size: 16px; }
 .catalog-card { position: relative; min-width: 0; }
 .book-entry { display: flex; flex-direction: column; align-items: stretch; width: 100%; padding: 0; text-align: left; border-radius: 4px; }
 a.book-entry, a.scene-card { color: inherit; text-decoration: none; }
-a.book-entry:hover, a.scene-card:hover { text-decoration: none; }
+a.book-entry:hover, a.scene-card:hover { color: #173d2a; text-decoration: none; }
 .cover-stage { display: block; position: relative; width: 100%; }
 .catalog-cover { display: block; width: 100%; aspect-ratio: 2 / 2.85; border-radius: 3px; }
 .book-entry:hover .catalog-cover { background: #e4e9e5; }
