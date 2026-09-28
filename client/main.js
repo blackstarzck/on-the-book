@@ -46,6 +46,8 @@ function record() {
 function header() {
   return `<header class="site-header${exploring ? " reader-header" : ""}"><a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>${!exploring ? `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>` : ""}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${exploring ? "text-button" : "icon-button"}" aria-label="${exploring ? "책장으로" : "책장 홈"}">${icon(exploring ? "arrow-left" : "book-open")}${exploring ? "책장으로" : ""}</button>${exploring ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
 }
+// The draft preview holds unpublished books too; its bookshelf shows what publishing would show.
+const shelf = () => draftPreview ? { ...library, books: library.books.filter((b) => b.published) } : library;
 function render() {
   disposeCatalog?.();
   disposeCatalog = undefined;
@@ -53,6 +55,7 @@ function render() {
   world = undefined;
   if (audioContext) exploring && sound ? audioContext.resume() : audioContext.suspend();
   const index = book.chapters.indexOf(chapter);
+  const shown = shelf();
   app.innerHTML = `${exploring ? "" : announcementBanner()}${header()}${
     exploring
       ? `<main class="reader is-exploring"><div class="scene-wrap" id="world"></div>
@@ -60,7 +63,7 @@ function render() {
  <div class="touch-pad" aria-label="이동 방향"><button data-dir="up" aria-label="앞으로 이동">↑</button><div><button data-dir="left" aria-label="왼쪽 이동">←</button><button data-dir="down" aria-label="뒤로 이동">↓</button><button data-dir="right" aria-label="오른쪽 이동">→</button></div></div>
  <div class="journey-controls"><button id="prev-chapter" class="icon-button" aria-label="이전 챕터" ${index === 0 ? "disabled" : ""}>${icon("arrow-left")}</button><button id="map-button" class="chapter-switch"><span><small>지금 걷고 있는 페이지</small>${String(index + 1).padStart(2, "0")} — ${esc(chapter.title)}</span></button><button id="next-chapter" class="icon-button" aria-label="다음 챕터" ${index === book.chapters.length - 1 ? "disabled" : ""}>${icon("arrow-right")}</button></div>
  <div class="move-hint">${icon("move")} 땅을 클릭 · 방향키로 이동 <span>물체 가까이 다가가 보세요</span></div></main>`
-      : landing(library, progress, catalogState)
+      : landing(shown, progress, catalogState)
   }
  <footer class="site-footer"><span>${exploring ? "문장 너머의 세계를, 천천히." : "오래된 이야기, 새로운 발견."}</span>${exploring ? `<div><span>땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상</span></div>` : ""}<span class="footer-brand">ON THE BOOK © 2026</span></footer>`;
   if (exploring) try {
@@ -97,7 +100,7 @@ function render() {
   const soundButton = document.querySelector("#sound-button");
   if (soundButton) soundButton.onclick = toggleSound;
   if (!exploring) {
-    disposeCatalog = setupCatalog({ library, progress, state: catalogState, onEnter: enterBook, onTrailer: showTrailer, onHelp: help });
+    disposeCatalog = setupCatalog({ library: shown, progress, state: catalogState, onEnter: enterBook, onTrailer: showTrailer, onHelp: help });
   } else {
     document.querySelector("#reader-book-info").onclick = () => bookDetails(book.id);
     document.querySelector("#map-button").onclick = chapterMap;
@@ -212,7 +215,7 @@ function bookDetails(id) {
   const selected = library.books.find(b => b.id === id);
   if (!selected) return;
   const saved = selected.chapters.find(c => c.id === progress[id]?.chapter);
-  const d = modal(`<div class="book-detail-heading">${bookCover(selected)}<div><span class="eyebrow">${edition(selected).category} · ${selected.chapters.length}개의 장면</span><h2 id="book-detail-title">${esc(selected.title)}</h2><p>${esc(selected.author)} · ${selected.year}</p><p>${esc(selected.englishTitle)}</p></div></div><p class="book-detail-copy">${esc(selected.description)}</p><h3>이 책에서 만날 장면</h3><ol class="book-detail-chapters">${selected.chapters.map(c => `<li>${esc(c.title)}</li>`).join("")}</ol><p class="source-note">${esc(selected.rights)}<br><a href="${esc(selected.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p><button class="primary-button book-detail-enter">${exploring ? "이야기로 돌아가기" : saved ? "마지막 장면에서 이어 읽기" : "이야기 속으로 들어가기"} ${icon("arrow-up-right")}</button>`);
+  const d = modal(`<div class="book-detail-heading">${bookCover(selected)}<div><span class="eyebrow">${esc(edition(selected).category)} · ${selected.chapters.length}개의 장면</span><h2 id="book-detail-title">${esc(selected.title)}</h2><p>${esc(selected.author)} · ${selected.year}</p><p>${esc(selected.englishTitle)}</p></div></div><p class="book-detail-copy">${esc(selected.description)}</p><h3>이 책에서 만날 장면</h3><ol class="book-detail-chapters">${selected.chapters.map(c => `<li>${esc(c.title)}</li>`).join("")}</ol><p class="source-note">${esc(selected.rights)}<br><a href="${esc(selected.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p><button class="primary-button book-detail-enter">${exploring ? "이야기로 돌아가기" : saved ? "마지막 장면에서 이어 읽기" : "이야기 속으로 들어가기"} ${icon("arrow-up-right")}</button>`);
   d.setAttribute("aria-labelledby", "book-detail-title");
   d.querySelector(".book-detail-enter").onclick = () => {
     d.close();
@@ -306,14 +309,16 @@ async function init() {
   app.setAttribute("aria-busy", "true");
   try {
     library = draftPreview ? (await api("/api/studio")).library : await api("/api/library");
-    if (!library.books.length) {
+    const params = new URLSearchParams(location.search);
+    // A draft preview may still open an unpublished book's chapter directly.
+    const opensChapter = library.books.find((b) => b.id === params.get("book"))?.chapters.some((c) => c.id === params.get("chapter"));
+    if (!library.books.length || (!shelf().books.length && !opensChapter)) {
       clearLoading();
       app.removeAttribute("aria-busy");
       app.innerHTML =
         '<div class="loading-screen"><h1>새로운 이야기를 준비하고 있어요.</h1><p>관리자가 책을 공개하면 이곳에 나타나요.</p></div>';
       return;
     }
-    const params = new URLSearchParams(location.search);
     book =
       library.books.find((b) => b.id === params.get("book")) ||
       library.books[0];
