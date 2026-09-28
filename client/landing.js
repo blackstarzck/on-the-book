@@ -1,4 +1,5 @@
 import { esc, icon, icons } from "../shared/ui.js";
+import { edition, bookCover } from "./book-meta.js";
 import openBookClay from "./assets/quick-menu/open-book-clay.png";
 import fantasySparklesClay from "./assets/quick-menu/fantasy-sparkles-clay.png";
 import adventureMapClay from "./assets/quick-menu/adventure-map-clay.png";
@@ -18,15 +19,6 @@ const quickIcons = {
 
 function clayIcon(name) {
   return `<img src="${quickIcons[name] || openBookClay}" alt="" aria-hidden="true" decoding="async">`;
-}
-
-export function edition(book) {
-  return { category: ({ alice: "판타지", oz: "모험" })[book.id] || "문학" };
-}
-
-// Image slots are deliberately empty, including when a cover exists in the library.
-export function bookCover() {
-  return '<span class="catalog-cover image-placeholder" role="img" aria-label="표지 이미지 준비 중"></span>';
 }
 
 function bookCard(book) {
