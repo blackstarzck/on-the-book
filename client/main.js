@@ -20,6 +20,8 @@ let library,
   disposeView;
 const catalogState = { query: "", category: "all", sort: "default", scroll: 0, selected: null };
 const draftPreview = new URLSearchParams(location.search).get("preview") === "draft";
+// The draft preview holds unpublished books too; its bookshelf shows what publishing would show.
+const shelf = () => draftPreview ? { ...library, books: library.books.filter((b) => b.published) } : library;
 // The studio's Vercel project serves the reader for previews but has no /about page.
 const aboutLink = !draftPreview && import.meta.env.MODE !== "admin";
 const baseTitle = document.title;
@@ -88,7 +90,7 @@ function header() {
   return `<header class="site-header${compact ? " reader-header" : ""}"><a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>${compact ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
 }
 function page() {
-  if (view === "home") return landing(library, progress, catalogState, draftPreview);
+  if (view === "home") return landing(shelf(), progress, catalogState, draftPreview);
   if (view === "book") return bookDetail({ book, progress, preview: draftPreview });
   if (view === "scene") return sceneDetail({ book, chapter, library, preview: draftPreview });
   const index = book.chapters.indexOf(chapter);
@@ -141,7 +143,7 @@ function render() {
   const soundButton = document.querySelector("#sound-button");
   if (soundButton) soundButton.onclick = toggleSound;
   if (view === "home") {
-    disposeView = setupCatalog({ library, progress, state: catalogState, preview: draftPreview, onOpen: openDetail, onTrailer: showTrailer, onHelp: help });
+    disposeView = setupCatalog({ library: shelf(), progress, state: catalogState, preview: draftPreview, onOpen: openDetail, onTrailer: showTrailer, onHelp: help });
   } else if (exploring) {
     document.querySelector("#reader-book-info").onclick = () => bookDetails(book.id);
     document.querySelector("#map-button").onclick = chapterMap;
@@ -282,7 +284,7 @@ function restoreCatalogPosition() {
 function bookDetails(id) {
   const selected = library.books.find(b => b.id === id);
   if (!selected) return;
-  const d = modal(`<div class="book-detail-heading">${bookCover(selected)}<div><span class="eyebrow">${edition(selected).category} · ${selected.chapters.length}개의 장면</span><h2 id="book-detail-title">${esc(selected.title)}</h2><p>${esc(selected.author)} · ${selected.year}</p><p>${esc(selected.englishTitle)}</p></div></div><p class="book-detail-copy">${esc(selected.description)}</p><h3>이 책에서 만날 장면</h3><ol class="book-detail-chapters">${selected.chapters.map(c => `<li>${esc(c.title)}</li>`).join("")}</ol><p class="source-note">${esc(selected.rights)}<br><a href="${esc(selected.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p><button class="primary-button book-detail-enter">이야기로 돌아가기 ${icon("arrow-up-right")}</button>`);
+  const d = modal(`<div class="book-detail-heading">${bookCover(selected)}<div><span class="eyebrow">${esc(edition(selected).category)} · ${selected.chapters.length}개의 장면</span><h2 id="book-detail-title">${esc(selected.title)}</h2><p>${esc(selected.author)} · ${selected.year}</p><p>${esc(selected.englishTitle)}</p></div></div><p class="book-detail-copy">${esc(selected.description)}</p><h3>이 책에서 만날 장면</h3><ol class="book-detail-chapters">${selected.chapters.map(c => `<li>${esc(c.title)}</li>`).join("")}</ol><p class="source-note">${esc(selected.rights)}<br><a href="${esc(selected.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p><button class="primary-button book-detail-enter">이야기로 돌아가기 ${icon("arrow-up-right")}</button>`);
   d.setAttribute("aria-labelledby", "book-detail-title");
   d.querySelector(".book-detail-enter").onclick = () => d.close();
 }
@@ -361,14 +363,15 @@ async function init() {
   app.setAttribute("aria-busy", "true");
   try {
     library = draftPreview ? (await api("/api/studio")).library : await api("/api/library");
-    if (!library.books.length) {
+    const params = new URLSearchParams(location.search);
+    // A draft preview may still open an unpublished book's detail or 3D world by address; only its bookshelf is limited to published books.
+    if (!library.books.length || (!shelf().books.length && resolveView(params).view === "home")) {
       clearLoading();
       app.removeAttribute("aria-busy");
       app.innerHTML =
         '<div class="loading-screen"><h1>새로운 이야기를 준비하고 있어요.</h1><p>관리자가 책을 공개하면 이곳에 나타나요.</p></div>';
       return;
     }
-    const params = new URLSearchParams(location.search);
     applyResolved(resolveView(params));
     await transitionPage(app, render, { initial: true });
     if (draftPreview && params.get('model') && world instanceof Journey) {

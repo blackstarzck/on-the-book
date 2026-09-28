@@ -10,17 +10,22 @@ const library = librarySchema.parse(seed);
 const alice = library.books.find(b => b.id === "alice");
 const count = (html, needle) => html.split(needle).length - 1;
 
-test("edition maps the two seeded books to their categories and everything else to 문학", () => {
+test("edition uses the studio category, then the legacy table for the two seeded books, then 문학", () => {
   assert.equal(edition({ id: "alice" }).category, "판타지");
   assert.equal(edition({ id: "oz" }).category, "모험");
   assert.equal(edition({ id: "new-book" }).category, "문학");
+  assert.equal(edition({ id: "new-book", category: "동화" }).category, "동화");
 });
 
-test("bookCover is an empty labelled slot without an image, even when a cover exists", () => {
-  const html = bookCover({ cover: "/uploads/0123456789abcdef0123456789abcdef.png" });
-  assert.match(html, /class="catalog-cover image-placeholder"/);
-  assert.match(html, /role="img" aria-label="표지 이미지 준비 중"/);
-  assert.doesNotMatch(html, /<img/);
+test("bookCover shows an uploaded cover and keeps the labelled empty slot without one", () => {
+  const cover = "/uploads/0123456789abcdef0123456789abcdef.png";
+  const html = bookCover({ cover });
+  assert.match(html, /^<span class="catalog-cover image-placeholder"><img /);
+  assert.ok(html.includes(`<img src="${cover}"`));
+  const empty = bookCover({ cover: "" });
+  assert.match(empty, /class="catalog-cover image-placeholder"/);
+  assert.match(empty, /role="img" aria-label="표지 이미지 준비 중"/);
+  assert.doesNotMatch(empty, /<img/);
 });
 
 test("detailUrl builds the three reader addresses and keeps the draft preview flag", () => {

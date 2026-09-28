@@ -247,6 +247,83 @@ try {
   pass('18-book responsive grid without changing real library');
   await context.close();
 
+  // Studio-managed images, slides and categories, again only in intercepted responses.
+  const upload = c => `/uploads/${c.repeat(8)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(12)}.png`;
+  const [alice, oz] = original.books;
+  const managed = {
+    ...original,
+    books: [
+      { ...alice, cover: upload('1'), chapters: alice.chapters.map((c, i) => i ? c : { ...c, thumbnail: upload('2') }) },
+      { ...oz, category: '세계고전문학선집' },
+    ],
+    home: { hero: [
+      { id: 'slide-missing', bookId: 'missing-book', image: upload('3') },
+      { id: 'slide-oz', bookId: 'oz', image: upload('4'), focus: 'right', kicker: '이번 주 추천', title: '노란 길로 떠나요', description: '용기와 지혜를 찾아 걷는 길' },
+      { id: 'slide-alice', bookId: 'alice', image: upload('5'), focus: 'center', kicker: '', title: '', description: '' },
+      { id: 'slide-oz-again', bookId: 'oz', image: upload('6'), focus: 'left', kicker: '', title: '', description: '' },
+    ] },
+  };
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+  const managedPage = async (context, payload) => {
+    const view = await context.newPage();
+    view.on('pageerror', error => errors.push(error.message));
+    await view.route('**/api/library', route => route.fulfill({ json: payload }));
+    await view.route('**/uploads/**', route => route.fulfill({ contentType: 'image/png', body: png }));
+    await view.goto(`${server.url}/client/`);
+    await expect(view.locator('.catalog-card')).toHaveCount(2);
+    return view;
+  };
+  const loaded = locator => locator.evaluateAll(images => images.length > 0 && images.every(image => image.complete && image.naturalWidth > 0));
+  // Reduced motion keeps autoplay off, so the slide under test cannot change mid-check.
+  const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+  const home = await managedPage(desktop, managed);
+  await expect(home.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
+  await expect(home.locator('[data-book="oz"] .catalog-cover img')).toHaveCount(0);
+  await expect(home.locator('.scene-image.has-image img')).toHaveCount(1);
+  await home.locator('.scene-image.has-image').scrollIntoViewIfNeeded();
+  await expect.poll(() => loaded(home.locator('.catalog-cover img, .scene-image img'))).toBe(true);
+  await home.evaluate(() => window.scrollTo(0, 0));
+  await expect(home.locator('.feature-card')).toHaveCount(3);
+  const first = home.locator('.feature-card.is-active');
+  await expect(first).toHaveAttribute('data-feature-book', 'oz');
+  await expect(first).toHaveClass(/feature-card--photo/);
+  await expect(first.locator('.feature-kicker')).toHaveText('이번 주 추천');
+  await expect(first.locator('.feature-copy > strong')).toHaveText('노란 길로 떠나요');
+  await expect(first.locator('.feature-art')).toHaveCount(0);
+  expect(await first.locator('.feature-copy > strong').evaluate(el => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+  expect(await first.locator('.feature-photo').evaluate(img => getComputedStyle(img).objectPosition)).toBe('82% 50%');
+  await expect(home.locator('.feature-progress')).toContainText('1 / 3');
+  // The shown photo and the next one load; the third waits for its turn.
+  await expect(home.locator('[data-feature-book="alice"] .feature-photo')).toHaveAttribute('src', upload('5'));
+  await expect(home.locator('[data-feature-index="2"] .feature-photo')).not.toHaveAttribute('src', /./);
+  await home.getByRole('button', { name: '다음 추천 작품', exact: true }).click();
+  await expect(home.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
+  await expect(home.locator('.feature-card.is-active .feature-kicker')).toHaveText('한 걸음, 새로운 모험');
+  await expect(home.locator('.feature-card.is-active .feature-copy > strong')).toHaveText(alice.title);
+  await expect(home.locator('[data-feature-index="2"] .feature-photo')).toHaveAttribute('src', upload('6'));
+  await expect(home.locator('.quick-menu img')).toHaveCount(6);
+  await home.locator('.catalog-filters [data-category="세계고전문학선집"]').click();
+  await expect(home.locator('.catalog-card')).toHaveCount(1);
+  await expect(home.locator('[data-book="oz"]')).toBeVisible();
+  await home.locator('.catalog-filters [data-category="all"]').click();
+  await home.screenshot({ path: 'test-results/catalog/managed-home.png', fullPage: true });
+  const single = await managedPage(desktop, { ...managed, home: { hero: [managed.home.hero[1]] } });
+  await expect(single.locator('.feature-card')).toHaveCount(1);
+  await expect(single.locator('.feature-arrow, .feature-controls')).toHaveCount(0);
+  const empty = await managedPage(desktop, { ...managed, home: { hero: [managed.home.hero[0]] } });
+  await expect(empty.locator('.feature-card')).toHaveCount(2);
+  await expect(empty.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
+  await desktop.close();
+  for (const width of [320, 390, 768]) {
+    const phone = await browser.newContext({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    const view = await managedPage(phone, managed);
+    expect(await view.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await view.locator('.quick-menu button').evaluateAll(buttons => buttons.every(b => b.scrollWidth <= b.clientWidth + 1))).toBe(true);
+    await view.screenshot({ path: `test-results/catalog/managed-home-${width}.png` });
+    await phone.close();
+  }
+  pass('Studio covers, chapter thumbnails, photo hero slides and typed categories');
+
   for (const width of [320, 390, 768]) {
     const mobileContext = await browser.newContext({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
     const mobile = await mobileContext.newPage();

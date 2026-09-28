@@ -36,6 +36,14 @@ body { background: #fff; color: #242a27; font-size: 16px; }
 .feature-card-0 { background: linear-gradient(112deg, #d8e6dd 0%, #b9d1c0 100%); color: #173e2b; }
 .feature-card-1 { background: linear-gradient(112deg, #f7e7b8 0%, #e7c36f 100%); color: #513f18; }
 .feature-card:hover { filter: brightness(.99); }
+/* Photo slides fill the card; the scrim keeps white copy readable on any picture. */
+.feature-card--photo { background: #2d4436; color: #fff; }
+.feature-card--photo::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, #0c1a12c2 0%, #0c1a1280 40%, #0c1a1200 74%); pointer-events: none; }
+.feature-photo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; pointer-events: none; -webkit-user-drag: none; }
+.feature-photo[data-focus="left"] { object-position: 18% 50%; }
+.feature-photo[data-focus="right"] { object-position: 82% 50%; }
+.feature-card--photo .feature-kicker, .feature-card--photo .feature-description { opacity: .88; }
+.feature-card--photo .feature-number { opacity: .72; }
 .feature-copy { display: flex; position: relative; z-index: 3; flex-direction: column; min-width: 0; align-items: flex-start; justify-content: center; }
 .feature-kicker { font-size: 14px; font-weight: 650; margin-bottom: 14px; opacity: .76; }
 .feature-copy > strong { font-size: 42px; font-weight: 750; line-height: 1.2; letter-spacing: -.06em; word-break: keep-all; }
@@ -65,7 +73,7 @@ body { background: #fff; color: #242a27; font-size: 16px; }
 .feature-carousel:hover .feature-next { transform: translate(2px, -50%); }
 .feature-arrow svg { width: 18px; height: 18px; }
 @keyframes hero-copy-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-.quick-menu { display: flex; justify-content: center; gap: clamp(24px, 3.8vw, 54px); padding: 24px 0 22px; margin-bottom: 12px; border-bottom: 1px solid #f0f2f0; }
+.quick-menu { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px clamp(24px, 3.8vw, 54px); padding: 24px 0 22px; margin-bottom: 12px; border-bottom: 1px solid #f0f2f0; }
 .quick-menu button { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; padding: 0; min-width: 72px; white-space: nowrap; }
 .quick-menu button > span { display: grid; place-items: center; width: 96px; height: 96px; background: transparent; transition: transform .2s ease; }
 .quick-menu button:nth-child(2n) > span { background: transparent; }
@@ -90,6 +98,7 @@ a.book-entry:hover, a.scene-card:hover { color: #173d2a; text-decoration: none; 
 .cover-stage { display: block; position: relative; width: 100%; }
 .catalog-cover { display: block; width: 100%; aspect-ratio: 2 / 2.85; border-radius: 3px; }
 .book-entry:hover .catalog-cover { background: #e4e9e5; }
+.catalog-cover img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .book-title { font-size: 17px; line-height: 1.45; font-weight: 700; letter-spacing: -.025em; margin-top: 14px; overflow-wrap: anywhere; }
 .book-author { color: #727c76; font-size: 14px; margin-top: 6px; }
 .catalog-slot { display: flex; flex-direction: column; gap: 14px; pointer-events: none; }
@@ -107,6 +116,12 @@ a.book-entry:hover, a.scene-card:hover { color: #173d2a; text-decoration: none; 
 .scene-arrow { position: absolute; bottom: 9px; right: 12px; color: #93a094; }
 .scene-arrow svg { width: 16px; height: 16px; }
 .scene-card:hover .scene-image { background: #e7ece7; }
+.scene-image.has-image { overflow: hidden; }
+.scene-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.scene-card:hover .scene-image img { filter: brightness(.95); }
+.scene-image.has-image .scene-number, .scene-image.has-image .scene-arrow { background: #ffffffe8; color: #4f6356; box-shadow: 0 2px 8px #1d2e2414; }
+.scene-image.has-image .scene-number { bottom: 9px; left: 10px; padding: 3px 9px; border-radius: 20px; line-height: 1.4; }
+.scene-image.has-image .scene-arrow { display: grid; place-items: center; bottom: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; }
 .scene-book { font-size: 12px; color: #738279; margin: 13px 0 5px; }
 .scene-card > strong { font-size: 16px; font-weight: 650; letter-spacing: -.025em; line-height: 1.5; overflow-wrap: anywhere; }
 .scene-subtitle { font-size: 13px; color: #768079; margin-top: 6px; line-height: 1.6; }
@@ -151,6 +166,11 @@ a.book-entry:hover, a.scene-card:hover { color: #173d2a; text-decoration: none; 
 }
 @media (max-width: 370px) {
   .site-header, .reader-header { padding-left: 14px; padding-right: 14px; }.site-header .wordmark { font-size: 20px; }.site-header .brand-mark { width: 26px; }.store-content { padding-left: 14px; padding-right: 14px; }.reading-ribbon { gap: 8px; padding-left: 14px; padding-right: 14px; }.reading-ribbon .ribbon-badge { padding: 4px 6px; }.feature-grid, .feature-card { min-height: 380px; }.feature-copy { left: 18px; right: 88px; bottom: 24px; }.feature-copy > strong { font-size: 25px; }.feature-art img { width: 185px; height: 185px; }.quick-menu button { font-size: 11px; }.quick-menu button > span { width: 80px; height: 80px; }.quick-menu img { width: 77px; height: 77px; }.catalog-grid { gap: 26px 14px; }.scene-section .section-heading h2 { font-size: 20px; }.rail-controls .icon-button { min-width: 30px; min-height: 30px; width: 30px; height: 30px; }.book-detail-heading { grid-template-columns: 1fr; }.book-detail-heading .catalog-cover { width: 130px; margin: auto; }
+}
+/* After the 600px block above: phones stack the copy at the bottom, so the scrim runs downward. */
+@media (max-width: 600px) {
+  .feature-card--photo::before { background: #0c1a121f; }
+  .feature-card--photo::after { height: 72%; background: linear-gradient(180deg, #0c1a1200 0%, #0c1a129e 52%, #0c1a12e0 100%); }
 }
 
 @media (prefers-reduced-motion: reduce) {

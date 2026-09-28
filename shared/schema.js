@@ -1,6 +1,7 @@
 import { z } from "zod";
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 const text = z.string().trim().min(1).max(200);
+const image = z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).or(z.literal("")).default("");
 export const kinds = [
   "rabbit",
   "mushroom",
@@ -55,6 +56,7 @@ export const chapterSchema = z.object({
   subtitle: z.string().max(250),
   body: z.string().max(15000),
   theme: z.enum(["meadow", "night", "tea", "rose", "gold"]),
+  thumbnail: image,
   width: z.number().min(40).max(120).default(64),
   depth: z.number().min(40).max(100).default(56),
   floorArrows: z.boolean().default(true),
@@ -86,6 +88,10 @@ export const bookSchema = z.object({
   title: text,
   englishTitle: text,
   author: z.string().max(200),
+  // "all" and "reading" are the reader's own filter states.
+  category: z.string().trim().max(8, "분류는 8자 이하로 입력해 주세요.")
+    .refine((c) => !["all", "reading"].includes(c), { message: "분류 이름으로 all·reading은 쓸 수 없습니다." })
+    .default(""),
   cover: z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).or(z.literal('')).default(''),
   floorAssets: z.array(z.object({asset:z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/),name:text})).max(300).optional(),
   year: z.number().int().min(1).max(2026),
@@ -95,19 +101,32 @@ export const bookSchema = z.object({
   published: z.boolean(),
   chapters: z.array(chapterSchema).min(1).max(40),
 });
+export const heroSlideSchema = z.object({
+  id,
+  bookId: id,
+  image,
+  focus: z.enum(["left", "center", "right"]).default("center"),
+  kicker: z.string().trim().max(40).default(""),
+  title: z.string().trim().max(60).default(""),
+  description: z.string().trim().max(200).default(""),
+});
 export const librarySchema = z
   .object({
     models: z.array(modelSchema).max(300),
     books: z.array(bookSchema).max(50),
+    // prefault re-parses {} so every library gets its own slide list; a default object would be shared.
+    home: z.object({ hero: z.array(heroSlideSchema).max(5).default([]) }).prefault({}),
   })
   .superRefine((s, c) => {
     const modelIds = new Set(s.models.map((m) => m.id));
+    const bookIds = new Set(s.books.map((b) => b.id));
     const seen = new Set();
     for (const row of [
       ...s.models,
       ...s.books,
       ...s.books.flatMap((b) => b.chapters),
       ...s.books.flatMap((b) => b.chapters.flatMap((c) => c.placements)),
+      ...s.home.hero,
     ]) {
       if (seen.has(row.id))
         c.addIssue({ code: "custom", message: "중복된 항목 ID가 있습니다." });
@@ -121,4 +140,7 @@ export const librarySchema = z
           code: "custom",
           message: "배치된 모델을 먼저 장면에서 제거해 주세요.",
         });
+    for (const slide of s.home.hero)
+      if (!bookIds.has(slide.bookId))
+        c.addIssue({ code: "custom", message: "추천 슬라이드에 연결된 책을 찾을 수 없습니다." });
   });

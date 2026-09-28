@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 import { librarySchema } from "../shared/schema.js";
 import { newTriggerConflict } from '../shared/experience.js';
 import { modelInfo } from './model-info.js';
-import { cloud, uploadDir, readLibrary, persist, readAsset, writeAsset, signedAsset, removeStaging, saveSession, validSession, removeSession, publicAssetNames } from './storage.js';
+import { cloud, uploadDir, readLibrary, persist, readAsset, writeAsset, signedAsset, removeStaging, saveSession, validSession, removeSession } from './storage.js';
+import { publicLibrary, publicAssetNames, imageUrls } from './publication.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const app = express();
 app.disable("x-powered-by");
@@ -87,17 +88,7 @@ app.post("/api/logout", sameOrigin, async (req, res) => {
 app.get("/api/library", async (req, res) => {
   const { db } = await readLibrary();
   res.set("Cache-Control", "no-store");
-  const books = db.live.books.filter((b) => b.published);
-  const used = new Set(
-    books.flatMap((b) =>
-      b.chapters.flatMap((c) => c.placements.map((p) => p.modelId)),
-    ),
-  );
-  res.json({
-    books,
-    models: db.live.models.filter((m) => used.has(m.id)),
-    publishedAt: db.publishedAt,
-  });
+  res.json(publicLibrary(db));
 });
 app.get("/api/studio", auth, async (req, res) => {
   const { db } = await readLibrary();
@@ -147,11 +138,15 @@ app.put("/api/studio", sameOrigin, auth, async (req, res) => {
       const model=parsed.data.models.find(m=>m.id===p.modelId);
       if(prior.get(p.id)!==p.modelId&&model?.kind==='glb'&&(!model.rigged||p.animation!=='clip'||!model.clips.includes(p.clip)))return res.status(400).json({error:'새 배치에는 뼈대 모델과 등록된 애니메이션을 선택해 주세요.'});
     }
-    for(const book of parsed.data.books)if(book.cover)await readAsset(path.basename(book.cover));
-    for(const book of parsed.data.books)for(const item of book.floorAssets||[])await readAsset(path.basename(item.asset));
-    for (const book of parsed.data.books) for (const chapter of book.chapters)
-      for (const item of chapter.floorDecals || []) if (item.asset.startsWith('/uploads/'))
-        await readAsset(path.basename(item.asset));
+    // Cloud reads download each file whole, so only images new to the draft are checked.
+    const known = imageUrls(db.draft);
+    for (const url of imageUrls(parsed.data)) if (!known.has(url)) {
+      try { await readAsset(path.basename(url)); }
+      catch (e) {
+        if (e.code === "ENOENT") return res.status(400).json({ error: "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요." });
+        throw e;
+      }
+    }
     const next = { ...db, draft: parsed.data, version: db.version + 1 };
     if (req.body.publish) {
       next.live = structuredClone(parsed.data);
@@ -277,7 +272,8 @@ if (cloud) app.get('/uploads/:filename', async (req, res) => {
   const { db } = await readLibrary();
   if (!publicAssetNames(db).has(filename) && !(process.env.DEPLOYMENT_APP === 'admin' && await validSession(sessionToken(req))))
     return res.sendStatus(404);
-  res.set('Cache-Control', 'private, no-store');
+  // Images may stay in the browser for 5 minutes, inside the 10-minute life of the signed address.
+  res.set('Cache-Control', filename.endsWith('.png') ? 'private, max-age=300' : 'private, no-store');
   res.redirect(307, await signedAsset(`uploads/${filename}`));
 });
 else app.use(
