@@ -31,7 +31,7 @@
 - 검사(`tests/detail.test.js`, `tests/catalog.mjs`, `tests/mobile-entry.mjs`, `tests/home-admin.mjs` 의 상세 부분, `tests/capture.mjs`), README, `docs/ADMIN-GUIDE.md`, `client/index.html` 설명 문구, 전환 스펙 10절.
 
 비범위
-- 서버, `shared/schema.js`, 관리자 화면, `client/vercel.json`, `server/index.js` 변경. 상세 페이지가 쓰는 정보는 모두 `/api/library`(초안 미리보기는 `/api/studio`) 응답에 이미 있다.
+- 서버, `shared/schema.js`, 관리자 화면(15절의 도움말 문구 한 줄 제외), `client/vercel.json`, `server/index.js` 변경. 상세 페이지가 쓰는 정보는 모두 `/api/library`(초안 미리보기는 `/api/studio`) 응답에 이미 있다.
 - 라이브 3D 미리보기(`World` 의 `hero` 모드). 카드마다 캔버스를 띄우면 진입이 느려지고 CTA 의 "본격 진입" 의미가 약해진다.
 - 3D 월드 안의 "작품 소개" 모달과 "이야기의 지도" 모달의 내용·동작 변경. 모달은 탐험을 끊지 않기 위해 그대로 둔다.
 - 새 저장 데이터. 기존 `otb-reader` 의 `{ [bookId]: { chapter } }` 만 읽는다. 패널의 선택은 주소(`&scene=`)에만 반영하고 저장하지 않는다.
@@ -182,6 +182,8 @@ docs/
               detail-scene-desktop.png(?scene=alice-2 선택), detail-scene-mobile.png(장면 시트 열림) (갱신)
   preview/detail.png                                                                             (갱신)
   ADMIN-GUIDE.md, README.md, superpowers/specs/2026-09-11-react-next-migration-design.md          (수정)
+admin/
+  main.js          장면 썸네일 도움말 문구 한 줄                                                    (수정)
 ```
 
 반응형 분기점은 `landing.css` 와 같은 1100, 850, 600, 370px 이다.
@@ -265,6 +267,7 @@ docs/
 
 - `README.md`: "장면을 누르면 … 장면 상세 페이지가 열립니다" 문장을 "장면을 누르면 그 장면이 선택된 작품 상세가 열립니다"로, 작품 상세 설명에 "오른쪽 패널에서 장면을 고르고 '이 장면부터 걷기'로 3D 공간에 들어갑니다. 휴대폰에서는 장면을 누르면 아래에서 시트가 올라옵니다"를 더한다. 주소 문장은 `?book=<책>&scene=<장면>` 이 "그 장면이 선택된 작품 상세"라고 고친다. 확인 순서 1 은 "표지를 눌러 작품 상세를 열고 '이 장면부터 걷기'를 누른 뒤".
 - `docs/ADMIN-GUIDE.md`: "장면 상세 페이지에서도 썸네일은 16:10 비율 그대로 보입니다." → "작품 상세의 장면 패널에서도 썸네일은 16:10 비율 그대로 보입니다."
+- `admin/main.js` 챕터 편집 창의 장면 썸네일 도움말: "사용자 화면의 장면 목록에 16:10 비율로 보여요(예: 1280×800). 없으면 빈 자리로 둡니다." → "사용자 화면의 장면 목록과 작품 상세의 장면 패널에 16:10 비율로 보여요(예: 1280×800). 없으면 빈 자리로 둡니다." 관리자 쪽 변경은 이 문구 한 줄뿐이다. 스튜디오의 "공개된 탐험 화면 보기" 링크와 "독자 화면으로 체험" 미리보기는 `?book=&chapter=`(3D 월드)나 `?preview=draft`(홈)를 열므로 영향이 없고, 홈 미리보기 iframe 안에서 카드를 누르면 이제 iframe 안에서 작품 상세가 열린다(실제 독자 흐름과 같다).
 - 전환 스펙 10절: 화면 상태를 셋(`/`, `?book=<id>`(선택 장면은 `&scene=`), `?book=&chapter=`)으로 고치고 이 설계 파일을 가리킨다.
 - `docs/PRD.md` 의 슬라이드 문장은 그대로 맞다.
 
