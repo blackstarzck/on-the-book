@@ -5,14 +5,18 @@ import { api, esc, icon, icons, logo, modal, toast } from "../shared/ui.js";
 import "../shared/style.css";
 import { announcementBanner, landing, setupCatalog } from "./landing.js";
 import { bookCover, edition } from "./book-meta.js";
-import { bookDetail, detailUrl } from "./detail.js";
+import { bookDetail, scenePanel, sceneBar, sceneStatus, defaultScene, detailUrl } from "./detail.js";
 import "./detail.css";
 let library,
   book,
   chapter,
   world,
-  // Which screen is on: the bookshelf ("home"), a book detail, a scene detail or the 3D world.
+  // Which screen is on: the bookshelf ("home"), the book detail ("book", with `chapter` as the panel's scene) or the 3D world.
   view = "home",
+  // Whether the address names the panel's scene (`&scene=`). False while the panel shows the default scene.
+  sceneAddressed = false,
+  // The phone's scene sheet while it is open.
+  sceneSheet = null,
   sound = false,
   audioContext,
   ambient,
@@ -57,7 +61,7 @@ function currentUrl() {
   if (view === "home") return `${location.pathname}${draftPreview ? "?preview=draft" : ""}`;
   return location.pathname + detailUrl({
     book: book.id,
-    scene: view === "scene" ? chapter.id : undefined,
+    scene: view === "book" && sceneAddressed ? chapter.id : undefined,
     chapter: view === "world" ? chapter.id : undefined,
     preview: draftPreview,
   });
@@ -66,23 +70,23 @@ function currentUrl() {
 // `clean` says the address had unusable parts and should be rewritten.
 function resolveView(params) {
   const selected = library.books.find(b => b.id === params.get("book"));
-  if (!selected) return { view: "home", book: library.books[0], chapter: library.books[0].chapters[0], clean: params.has("book") || params.has("scene") || params.has("chapter") };
+  if (!selected) return { view: "home", book: library.books[0], chapter: library.books[0].chapters[0], sceneAddressed: false, clean: params.has("book") || params.has("scene") || params.has("chapter") };
   const explored = selected.chapters.find(c => c.id === params.get("chapter"));
-  if (explored) return { view: "world", book: selected, chapter: explored, clean: false };
+  if (explored) return { view: "world", book: selected, chapter: explored, sceneAddressed: false, clean: false };
   const scene = selected.chapters.find(c => c.id === params.get("scene"));
-  if (scene) return { view: "scene", book: selected, chapter: scene, clean: false };
-  return { view: "book", book: selected, chapter: selected.chapters[0], clean: params.has("scene") || params.has("chapter") };
+  if (scene) return { view: "book", book: selected, chapter: scene, sceneAddressed: true, clean: false };
+  return { view: "book", book: selected, chapter: defaultScene(selected, progress), sceneAddressed: false, clean: params.has("scene") || params.has("chapter") };
 }
 function applyResolved(state) {
   view = state.view;
   book = state.book;
   chapter = state.chapter;
+  sceneAddressed = state.sceneAddressed;
   if (view === "world") { record().chapter = chapter.id; remember(); }
   if (state.clean) history.replaceState(null, "", currentUrl());
 }
 function pageTitle() {
   if (view === "book") return `${book.title} — On the Book`;
-  if (view === "scene") return `${chapter.title} · ${book.title} — On the Book`;
   return baseTitle;
 }
 function header() {
@@ -91,9 +95,7 @@ function header() {
 }
 function page() {
   if (view === "home") return landing(shelf(), progress, catalogState, draftPreview);
-  if (view === "book") return bookDetail({ book, library, progress, preview: draftPreview });
-  // Until Task 2 folds the scene view into the book view, a scene address renders the same page on that scene.
-  if (view === "scene") return bookDetail({ book, chapter, library, progress, preview: draftPreview });
+  if (view === "book") return bookDetail({ book, chapter, library, progress, preview: draftPreview });
   const index = book.chapters.indexOf(chapter);
   return `<main class="reader is-exploring"><div class="scene-wrap" id="world"></div>
  <div class="explore-topline"><span class="live-dot"></span> ${esc(book.title)}<button id="reader-book-info" aria-label="${esc(book.title)} 작품 소개">작품 소개 ${icon("chevron-right")}</button></div>
@@ -169,19 +171,46 @@ function render() {
     disposeView = setupDetail();
   }
 }
-// One delegated click handler for a detail page: CTA buttons enter the world, links open another detail.
+const narrow = () => matchMedia("(max-width: 850px)").matches;
+// One delegated click handler for the book detail. It sits on the document because the phone's scene sheet is a
+// <dialog> appended to <body>, outside <main>. CTA buttons enter the world; scene links swap the panel in place.
 function setupDetail() {
   const abort = new AbortController();
-  document.querySelector(".detail-page").addEventListener("click", event => {
-    const target = event.target.closest("[data-enter], a[data-book], a[data-scene-book]");
+  document.addEventListener("click", event => {
+    const target = event.target.closest("[data-enter], a[data-scene]");
     if (!target) return;
-    if (target.dataset.enter) { enterBook(target.dataset.enter, target.dataset.enterChapter); return; }
+    if (target.dataset.enter) { sceneSheet?.close(); enterBook(target.dataset.enter, target.dataset.enterChapter); return; }
     if (modifiedClick(event)) return;
     event.preventDefault();
-    if (target.dataset.sceneBook) openDetail("scene", target.dataset.sceneBook, target.dataset.sceneChapter);
-    else openDetail("book", target.dataset.book);
+    selectScene(target.dataset.scene, { sheet: target.classList.contains("journey-row") && narrow() });
   }, { signal: abort.signal });
-  return () => abort.abort();
+  return () => { abort.abort(); sceneSheet?.close(); };
+}
+// Shows a scene in the panel (and in the phone sheet when asked) without leaving the page or adding history.
+function selectScene(sceneId, { sheet = false } = {}) {
+  const next = book.chapters.find(c => c.id === sceneId);
+  if (!next) return;
+  chapter = next;
+  sceneAddressed = true;
+  history.replaceState(null, "", currentUrl());
+  const options = { book, chapter, library, progress, preview: draftPreview };
+  const panel = document.querySelector(".scene-panel");
+  panel.innerHTML = scenePanel(options);
+  panel.scrollTop = 0;
+  document.querySelector(".detail-cta").innerHTML = sceneBar({ book, chapter });
+  for (const row of document.querySelectorAll(".journey-row")) row.setAttribute("aria-current", String(row.dataset.scene === chapter.id));
+  document.querySelector("#scene-status").textContent = sceneStatus({ book, chapter });
+  if (sceneSheet?.open) {
+    for (const node of sceneSheet.querySelectorAll(":scope > :not(.close-modal)")) node.remove();
+    sceneSheet.insertAdjacentHTML("beforeend", scenePanel({ ...options, prefix: "sheet" }));
+    sceneSheet.scrollTop = 0;
+  } else if (sheet) {
+    sceneSheet = modal(scenePanel({ ...options, prefix: "sheet" }));
+    sceneSheet.classList.add("scene-sheet");
+    sceneSheet.setAttribute("aria-labelledby", "sheet-scene-title");
+    sceneSheet.addEventListener("close", () => { sceneSheet = null; }, { once: true });
+  }
+  icons();
 }
 function showFloorReading(state) {
   const panel = document.querySelector(".floor-reading-controls"); if (!panel) return;
@@ -247,19 +276,20 @@ async function enterBook(id, chapterId) {
     render();
   }, { label: "이야기 속으로 들어가는 중이에요…" });
 }
-// Opens the book detail ("book") or a scene detail ("scene") in the same document, with a history entry.
+// Opens the book detail with a history entry: on the default scene, or on the scene a home card named.
 async function openDetail(target, bookId, sceneId) {
   const selected = library.books.find(b => b.id === bookId);
   if (!selected) return;
   const scene = target === "scene" ? selected.chapters.find(c => c.id === sceneId) : null;
   if (target === "scene" && !scene) return;
   await transitionPage(app, () => {
-    view = scene ? "scene" : "book";
+    view = "book";
     book = selected;
-    chapter = scene || selected.chapters[0];
+    chapter = scene || defaultScene(selected, progress);
+    sceneAddressed = Boolean(scene);
     history.pushState(null, "", currentUrl());
     render();
-  }, { label: scene ? "장면을 펼치는 중이에요…" : "작품을 펼치는 중이에요…" });
+  }, { label: "작품을 펼치는 중이에요…" });
 }
 async function openLibrary() {
   if (view === "home") {
