@@ -99,7 +99,7 @@ test("sceneDetail shows the scene, the first paragraph only and the placements w
   assert.match(html, /<h2 id="detail-figures-title">이 장면에서 만나는 것들<\/h2><p>가까이 다가가면 움직여요\.<\/p>/);
   assert.equal(count(html, 'class="figure-chip"'), 3);
   assert.match(html, /<strong>정원으로 가는 열쇠<\/strong><span class="journey-badge">장면의 중심<\/span><span class="figure-story">아주 작은 문 너머에 햇살 가득한 정원이 기다립니다\.<\/span>/);
-  assert.equal(count(html, "장면의 중심"), 2);
+  assert.equal(count(html, '<span class="journey-badge">장면의 중심</span>'), 1);
   assert.match(html, /class="figure-chip" style="background:#d4aa56"/);
   assert.equal(count(html, 'class="neighbor-link"'), 2);
   assert.match(html, /href="\?book=alice&amp;scene=alice-1" data-scene-book="alice" data-scene-chapter="alice-1"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 01 흰 토끼를 따라서<\/a>/);
