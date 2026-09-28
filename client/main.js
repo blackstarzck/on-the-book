@@ -5,7 +5,7 @@ import { api, esc, icon, icons, logo, modal, toast } from "../shared/ui.js";
 import "../shared/style.css";
 import { announcementBanner, landing, setupCatalog } from "./landing.js";
 import { bookCover, edition } from "./book-meta.js";
-import { bookDetail, sceneDetail, detailUrl } from "./detail.js";
+import { bookDetail, detailUrl } from "./detail.js";
 import "./detail.css";
 let library,
   book,
@@ -91,8 +91,9 @@ function header() {
 }
 function page() {
   if (view === "home") return landing(shelf(), progress, catalogState, draftPreview);
-  if (view === "book") return bookDetail({ book, progress, preview: draftPreview });
-  if (view === "scene") return sceneDetail({ book, chapter, library, preview: draftPreview });
+  if (view === "book") return bookDetail({ book, library, progress, preview: draftPreview });
+  // Until Task 2 folds the scene view into the book view, a scene address renders the same page on that scene.
+  if (view === "scene") return bookDetail({ book, chapter, library, progress, preview: draftPreview });
   const index = book.chapters.indexOf(chapter);
   return `<main class="reader is-exploring"><div class="scene-wrap" id="world"></div>
  <div class="explore-topline"><span class="live-dot"></span> ${esc(book.title)}<button id="reader-book-info" aria-label="${esc(book.title)} 작품 소개">작품 소개 ${icon("chevron-right")}</button></div>
