@@ -1,0 +1,118 @@
+/* The book detail: a scrolling left column and a scene panel fixed at the screen's height. Phones get a scene sheet
+   and a pinned bar. Type, gutters (.store-content) and section headings come from the bookshelf.
+   The second track stays empty on purpose: the fixed panel sits over it, so the left column keeps its width. */
+.detail-page { --detail-space-top: 72px; display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 48px; align-items: start; }
+/* Room above and below: the left column starts --detail-space-top under the pinned top, the same offset as the scene
+   panel's first line, so the cover and the scene image share a top edge; the page ends 120px after the last section.
+   Two classes outrank landing.css's .store-content padding at every width. */
+.detail-page.store-content { padding-top: var(--detail-space-top); padding-bottom: 120px; }
+.detail-page h1, .detail-page h2, .detail-page h3 { font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
+.detail-main { min-width: 0; }
+.detail-hero { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 28px; align-items: center; }
+/* An uploaded cover fills its .catalog-cover slot through landing.css's `.catalog-cover img` rule. */
+.detail-cover { display: block; width: 160px; }
+.detail-copy { min-width: 0; }
+/* The detail's small print is 14px at every width (it was 12px, and 11px for this line on phones). */
+.detail-copy .eyebrow { margin-bottom: 14px; font-size: 14px; letter-spacing: .08em; color: #75867a; }
+.detail-copy h1 { margin: 0 0 12px; font-size: 36px; line-height: 1.2; word-break: keep-all; outline: none; }
+.detail-meta { margin: 0 0 12px; font-size: 15px; color: #6b7567; }
+/* Sections in the left column are set apart by space alone, without divider lines. */
+.detail-section { padding-top: 36px; margin-top: 34px; }
+.detail-section .section-heading { margin-bottom: 16px; }
+/* 저자 소개·책 소개: studio prose. A single line break inside a paragraph is kept (pre-line); an empty field
+   shows a muted 준비 중 line. */
+.detail-intro-empty { margin: 0; font-size: 15px; line-height: 1.7; color: #7f8982; }
+.detail-intro-name { margin: 0 0 10px; font-size: 17px; font-weight: 650; letter-spacing: -.025em; color: #26312b; }
+.detail-prose { max-width: 680px; }
+.detail-prose p { margin: 0 0 14px; font-size: 16px; line-height: 1.8; color: #3f4a44; white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
+.detail-prose p:last-child { margin-bottom: 0; }
+.journey-hint--narrow { display: none; }
+.journey-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e7ebe7; }
+.journey-row { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px 10px; border-bottom: 1px solid #e7ebe7; border-left: 3px solid transparent; }
+.journey-row:hover { background: #f6f8f5; text-decoration: none; }
+/* The row the panel shows. */
+.journey-row[aria-current="true"] { background: #f0f4ef; border-left-color: var(--accent); }
+.journey-number { flex: none; width: 28px; font-size: 13px; color: #75867a; font-variant-numeric: tabular-nums; }
+.journey-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.journey-copy strong { font-size: 16px; font-weight: 650; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.journey-copy small { font-size: 13px; color: #768079; }
+.journey-badge { flex: none; padding: 4px 9px; border-radius: 20px; background: #e8f0e6; color: #2f5a41; font-size: 11px; font-weight: 650; white-space: nowrap; }
+.journey-row svg { flex: none; width: 16px; height: 16px; margin-left: auto; color: #93a094; }
+/* Theme colours mirror the 3D floor (shared/world.js themes[*].ground). meadow is the default. */
+.theme-chip { flex: none; width: 14px; height: 14px; border-radius: 4px; }
+.theme-chip, .scene-image[data-theme] { background: #cad7aa; }
+.theme-chip[data-theme="night"], .scene-image[data-theme="night"] { background: #929aaf; }
+.theme-chip[data-theme="tea"], .scene-image[data-theme="tea"] { background: #d7c9b6; }
+.theme-chip[data-theme="rose"], .scene-image[data-theme="rose"] { background: #d8c6b7; }
+.theme-chip[data-theme="gold"], .scene-image[data-theme="gold"] { background: #dcca98; }
+/* The bookshelf's top (ribbon and header) stays pinned on the book detail above 850px; it scrolls away on phones. */
+.detail-top { position: sticky; top: 0; z-index: 6; background: #fff; }
+/* The scene panel fills the screen from the pinned top down to the bottom edge and does not move while the page
+   scrolls; a taller panel scrolls inside, with no visible scrollbar. No card: a single line on its left sets it
+   apart from the left column. Its right edge meets the .store-content box (1280px column, 40px gutters above
+   850px), so its content lines up with the header's icons. --detail-top is the pinned top's height, measured by
+   main.js; 138px is the default 50px ribbon plus the 88px header. Toasts and the curtain stay above it. */
+.scene-panel { position: fixed; top: var(--detail-top, 138px); bottom: 0; right: max(40px, calc((100% - 1280px) / 2 + 40px)); z-index: 4; width: 400px; overflow-y: auto; scrollbar-width: none; padding: var(--detail-space-top) 0 48px 32px; border-left: 1px solid #e7ebe7; background: #fff; }
+/* Safari before 18.2 ignores scrollbar-width. The phone sheet below hides its scrollbar the same way. */
+.scene-panel::-webkit-scrollbar, .scene-sheet::-webkit-scrollbar { display: none; }
+/* Panel and sheet share their inner layout. The image slot is always 16:10; a thumbnail fills it (landing.css:
+   `.scene-image img` covers the slot and `.scene-image.has-image .scene-number` becomes a light pill). */
+.scene-panel .scene-image, .scene-sheet .scene-image { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 10px; }
+.scene-panel .scene-number, .scene-sheet .scene-number { font-size: 13px; color: #3a4a40; }
+.scene-panel .eyebrow, .scene-sheet .eyebrow { margin: 16px 0 8px; font-size: 14px; letter-spacing: .08em; color: #75867a; }
+.scene-panel h2, .scene-sheet h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
+.scene-panel .detail-meta, .scene-sheet .detail-meta { margin: 0 0 10px; font-size: 14px; color: #6b7567; }
+.scene-panel > .journey-badge, .scene-sheet > .journey-badge { display: inline-block; margin-bottom: 12px; }
+.scene-panel .detail-enter, .scene-sheet .detail-enter { width: 100%; margin: 6px 0 4px; justify-content: space-between; }
+/* Previous and next: two buttons of the same width right under the CTA. A missing side stays as a dimmed slot. */
+.neighbor-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.neighbor-link { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 12px; border: 1px solid #dfe5de; border-radius: 5px; background: #fff; color: #3f5a49; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.neighbor-link:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.neighbor-link.is-disabled { border-color: #edf0ec; background: #f7f9f6; color: #b2bbb4; }
+.neighbor-link svg { width: 15px; height: 15px; }
+.detail-enter { gap: 14px; padding: 14px 20px; font-size: 14px; font-weight: 600; }
+.detail-enter svg { width: 17px; height: 17px; }
+/* The phone bar exists in the markup at every width but only shows in the one-column layout. */
+.detail-cta { display: none; }
+/* The phone's scene sheet reuses the modal dialog, pinned to the bottom edge. */
+.scene-sheet { position: fixed; inset: auto 0 0 0; width: auto; max-width: none; max-height: 88dvh; margin: 0; padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; scrollbar-width: none; border: 0; border-radius: 18px 18px 0 0; background: #fff; }
+/* The scene image is `position: relative` (landing.css, for its badge); without a higher stacking order the
+   close button (also positioned, but earlier in the DOM) would paint underneath it and miss taps. */
+.scene-sheet .close-modal { z-index: 1; }
+@media (max-width: 1100px) {
+  .detail-page { grid-template-columns: minmax(0, 1fr) 340px; column-gap: 32px; }
+  .scene-panel { width: 340px; }
+  .detail-copy h1 { font-size: 32px; }
+}
+@media (max-width: 850px) {
+  .detail-top { position: static; }
+  .detail-page { --detail-space-top: 44px; display: flex; flex-direction: column; align-items: stretch; }
+  /* The last section keeps 64px above the pinned bar, and the bar closes the page, so it never lifts at the end. */
+  .detail-page.store-content { padding-bottom: 0; }
+  .detail-main { padding-bottom: 64px; }
+  .scene-panel { display: none; }
+  .journey-hint--wide { display: none; }
+  .journey-hint--narrow { display: inline; }
+  .detail-cta { display: flex; align-items: center; justify-content: space-between; gap: 12px; order: 99; position: sticky; bottom: 0; z-index: 5; margin: 0 -24px; padding: 10px 24px calc(10px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid var(--line); }
+  .detail-cta-scene { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #4f5f56; }
+  .detail-cta .primary-button { flex: none; }
+}
+@media (max-width: 600px) {
+  .detail-hero { grid-template-columns: 112px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .detail-cover { width: 112px; }
+  .detail-copy .eyebrow { margin-bottom: 8px; }
+  .detail-copy h1 { margin-bottom: 8px; font-size: 26px; letter-spacing: -.045em; }
+  .detail-meta { font-size: 13px; }
+  .detail-cta { margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+  .detail-section { padding-top: 30px; margin-top: 28px; }
+  .detail-section .section-heading h2 { font-size: 21px; }
+  .detail-intro-name { font-size: 16px; }
+  .detail-prose p { font-size: 15px; line-height: 1.75; }
+  .detail-intro-empty { font-size: 14px; }
+  .journey-row { gap: 12px; min-height: 58px; }
+}
+@media (max-width: 370px) {
+  .detail-hero { grid-template-columns: minmax(0, 1fr); }
+  .detail-cover { width: 130px; margin: 0 auto; }
+  .detail-cta { margin: 0 -14px; padding-left: 14px; padding-right: 14px; }
+}

@@ -1,5 +1,7 @@
 import { esc, icon, icons } from "../shared/ui.js";
-import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
+import { heroKicker, heroSlides } from "../shared/home.js";
+import { edition, bookCover } from "./book-meta.js";
+import { detailUrl } from "./detail.js";
 import openBookClay from "./assets/quick-menu/open-book-clay.png";
 import fantasySparklesClay from "./assets/quick-menu/fantasy-sparkles-clay.png";
 import adventureMapClay from "./assets/quick-menu/adventure-map-clay.png";
@@ -24,22 +26,12 @@ function clayIcon(name) {
   return `<img src="${iconFor(name)}" alt="" aria-hidden="true" decoding="async">`;
 }
 
-export function edition(book) {
-  return { category: bookCategory(book) };
-}
-
-// Books without an uploaded cover keep the empty slot.
-export function bookCover(book) {
-  if (!book?.cover) return '<span class="catalog-cover image-placeholder" role="img" aria-label="표지 이미지 준비 중"></span>';
-  return `<span class="catalog-cover image-placeholder"><img src="${esc(book.cover)}" alt="" loading="lazy" decoding="async" draggable="false"></span>`;
-}
-
-function bookCard(book) {
-  return `<article class="catalog-card"><button class="book-entry" data-enter="${esc(book.id)}" aria-label="${esc(book.title)} — 3D 공간에서 읽기">
+function bookCard(book, preview) {
+  return `<article class="catalog-card"><a class="book-entry" href="${esc(detailUrl({ book: book.id, preview }))}" data-book="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">
     <span class="cover-stage">${bookCover(book)}</span>
     <strong class="book-title">${esc(book.title)}</strong>
     <span class="book-author">${esc(book.author)}</span>
-    </button></article>`;
+    </a></article>`;
 }
 
 function feature(slide, index) {
@@ -50,8 +42,8 @@ function feature(slide, index) {
   // later photos keep data-src until their slide comes up (see loadPhoto).
   const photo = slide.image ? `<img class="feature-photo" ${active ? "src" : "data-src"}="${esc(slide.image)}" data-focus="${esc(slide.focus || "center")}" alt="" decoding="async" draggable="false">` : "";
   const art = slide.image ? "" : `<span class="feature-art" aria-hidden="true"><span class="feature-art-card"></span><span class="feature-art-ring"></span><img src="${iconFor(edition(book).category)}" alt="" decoding="async" draggable="false"></span>`;
-  return `<button class="feature-card feature-card-${index % 2}${slide.image ? " feature-card--photo" : ""}${active ? " is-active" : ""}" data-feature-book="${esc(book.id)}" data-feature-index="${index}" aria-label="${esc(title)} 추천 작품 시작" aria-hidden="${String(!active)}" tabindex="${active ? 0 : -1}">
-    ${photo}<span class="feature-copy"><span class="feature-kicker">${esc(heroKicker(slide, index))}</span><strong>${esc(title)}</strong><span class="feature-description">${esc(slide.description || book.description)}</span><span class="feature-action">이야기 속으로 ${icon("arrow-right")}</span></span>
+  return `<button class="feature-card feature-card-${index % 2}${slide.image ? " feature-card--photo" : ""}${active ? " is-active" : ""}" data-feature-book="${esc(book.id)}" data-feature-index="${index}" aria-label="${esc(title)} 작품 상세" aria-hidden="${String(!active)}" tabindex="${active ? 0 : -1}">
+    ${photo}<span class="feature-copy"><span class="feature-kicker">${esc(heroKicker(slide, index))}</span><strong>${esc(title)}</strong><span class="feature-description">${esc(slide.description || book.description)}</span><span class="feature-action">작품 살펴보기 ${icon("arrow-right")}</span></span>
     ${art}
     <span class="feature-number">ON THE BOOK · ${String(index + 1).padStart(2, "0")}</span>
   </button>`;
@@ -70,7 +62,7 @@ export function announcementBanner() {
   return `<button class="reading-ribbon discovery-content" data-scenes aria-label="책 속 장면 미리보기로 이동"><span class="ribbon-badge">NEW</span><strong>책장을 넘으면, 이야기가 움직이기 시작해요.</strong><span>장면 미리보기 ${icon("arrow-right")}</span></button>`;
 }
 
-export function landing(library, progress, state) {
+export function landing(library, progress, state, preview = false) {
   const categories = [...new Set(library.books.map(b => edition(b).category))];
   const scenes = library.books.flatMap(b => b.chapters.map((c, i) => ({ book: b, chapter: c, index: i })));
   return `<main class="library-page" id="main-content">
@@ -80,13 +72,13 @@ export function landing(library, progress, state) {
       <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기 <span>${library.books.length}</span></h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label></div>
         <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="도서 분류"><button data-category="all" aria-pressed="true">전체</button>${categories.map(c => `<button data-category="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}</div><p role="status" aria-live="polite" id="catalog-status"></p></div><div id="book-grid" class="catalog-grid catalog-grid--many"></div>
       </section>
-      <section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면으로 바로 들어가 보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div><div class="scene-rail" tabindex="0" role="region" aria-label="책 속 장면 목록">${scenes.map(({ book, chapter, index }) => `<button class="scene-card" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${esc(chapter.title)} 장면 열기"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<span class="scene-number">${String(index + 1).padStart(2, "0")}</span><span class="scene-arrow">${icon("arrow-up-right")}</span></span><span class="scene-book">${esc(book.title)}</span><strong>${esc(chapter.title)}</strong><span class="scene-subtitle">${esc(chapter.subtitle)}</span></button>`).join("")}</div></section>
+      <section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면부터 살펴보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div><div class="scene-rail" tabindex="0" role="region" aria-label="책 속 장면 목록">${scenes.map(({ book, chapter, index }) => `<a class="scene-card" href="${esc(detailUrl({ book: book.id, scene: chapter.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${esc(chapter.title)} — 작품 상세"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<span class="scene-number">${String(index + 1).padStart(2, "0")}</span><span class="scene-arrow">${icon("arrow-up-right")}</span></span><span class="scene-book">${esc(book.title)}</span><strong>${esc(chapter.title)}</strong><span class="scene-subtitle">${esc(chapter.subtitle)}</span></a>`).join("")}</div></section>
       <section class="experience-banner discovery-content" aria-labelledby="experience-title"><div><span class="section-eyebrow">A DIFFERENT WAY TO READ</span><h2 id="experience-title">읽는 즐거움에, 걷는 설렘을 더하다.</h2><p>책을 고르고, 장면을 걷고, 이야기 곁에 잠시 머물러 보세요.</p><button id="trailer-button">온더북 미리보기 ${icon("arrow-up-right")}</button></div><div class="experience-steps"><span><b>01</b> 책을 고르고</span><span><b>02</b> 장면을 걷고</span><span><b>03</b> 이야기를 만나요</span></div></section>
     </div>
   </main>`;
 }
 
-export function setupCatalog({ library, progress, state, onEnter, onTrailer, onHelp }) {
+export function setupCatalog({ library, progress, state, preview = false, onOpen, onTrailer, onHelp }) {
   const page = document.querySelector(".library-page");
   const abort = new AbortController();
   const options = { signal: abort.signal };
@@ -126,7 +118,12 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
   };
   const startHeroTimer = () => {
     clearInterval(heroTimer);
-    if (!heroPaused) heroTimer = setInterval(() => { heroIndex = (heroIndex + 1) % heroCards.length; renderHero(); }, 5200);
+    // Autoplay must not advance while the carousel holds focus: renderHero() would make the focused slide inert and drop focus.
+    if (!heroPaused) heroTimer = setInterval(() => {
+      if (hero?.contains(document.activeElement)) return;
+      heroIndex = (heroIndex + 1) % heroCards.length;
+      renderHero();
+    }, 5200);
   };
   const showHero = direction => {
     if (heroCards.length < 2) return;
@@ -168,7 +165,7 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
     page.querySelector("#catalog-intro").textContent = state.category === "reading" ? "마지막으로 머문 장면에서 다시 시작하세요." : "책을 고르면, 그 안의 세계가 열립니다.";
     page.querySelector("#catalog-status").textContent = `${query ? `“${state.query.trim()}” · ` : ""}${books.length}권`;
     const spaces = discovery && books.length > 0 && books.length < 6 ? Array.from({ length: 6 - books.length }, () => '<div class="catalog-slot" aria-label="새로운 도서를 위한 빈 자리"><span class="empty-cover image-placeholder"></span><span>새로운 이야기 준비 중</span></div>').join("") : "";
-    page.querySelector("#book-grid").innerHTML = books.length ? books.map(bookCard).join("") + spaces : `<div class="catalog-empty">${icon("book-open")}<h3>${state.category === "reading" && !query ? "아직 펼친 이야기가 없어요" : "찾는 이야기가 없어요"}</h3><p>${state.category === "reading" && !query ? "책을 고르면 마지막으로 머문 장면을 이어볼 수 있어요." : "다른 검색어를 입력하거나 전체 책장을 둘러보세요."}</p><button class="primary-button" data-reset>전체 도서 보기</button></div>`;
+    page.querySelector("#book-grid").innerHTML = books.length ? books.map(b => bookCard(b, preview)).join("") + spaces : `<div class="catalog-empty">${icon("book-open")}<h3>${state.category === "reading" && !query ? "아직 펼친 이야기가 없어요" : "찾는 이야기가 없어요"}</h3><p>${state.category === "reading" && !query ? "책을 고르면 마지막으로 머문 장면을 이어볼 수 있어요." : "다른 검색어를 입력하거나 전체 책장을 둘러보세요."}</p><button class="primary-button" data-reset>전체 도서 보기</button></div>`;
     icons();
     updateRail();
   };
@@ -177,9 +174,10 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
     update();
     page.querySelector("#catalog-title").focus({ preventScroll: true });
   };
-  const enter = (id, chapter) => {
-    state.scroll = scrollY; state.selected = id;
-    onEnter(id, chapter);
+  // Remember where the reader was so "책장으로" can scroll back and refocus the card.
+  const open = (target, bookId, sceneId, selector) => {
+    state.scroll = scrollY; state.selected = selector;
+    onOpen(target, bookId, sceneId);
   };
   const showScenes = () => {
     page.querySelector("#scene-title").scrollIntoView({ behavior: motion(), block: "start" });
@@ -231,6 +229,15 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
   const resize = new ResizeObserver(updateRail);
   resize.observe(rail);
   page.addEventListener("click", event => {
+    const link = event.target.closest("a[data-book], a[data-scene-book]");
+    if (link) {
+      // Modified clicks keep the browser's own behaviour, such as opening the link in a new tab.
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      if (link.dataset.sceneBook) open("scene", link.dataset.sceneBook, link.dataset.sceneChapter, `[data-scene-chapter="${CSS.escape(link.dataset.sceneChapter)}"]`);
+      else open("book", link.dataset.book, undefined, `[data-book="${CSS.escape(link.dataset.book)}"]`);
+      return;
+    }
     const button = event.target.closest("button");
     if (!button) return;
     if (button.dataset.category) { state.category = button.dataset.category; update(); }
@@ -244,9 +251,7 @@ export function setupCatalog({ library, progress, state, onEnter, onTrailer, onH
       startHeroTimer();
     }
     if (button.hasAttribute("data-reset")) { showCatalog("all"); search.focus(); }
-    if (button.dataset.enter) enter(button.dataset.enter);
-    if (button.dataset.featureBook) enter(button.dataset.featureBook);
-    if (button.dataset.sceneBook) enter(button.dataset.sceneBook, button.dataset.sceneChapter);
+    if (button.dataset.featureBook) open("book", button.dataset.featureBook, undefined, `[data-feature-book="${CSS.escape(button.dataset.featureBook)}"]`);
     if (button.hasAttribute("data-help")) onHelp();
     if (button.hasAttribute("data-scenes")) showScenes();
     if (button.dataset.rail) rail.scrollBy({ left: Number(button.dataset.rail) * rail.clientWidth * .8, behavior: motion() });

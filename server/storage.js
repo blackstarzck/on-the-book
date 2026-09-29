@@ -10,7 +10,8 @@ import { modelInfo } from './model-info.js';
 
 export const cloud = process.env.VERCEL === '1';
 // Raise this when the library shape changes, so an older studio cannot save over fields it does not know.
-export const SCHEMA_VERSION = 1;
+// 2: books carry authorIntro and bookIntro (저자 소개·책 소개).
+export const SCHEMA_VERSION = 2;
 
 const parse = library => librarySchema.parse(upgrade(library));
 const conflict = () => Object.assign(new Error('Save conflict'), { status: 409 });

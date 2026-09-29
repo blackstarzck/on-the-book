@@ -27,7 +27,8 @@ body { background: #fff; color: #242a27; font-size: 16px; }
 .reading-ribbon strong { font-size: 14px; font-weight: 650; letter-spacing: -.02em; }
 .reading-ribbon > span:last-child { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; font-size: 12px; font-weight: 600; color: #dbe7df; white-space: nowrap; }
 .reading-ribbon svg { width: 15px; height: 15px; }
-.reading-ribbon:hover { background: #234735; }
+/* Keep the text white: the global button:hover colour would sink it into the green. */
+.reading-ribbon:hover { background: #234735; color: #fff; }
 .featured-section { margin-bottom: 2px; }
 .feature-carousel { position: relative; }
 .feature-grid { position: relative; min-height: 354px; overflow: hidden; border-radius: 22px; touch-action: pan-y; user-select: none; }
@@ -93,6 +94,8 @@ body { background: #fff; color: #242a27; font-size: 16px; }
 .catalog-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 30px 24px; min-height: 350px; }
 .catalog-card { position: relative; min-width: 0; }
 .book-entry { display: flex; flex-direction: column; align-items: stretch; width: 100%; padding: 0; text-align: left; border-radius: 4px; }
+a.book-entry, a.scene-card { color: inherit; text-decoration: none; }
+a.book-entry:hover, a.scene-card:hover { color: #173d2a; text-decoration: none; }
 .cover-stage { display: block; position: relative; width: 100%; }
 .catalog-cover { display: block; width: 100%; aspect-ratio: 2 / 2.85; border-radius: 3px; }
 .book-entry:hover .catalog-cover { background: #e4e9e5; }

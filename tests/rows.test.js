@@ -77,3 +77,21 @@ test("optional fields stay absent instead of turning into null", () => {
   assert.deepEqual(back.books[0].chapters[0].floorRoute, [{ x: 1, z: 2 }, { x: 3, z: 4 }]);
   assert.deepEqual(librarySchema.parse(back), parsed);
 });
+
+// The sample library's intros are empty, which the schema default would restore even if they were dropped.
+test("author and book intros survive the trip, and rows from before their columns read back empty", () => {
+  const original = library();
+  original.books[0].authorIntro = "옥스퍼드의 수학 강사였어요.\n\n본명은 찰스 럿위지 도지슨이에요.";
+  original.books[0].bookIntro = "흰 토끼를 따라간 앨리스의 이야기예요.";
+  const rows = toRows(original);
+  assert.equal(rows.books[0].author_intro, original.books[0].authorIntro);
+  assert.equal(rows.books[0].book_intro, original.books[0].bookIntro);
+  assert.deepEqual(librarySchema.parse(fromRows(rows)), original);
+  // A row saved before 20260929090000_book_intros.sql, or by an older studio, holds null in both columns.
+  for (const row of rows.books) Object.assign(row, { author_intro: null, book_intro: null });
+  const back = fromRows(rows);
+  assert.equal("authorIntro" in back.books[0], false);
+  assert.equal("bookIntro" in back.books[0], false);
+  const parsed = librarySchema.parse(back).books[0];
+  assert.deepEqual([parsed.authorIntro, parsed.bookIntro], ["", ""]);
+});

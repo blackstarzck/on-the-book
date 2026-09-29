@@ -36,6 +36,10 @@ try {
   await page.locator('#book-cover-file').setInputFiles(await png(400, 570, '#6b8f71'));
   await expect(page.locator('#book-cover-status')).toContainText('업로드 완료');
   await expect(page.locator('#book-cover-preview')).toBeVisible();
+  const authorIntro = '옥스퍼드의 수학 강사였어요.\n아이들에게 이야기를 들려주곤 했어요.\n\n본명은 찰스 럿위지 도지슨이에요.';
+  const bookIntro = '흰 토끼를 따라 굴에 떨어진 앨리스의 이야기예요.';
+  await page.getByLabel('저자 소개', { exact: true }).fill(authorIntro);
+  await page.getByLabel('책 소개', { exact: true }).fill(bookIntro);
   await category.fill('all');
   await page.locator('#book-form button[type="submit"]').click();
   await expect(page.locator('#book-form')).toBeVisible();
@@ -52,9 +56,10 @@ try {
   expect(alice.category).toBe('고전');
   expect(alice.cover).toMatch(/^\/uploads\/.+\.png$/);
   expect(alice.chapters[0].thumbnail).toMatch(/^\/uploads\/.+\.png$/);
+  expect([alice.authorIntro, alice.bookIntro]).toEqual([authorIntro, bookIntro]);
   await page.locator('#back-library').click();
   await expect(page.locator('.book-shelf')).toBeVisible();
-  pass('Cover, category (reserved names refused) and chapter thumbnail are edited and saved');
+  pass('Cover, category (reserved names refused), intros and chapter thumbnail are edited and saved');
 
   await page.locator('[data-book-drag="alice"]').focus();
   await page.keyboard.press('Alt+ArrowRight');
@@ -110,8 +115,8 @@ try {
   await expect(frame.locator('.feature-card.is-active')).toHaveClass(/feature-card--photo/);
   await expect(frame.locator('.feature-card.is-active .feature-kicker')).toHaveText('이번 주 추천');
   await expect(frame.locator('.catalog-card')).toHaveCount(2);
-  await expect(frame.locator('.catalog-card').first().locator('[data-enter]')).toHaveAttribute('data-enter', 'oz');
-  await expect(frame.locator('[data-enter="alice"] .catalog-cover img')).toHaveCount(1);
+  await expect(frame.locator('.catalog-card').first().locator('[data-book]')).toHaveAttribute('data-book', 'oz');
+  await expect(frame.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
   await page.locator('#preview-mobile').click();
   expect((await page.locator('iframe').boundingBox()).width).toBe(390);
   await page.locator('.client-preview-dialog .close-modal').click();
@@ -127,11 +132,34 @@ try {
   await reader.goto(`${server.url}/client/`);
   await expect(reader.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'oz');
   await expect(reader.locator('.feature-card.is-active .feature-copy > strong')).toHaveText('노란 길로 떠나요');
-  await expect(reader.locator('.catalog-card').first().locator('[data-enter]')).toHaveAttribute('data-enter', 'oz');
-  await expect(reader.locator('[data-enter="alice"] .catalog-cover img')).toHaveCount(1);
+  await expect(reader.locator('.catalog-card').first().locator('[data-book]')).toHaveAttribute('data-book', 'oz');
+  await expect(reader.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
   await expect(reader.locator('.scene-image.has-image img')).toHaveCount(1);
   await expect(reader.locator('.catalog-filters [data-category="고전"]')).toBeVisible();
   pass('Publishing brings the order, cover, thumbnail, category and slides to readers');
+
+  const detail = await context.newPage();
+  detail.on('pageerror', error => errors.push(error.message));
+  await detail.goto(`${server.url}/client/?book=alice`);
+  await expect(detail.locator('#detail-author h2')).toHaveText('저자 소개');
+  await expect(detail.locator('#detail-author .detail-intro-name')).toHaveText('루이스 캐럴');
+  await expect(detail.locator('#detail-author .detail-prose p')).toHaveCount(2);
+  // innerText follows the rendering, so the kept line break proves `white-space: pre-line`.
+  expect(await detail.locator('#detail-author .detail-prose p').first().evaluate(p => p.innerText)).toBe('옥스퍼드의 수학 강사였어요.\n아이들에게 이야기를 들려주곤 했어요.');
+  await expect(detail.locator('#detail-book-intro .detail-prose p')).toHaveText([bookIntro]);
+  expect(await detail.locator('#detail-journey, .detail-intro').evaluateAll(sections => sections.map(s => s.id))).toEqual(['detail-journey', 'detail-author', 'detail-book-intro']);
+  // 책 소개 closes the left column: the book detail no longer shows the 원작 정보 section.
+  await expect(detail.locator('.detail-main > :last-child')).toHaveId('detail-book-intro');
+  await expect(detail.locator('.detail-source')).toHaveCount(0);
+  await expect(detail.locator('.detail-intro-empty')).toHaveCount(0);
+  // Oz was published with both intros left empty.
+  await detail.goto(`${server.url}/client/?book=oz`);
+  await expect(detail.locator('#detail-author .detail-intro-name')).toHaveText('L. 프랭크 바움');
+  await expect(detail.locator('#detail-author .detail-intro-empty')).toHaveText('저자 소개를 준비 중이에요.');
+  await expect(detail.locator('#detail-book-intro .detail-intro-empty')).toHaveText('책 소개를 준비 중이에요.');
+  await expect(detail.locator('.detail-prose')).toHaveCount(0);
+  await detail.close();
+  pass('The published intros follow the journey on the book detail, author first; empty ones say 준비 중');
 
   await page.locator('[data-slide]').nth(1).locator('[data-slide-remove]').click();
   await page.locator('#confirm-action').click();

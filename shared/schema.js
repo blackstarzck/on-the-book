@@ -96,6 +96,9 @@ export const bookSchema = z.object({
   floorAssets: z.array(z.object({asset:z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/),name:text})).max(300).optional(),
   year: z.number().int().min(1).max(2026),
   description: z.string().max(1000),
+  // Prose for the book detail page under the journey. Blank lines split paragraphs; an empty field hides its section.
+  authorIntro: z.string().max(5000).default(""),
+  bookIntro: z.string().max(5000).default(""),
   source: z.url().refine((s) => /^https?:/.test(s)),
   rights: z.string().max(1000),
   published: z.boolean(),
