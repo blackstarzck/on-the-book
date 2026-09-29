@@ -60,7 +60,9 @@ test("bookDetail opens the panel on the first scene when nothing is saved", () =
   assert.equal(count(html, 'aria-current="true"'), 1);
   assert.match(html, /data-scene="alice-1" aria-current="true"/);
   assert.match(html, /<h2 id="detail-journey-title">이 책의 여정<\/h2><p><span class="journey-hint journey-hint--wide">장면을 고르면 오른쪽에서 그 장면을 먼저 볼 수 있어요\.<\/span><span class="journey-hint journey-hint--narrow">장면을 고르면 그 장면을 먼저 볼 수 있어요\.<\/span><\/p>/);
-  assert.match(html, /<span class="journey-model">· 조끼 입은 흰 토끼<\/span>/);
+  // A journey row names the scene only; the scene's main model is left to the panel.
+  assert.match(html, /<span class="journey-copy"><strong>흰 토끼를 따라서<\/strong><small>익숙한 오후, 낯선 모험의 시작<\/small><\/span><i data-lucide="chevron-right" aria-hidden="true"><\/i><\/a>/);
+  assert.doesNotMatch(html, /journey-model/);
   assert.match(html, /<aside class="scene-panel" aria-labelledby="panel-scene-title">/);
   assert.match(html, /<h2 id="panel-scene-title">흰 토끼를 따라서<\/h2>/);
   assert.equal(count(html, 'data-enter="alice"'), 2);

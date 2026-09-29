@@ -86,10 +86,10 @@ export const sceneStatus = ({ book, chapter }) => `${two(indexOf(book, chapter) 
 // The whole book detail page. `chapter` is the scene the panel shows; it defaults to the saved or first scene.
 export function bookDetail({ book, library, progress = {}, preview = false, chapter = defaultScene(book, progress) }) {
   const saved = savedChapter(book, progress);
-  const rows = book.chapters.map((scene, index) => {
-    const main = mainPlacement(scene);
-    return `<li><a class="journey-row" href="${esc(detailUrl({ book: book.id, scene: scene.id, preview }))}" data-scene="${esc(scene.id)}" aria-current="${scene.id === chapter.id ? "true" : "false"}">${themeChip(scene.theme)}<span class="journey-number">${two(index + 1)}</span><span class="journey-copy"><strong>${esc(scene.title)}</strong>${scene.subtitle ? `<small>${esc(scene.subtitle)}</small>` : ""}</span>${main ? `<span class="journey-model">· ${esc(main.title)}</span>` : ""}${scene.id === saved?.id ? savedBadge : ""}${icon("chevron-right")}</a></li>`;
-  }).join("");
+  // A row names the scene only; its models are listed in the scene panel.
+  const rows = book.chapters.map((scene, index) =>
+    `<li><a class="journey-row" href="${esc(detailUrl({ book: book.id, scene: scene.id, preview }))}" data-scene="${esc(scene.id)}" aria-current="${scene.id === chapter.id ? "true" : "false"}">${themeChip(scene.theme)}<span class="journey-number">${two(index + 1)}</span><span class="journey-copy"><strong>${esc(scene.title)}</strong>${scene.subtitle ? `<small>${esc(scene.subtitle)}</small>` : ""}</span>${scene.id === saved?.id ? savedBadge : ""}${icon("chevron-right")}</a></li>`
+  ).join("");
   return `<main class="detail-page store-content" id="main-content" data-view="book">
     <div class="detail-main">
       <section class="detail-hero" aria-labelledby="detail-title"><span class="detail-cover">${bookCover(book)}</span><div class="detail-copy"><span class="eyebrow">${esc(edition(book).category)} · ${book.chapters.length}개의 장면 · ${book.year}</span><h1 id="detail-title" tabindex="-1">${esc(book.title)}</h1><p class="detail-meta">${esc(book.englishTitle)} · ${esc(book.author)}</p><p class="detail-description">${esc(book.description)}</p></div></section>

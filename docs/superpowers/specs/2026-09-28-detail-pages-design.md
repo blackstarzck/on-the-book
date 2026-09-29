@@ -139,10 +139,11 @@ main.detail-page.store-content#main-content[data-view="book"]
 
 여정 `.detail-section#detail-journey`
 - `h2` "이 책의 여정", 설명 `p` "장면을 고르면 오른쪽에서 그 장면을 먼저 볼 수 있어요."(850px 이하에서는 CSS 로 "장면을 고르면 그 장면을 먼저 볼 수 있어요." 를 보인다. 두 문구를 `span` 둘로 넣고 폭에 따라 하나만 보인다.)
-- `<ol class="journey-list">` 안에 챕터 순서대로 `<li><a class="journey-row" href="{detailUrl scene}" data-scene="alice-2" aria-current="true|false">`. 행 안: 테마 칩 `.theme-chip[data-theme]`(`aria-hidden`), 번호 `01`, `strong` 제목, `small` 부제, 대표 모델 `span.journey-model` "· 조끼 입은 흰 토끼", 배지 `.journey-badge` "마지막에 머문 장면"(저장된 장면 행 하나), `chevron-right` 아이콘.
+- `<ol class="journey-list">` 안에 챕터 순서대로 `<li><a class="journey-row" href="{detailUrl scene}" data-scene="alice-2" aria-current="true|false">`. 행 안: 테마 칩 `.theme-chip[data-theme]`(`aria-hidden`), 번호 `01`, `strong` 제목, `small` 부제, 배지 `.journey-badge` "마지막에 머문 장면"(저장된 장면 행 하나), `chevron-right` 아이콘. 행에는 대표 모델 이름을 두지 않는다(2026-09-29 사용자 요청으로 `span.journey-model` "· 조끼 입은 흰 토끼"를 없앴다. 장면의 모델은 패널의 "이 장면에서 만나는 것들"에 있다).
 - 선택된 행은 `aria-current="true"` 이고 연한 배경(`#f0f4ef`)과 왼쪽 3px 강조선(`--accent`)을 갖는다. 나머지는 `aria-current="false"`.
 - 행은 진짜 링크다. 수정키 클릭·가운데 클릭은 브라우저에 맡겨 `?book=&scene=` 을 새 탭으로 열 수 있고, 일반 클릭은 `preventDefault()` 뒤 장면 선택(4절)이다.
-- 대표 모델은 `chapter.mainPlacementId` 가 가리키는 배치의 `title`, 없으면 첫 배치, 배치가 없으면 생략. 테마 칩 색은 meadow `#cad7aa`, night `#929aaf`, tea `#d7c9b6`, rose `#d8c6b7`, gold `#dcca98`(3D 월드 바닥색).
+- 작은 글자는 14px 이다. 히어로의 `.eyebrow`, 패널·시트의 `.eyebrow`("장면 02 / 06"), `.panel-hint`, `.figure-story` 가 12px(히어로 `.eyebrow` 는 600px 이하 11px)였는데, 2026-09-29 사용자 요청으로 모든 폭에서 14px 로 올렸다. 13px(번호·부제·하단 바 문구)와 11px 배지는 그대로다.
+- 테마 칩 색은 meadow `#cad7aa`, night `#929aaf`, tea `#d7c9b6`, rose `#d8c6b7`, gold `#dcca98`(3D 월드 바닥색).
 
 저자 소개·책 소개 `.detail-section.detail-intro`
 - 여정 다음에 저자 소개, 책 소개 순서로 늘 놓고, 책 소개가 왼쪽 열의 끝이다. 비어 있으면 본문 자리에 준비 중 문구를 보인다. 자세한 규칙은 19절.
