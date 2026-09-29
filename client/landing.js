@@ -58,13 +58,35 @@ function featured(slides) {
   return `<section class="featured-section discovery-content" aria-label="추천 작품">${heading("추천 작품")}<div class="feature-carousel" data-feature-carousel><div class="feature-grid" role="region" aria-roledescription="carousel" aria-label="추천 작품 슬라이드" tabindex="0">${slides.map(feature).join("")}</div>${controls}</div></section>`;
 }
 
+const two = n => String(n).padStart(2, "0");
+
+// The scene previews show one book at a time: the reader's pick while that book is still on the shelf, otherwise the
+// first book. Undefined only when the draft preview's shelf is empty.
+const sceneBookOf = (books, id) => books.find(b => b.id === id) || books[0];
+
+// The chosen book's tiles in the rail: its cover (opens the book detail), then a card per chapter (opens that scene).
+function sceneTiles(book, preview) {
+  const cover = `<a class="scene-cover${book.cover ? " has-image" : ""}" href="${esc(detailUrl({ book: book.id, preview }))}" data-scene-cover="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">${book.cover ? `<img src="${esc(book.cover)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<strong>${esc(book.title)}</strong></a>`;
+  return cover + book.chapters.map((chapter, index) => `<a class="scene-card" href="${esc(detailUrl({ book: book.id, scene: chapter.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${two(index + 1)} ${esc(chapter.title)} — 작품 상세"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}</span><span class="scene-index">Chapter. ${two(index + 1)}</span><strong>${esc(chapter.title)}</strong></a>`).join("");
+}
+
+// A tab per book picks whose tiles fill the rail. A single book needs no picker, so its rail is a plain region.
+function sceneSection(books, state, preview) {
+  const book = sceneBookOf(books, state.sceneBook);
+  const picked = books.indexOf(book);
+  const picker = books.length > 1
+    ? `<div class="scene-books" role="tablist" aria-label="장면을 볼 도서">${books.map((b, i) => `<button type="button" role="tab" id="scene-tab-${i}" data-scene-tab="${esc(b.id)}" aria-selected="${i === picked}" aria-controls="scene-shelf" tabindex="${i === picked ? 0 : -1}">${esc(b.title)}</button>`).join("")}</div>`
+    : "";
+  const shelf = books.length > 1 ? `role="tabpanel" aria-labelledby="scene-tab-${picked}"` : `role="region" aria-label="${book ? `${esc(book.title)} 장면 목록` : "책 속 장면 목록"}"`;
+  return `<section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면부터 살펴보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div>${picker}<div class="scene-rail" id="scene-shelf" tabindex="0" ${shelf}>${book ? sceneTiles(book, preview) : ""}</div></section>`;
+}
+
 export function announcementBanner() {
   return `<button class="reading-ribbon discovery-content" data-scenes aria-label="책 속 장면 미리보기로 이동"><span class="ribbon-badge">NEW</span><strong>책장을 넘으면, 이야기가 움직이기 시작해요.</strong><span>장면 미리보기 ${icon("arrow-right")}</span></button>`;
 }
 
 export function landing(library, progress, state, preview = false) {
   const categories = [...new Set(library.books.map(b => edition(b).category))];
-  const scenes = library.books.flatMap(b => b.chapters.map((c, i) => ({ book: b, chapter: c, index: i })));
   return `<main class="library-page" id="main-content">
     <div class="store-content">
       ${featured(heroSlides(library.books, library.home))}
@@ -72,7 +94,7 @@ export function landing(library, progress, state, preview = false) {
       <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기 <span>${library.books.length}</span></h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label></div>
         <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="도서 분류"><button data-category="all" aria-pressed="true">전체</button>${categories.map(c => `<button data-category="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}</div><p role="status" aria-live="polite" id="catalog-status"></p></div><div id="book-grid" class="catalog-grid catalog-grid--many"></div>
       </section>
-      <section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면부터 살펴보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div><div class="scene-rail" tabindex="0" role="region" aria-label="책 속 장면 목록">${scenes.map(({ book, chapter, index }) => `<a class="scene-card" href="${esc(detailUrl({ book: book.id, scene: chapter.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${esc(chapter.title)} — 작품 상세"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<span class="scene-number">${String(index + 1).padStart(2, "0")}</span><span class="scene-arrow">${icon("arrow-up-right")}</span></span><span class="scene-book">${esc(book.title)}</span><strong>${esc(chapter.title)}</strong><span class="scene-subtitle">${esc(chapter.subtitle)}</span></a>`).join("")}</div></section>
+      ${sceneSection(library.books, state, preview)}
       <section class="experience-banner discovery-content" aria-labelledby="experience-title"><div><span class="section-eyebrow">A DIFFERENT WAY TO READ</span><h2 id="experience-title">읽는 즐거움에, 걷는 설렘을 더하다.</h2><p>책을 고르고, 장면을 걷고, 이야기 곁에 잠시 머물러 보세요.</p><button id="trailer-button">온더북 미리보기 ${icon("arrow-up-right")}</button></div><div class="experience-steps"><span><b>01</b> 책을 고르고</span><span><b>02</b> 장면을 걷고</span><span><b>03</b> 이야기를 만나요</span></div></section>
     </div>
   </main>`;
@@ -85,6 +107,7 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
   const search = document.querySelector("#book-search");
   const sort = page.querySelector("#book-sort");
   const rail = page.querySelector(".scene-rail");
+  const sceneTabs = [...page.querySelectorAll("[data-scene-tab]")];
   // The hero is absent when no published book is left (possible in the studio's draft preview).
   const hero = page.querySelector("[data-feature-carousel]");
   const heroTrack = hero?.querySelector(".feature-grid");
@@ -149,6 +172,26 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
   const updateRail = () => {
     page.querySelector('[data-rail="-1"]').disabled = rail.scrollLeft <= 1;
     page.querySelector('[data-rail="1"]').disabled = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+  };
+  // Picking a book swaps the rail's tiles in place and starts it from the cover again. The pick lives in `state`,
+  // so the bookshelf comes back on it (and can refocus a card) after a visit to the book detail.
+  const showSceneBook = (id, { focus = false } = {}) => {
+    const book = library.books.find(b => b.id === id);
+    const tab = sceneTabs.find(t => t.dataset.sceneTab === id);
+    if (!book || !tab) return;
+    if (focus) tab.focus();
+    if (tab.getAttribute("aria-selected") === "true") return;
+    state.sceneBook = id;
+    for (const other of sceneTabs) {
+      other.setAttribute("aria-selected", String(other === tab));
+      other.tabIndex = other === tab ? 0 : -1;
+    }
+    rail.setAttribute("aria-labelledby", tab.id);
+    // From the first swap on, new tiles slide in (see .scene-rail.is-swapped); the first render comes with the page.
+    rail.classList.add("is-swapped");
+    rail.innerHTML = sceneTiles(book, preview);
+    rail.scrollTo({ left: 0, behavior: "instant" });
+    updateRail();
   };
   const update = () => {
     const query = state.query.trim().toLocaleLowerCase();
@@ -226,20 +269,30 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
     if (event.key === "Home" || event.key === "End") rail.scrollTo({ left: event.key === "Home" ? 0 : rail.scrollWidth, behavior: motion() });
     else rail.scrollBy({ left: (event.key === "ArrowLeft" ? -1 : 1) * rail.clientWidth * .8, behavior: motion() });
   }, options);
+  // Tabs follow the arrow keys: the focused tab is picked at once, so its book fills the rail.
+  page.querySelector(".scene-books")?.addEventListener("keydown", event => {
+    const index = sceneTabs.indexOf(event.target);
+    if (index < 0 || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? sceneTabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + sceneTabs.length) % sceneTabs.length;
+    showSceneBook(sceneTabs[next].dataset.sceneTab, { focus: true });
+  }, options);
   const resize = new ResizeObserver(updateRail);
   resize.observe(rail);
   page.addEventListener("click", event => {
-    const link = event.target.closest("a[data-book], a[data-scene-book]");
+    const link = event.target.closest("a[data-book], a[data-scene-book], a[data-scene-cover]");
     if (link) {
       // Modified clicks keep the browser's own behaviour, such as opening the link in a new tab.
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       if (link.dataset.sceneBook) open("scene", link.dataset.sceneBook, link.dataset.sceneChapter, `[data-scene-chapter="${CSS.escape(link.dataset.sceneChapter)}"]`);
+      else if (link.dataset.sceneCover) open("book", link.dataset.sceneCover, undefined, `[data-scene-cover="${CSS.escape(link.dataset.sceneCover)}"]`);
       else open("book", link.dataset.book, undefined, `[data-book="${CSS.escape(link.dataset.book)}"]`);
       return;
     }
     const button = event.target.closest("button");
     if (!button) return;
+    if (button.dataset.sceneTab) showSceneBook(button.dataset.sceneTab);
     if (button.dataset.category) { state.category = button.dataset.category; update(); }
     if (button.dataset.quickView) showCatalog(button.dataset.quickView);
     if (button.dataset.quickCategory) showCatalog(button.dataset.quickCategory);

@@ -134,7 +134,11 @@ try {
   await expect(reader.locator('.feature-card.is-active .feature-copy > strong')).toHaveText('노란 길로 떠나요');
   await expect(reader.locator('.catalog-card').first().locator('[data-book]')).toHaveAttribute('data-book', 'oz');
   await expect(reader.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
+  // The scene previews open on the first book (now oz); the thumbnail belongs to alice's first chapter.
+  await expect(reader.locator('[data-scene-tab="oz"]')).toHaveAttribute('aria-selected', 'true');
+  await reader.locator('[data-scene-tab="alice"]').click();
   await expect(reader.locator('.scene-image.has-image img')).toHaveCount(1);
+  await expect(reader.locator('.scene-cover img')).toHaveCount(1);
   await expect(reader.locator('.catalog-filters [data-category="고전"]')).toBeVisible();
   pass('Publishing brings the order, cover, thumbnail, category and slides to readers');
 

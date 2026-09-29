@@ -31,7 +31,22 @@ try {
   expect(ribbonBox.x).toBe(0);
   expect(ribbonBox.width).toBe(1440);
   await expect(page.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
-  await expect(page.locator('.scene-card')).toHaveCount(9);
+  // The scene previews show one book at a time, the first on the shelf: its square cover tile (two columns wide), then
+  // a square card per chapter.
+  await expect(page.getByRole('tab')).toHaveText(['이상한 나라의 앨리스', '오즈의 마법사']);
+  await expect(page.getByRole('tab', { name: '이상한 나라의 앨리스', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#scene-shelf')).toHaveAttribute('aria-labelledby', 'scene-tab-0');
+  await expect(page.locator('.scene-cover')).toHaveText('이상한 나라의 앨리스');
+  await expect(page.locator('.scene-card')).toHaveCount(6);
+  await expect(page.locator('.scene-index')).toHaveText(['Chapter. 01', 'Chapter. 02', 'Chapter. 03', 'Chapter. 04', 'Chapter. 05', 'Chapter. 06']);
+  const tiles = await page.locator('.scene-rail').evaluate(rail => {
+    const cover = rail.querySelector('.scene-cover').getBoundingClientRect();
+    const image = rail.querySelector('.scene-card .scene-image').getBoundingClientRect();
+    return { cover: cover.width / cover.height, image: image.width / image.height, span: Math.round(cover.width - 2 * image.width - parseFloat(getComputedStyle(rail).columnGap)) };
+  });
+  expect(Math.abs(tiles.cover - 1)).toBeLessThan(.01);
+  expect(Math.abs(tiles.image - 1)).toBeLessThan(.01);
+  expect(tiles.span).toBe(0);
   await expect(page.locator('canvas, video, dialog[open]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /로그인|회원가입|알림/ })).toHaveCount(0);
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
@@ -219,6 +234,41 @@ try {
   await expect(page).toHaveURL(/book=alice&chapter=alice-3/);
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
   pass('Blank image slots; scene cards open the book detail on that scene and its CTA enters that chapter');
+  // Picking a book in the scene previews swaps the tiles in place; the arrow keys move the pick like tabs.
+  await page.getByRole('tab', { name: '오즈의 마법사', exact: true }).click();
+  await expect(page.getByRole('tab', { name: '오즈의 마법사', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: '이상한 나라의 앨리스', exact: true })).toHaveAttribute('aria-selected', 'false');
+  await expect(page.locator('#scene-shelf')).toHaveAttribute('aria-labelledby', 'scene-tab-1');
+  await expect(page.locator('.scene-cover')).toHaveText('오즈의 마법사');
+  await expect(page.locator('.scene-cover')).toHaveAttribute('href', '?book=oz');
+  await expect(page.locator('.scene-card')).toHaveCount(3);
+  await expect(page.locator('.scene-card').first()).toHaveAttribute('data-scene-chapter', 'oz-1');
+  // Three chapters fit beside the cover, so there is nothing to scroll.
+  await expect(page.locator('[data-rail="1"]')).toBeDisabled();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('tab', { name: '이상한 나라의 앨리스', exact: true })).toBeFocused();
+  await expect(page.locator('.scene-card')).toHaveCount(6);
+  await expect(page.locator('[data-rail="1"]')).toBeEnabled();
+  await page.keyboard.press('End');
+  await expect(page.getByRole('tab', { name: '오즈의 마법사', exact: true })).toBeFocused();
+  await expect(page.locator('.scene-card')).toHaveCount(3);
+  // The cover tile opens the book detail; coming back keeps the pick and puts the focus back on the tile.
+  await page.locator('.scene-cover').click();
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(page).toHaveURL(/\?book=oz$/);
+  await expect(page.locator('#detail-title')).toHaveText('오즈의 마법사');
+  await page.locator('.site-header .brand').click();
+  await expect(page.locator('.library-page')).toBeVisible();
+  await expect(page.getByRole('tab', { name: '오즈의 마법사', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.scene-cover')).toBeFocused();
+  await page.locator('[data-scene-chapter="oz-2"]').click();
+  await expect(page).toHaveURL(/\?book=oz&scene=oz-2$/);
+  await expect(page.locator('.scene-panel #panel-scene-title')).toHaveText('함께 걷는 숲');
+  await page.locator('.site-header .brand').click();
+  await expect(page.locator('[data-scene-chapter="oz-2"]')).toBeFocused();
+  await page.getByRole('tab', { name: '이상한 나라의 앨리스', exact: true }).click();
+  await expect(page.locator('.scene-card')).toHaveCount(6);
+  pass('Book tabs swap the scene previews, and the pick and the focus survive a visit to the book detail');
   await page.getByRole('button', { name: '히어로 자동 재생 중지', exact: true }).click();
   if (await page.locator('.feature-card.is-active').getAttribute('data-feature-book') !== 'alice') {
     await page.getByRole('button', { name: '이전 추천 작품', exact: true }).click();
@@ -411,8 +461,16 @@ try {
   await expect(home.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
   await expect(home.locator('[data-book="oz"] .catalog-cover img')).toHaveCount(0);
   await expect(home.locator('.scene-image.has-image img')).toHaveCount(1);
+  // The scene previews' cover tile shows the same studio cover; a book without one keeps the plain wash.
+  await expect(home.locator('.scene-cover.has-image img')).toHaveAttribute('src', upload('1'));
   await home.locator('.scene-image.has-image').scrollIntoViewIfNeeded();
-  await expect.poll(() => loaded(home.locator('.catalog-cover img, .scene-image img'))).toBe(true);
+  await expect.poll(() => loaded(home.locator('.catalog-cover img, .scene-image img, .scene-cover img'))).toBe(true);
+  await home.locator('[data-scene-tab="alice"]').focus();
+  await home.keyboard.press('ArrowRight');
+  await expect(home.locator('.scene-cover')).toHaveText(oz.title);
+  await expect(home.locator('.scene-cover img, .scene-image.has-image')).toHaveCount(0);
+  await home.keyboard.press('Home');
+  await expect(home.locator('.scene-image.has-image img')).toHaveCount(1);
   await home.evaluate(() => window.scrollTo(0, 0));
   await expect(home.locator('.feature-card')).toHaveCount(3);
   const first = home.locator('.feature-card.is-active');
