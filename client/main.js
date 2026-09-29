@@ -330,7 +330,8 @@ async function openLibrary({ land } = {}) {
     document.querySelector("#catalog-title").focus();
     return;
   }
-  // The scene previews are discovery content, which a search or a category would hide.
+  // The scene previews are discovery content, which a search or the reading list would hide, so the ribbon opens the
+  // whole shelf.
   if (land === "scenes") { catalogState.query = ""; catalogState.category = "all"; }
   const changed = await transitionPage(app, () => {
     view = "home";
