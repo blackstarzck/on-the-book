@@ -2154,8 +2154,8 @@ node tests/home-admin.mjs
 Run: `git diff --stat`
 Expected: 네 문서만 바뀜.
 
-Run: `grep -n "admin-routes\|otb-studio-panels\|주소와 새로고침" README.md docs/ADMIN-GUIDE.md docs/DEPLOYMENT.md docs/superpowers/specs/2026-09-11-react-next-migration-design.md`
-Expected: README 2곳 이상, ADMIN-GUIDE 1곳, DEPLOYMENT 1곳, 전환 스펙 4곳 이상.
+Run: `grep -n "admin-routes\|otb-studio-panels\|주소와 새로고침\|주소와-새로고침" README.md docs/ADMIN-GUIDE.md docs/DEPLOYMENT.md docs/superpowers/specs/2026-09-11-react-next-migration-design.md`
+Expected: README 2곳 이상, ADMIN-GUIDE 1곳, DEPLOYMENT 1곳, 전환 스펙 4곳 이상. README 와 DEPLOYMENT 는 링크 조각 `#주소와-새로고침`(하이픈)으로 걸린다. 실행 기록(2026-09-29): 처음 계획의 패턴에는 하이픈 표기가 없어 두 문서가 덜 잡혔다. 패턴을 고친 뒤 2·1·1·5 로 확인했다.
 
 - [ ] **Step 6: 커밋**
 
