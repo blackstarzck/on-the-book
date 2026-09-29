@@ -39,10 +39,10 @@ try {
   await expect(page.locator('.scene-cover')).toHaveText('이상한 나라의 앨리스');
   await expect(page.locator('.scene-card')).toHaveCount(6);
   await expect(page.locator('.scene-index')).toHaveText(['Chapter. 01', 'Chapter. 02', 'Chapter. 03', 'Chapter. 04', 'Chapter. 05', 'Chapter. 06']);
-  const tiles = await page.locator('.scene-rail').evaluate(rail => {
-    const cover = rail.querySelector('.scene-cover').getBoundingClientRect();
-    const image = rail.querySelector('.scene-card .scene-image').getBoundingClientRect();
-    return { cover: cover.width / cover.height, image: image.width / image.height, span: Math.round(cover.width - 2 * image.width - parseFloat(getComputedStyle(rail).columnGap)) };
+  const tiles = await page.locator('.scene-shelf').evaluate(shelf => {
+    const cover = shelf.querySelector('.scene-cover').getBoundingClientRect();
+    const image = shelf.querySelector('.scene-card .scene-image').getBoundingClientRect();
+    return { cover: cover.width / cover.height, image: image.width / image.height, span: Math.round(cover.width - 2 * image.width - parseFloat(getComputedStyle(shelf.querySelector('.scene-rail')).columnGap)) };
   });
   expect(Math.abs(tiles.cover - 1)).toBeLessThan(.01);
   expect(Math.abs(tiles.image - 1)).toBeLessThan(.01);
@@ -210,8 +210,18 @@ try {
   pass('Both real books enter their own world; trailer opens and closes');
 
   await expect(page.locator('[data-rail="-1"]')).toBeDisabled();
+  // The cover tile stays put while the arrows move the chapter cards beside it, and no card slides over it.
+  await page.evaluate(() => document.querySelector('#scene-title').scrollIntoView({ block: 'start', behavior: 'instant' }));
+  const place = () => page.locator('.scene-shelf').evaluate(shelf => {
+    const cover = shelf.querySelector('.scene-cover'), box = cover.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.right - 4, box.top + box.height / 2);
+    return { cover: Math.round(box.left), first: Math.round(shelf.querySelector('.scene-card').getBoundingClientRect().left), onTop: cover.contains(hit) };
+  });
+  const before = await place();
   await page.getByRole('button', { name: '다음 장면들', exact: true }).click();
   await expect.poll(() => page.locator('.scene-rail').evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+  await expect.poll(async () => (await place()).first).toBeLessThan(before.first);
+  expect(await place()).toMatchObject({ cover: before.cover, onTop: true });
   await page.locator('.scene-rail').focus();
   await page.keyboard.press('Home');
   await expect(page.locator('[data-rail="-1"]')).toBeDisabled();
