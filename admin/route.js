@@ -64,6 +64,9 @@ const objectIds = (chapter) => [
   ...(chapter.floorDecals ? chapter.floorDecals.map((d) => d.id) : chapter.floorDecor === "none" ? [] : chapter.placements.map((_, i) => `decor-${i}`)),
 ];
 
+// Whether `id` names one of the chapter's objects, as an address may.
+export const hasObject = (chapter, id) => !!chapter && objectIds(chapter).includes(id);
+
 export function resolveRoute(route, library) {
   const next = { ...route };
   let notice = null;

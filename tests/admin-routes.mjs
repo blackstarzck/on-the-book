@@ -350,6 +350,24 @@ try {
   await page.unroute(/fonts\.(googleapis|gstatic)\.com/);
   pass("The shelf returns to its scroll after a reload, back and the 도서 보관함 button, and a new page starts at the top");
 
+  await page.goto(at("/admin/books/alice", { chapter: "alice-1", object: "a1-clock" }));
+  await page.locator("#duplicate-object").click();
+  await expect(page).not.toHaveURL(/object=a1-clock/);
+  await page.locator("#undo").click();
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1" }));
+  await page.locator('#chapter-model-list [data-select-model="a1-clock"]').click();
+  await page.locator("#preview-client").click();
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1", object: "a1-clock", mode: "reader" }));
+  await page.locator(".reader-mode-bar select").selectOption("2");
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-3", mode: "reader" }));
+  await page.reload();
+  await expect(page.locator(".inplace-reader")).toBeVisible();
+  await expect(page.locator("#toast")).toHaveCount(0);
+  await page.locator("#exit-reader").click();
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-3" }));
+  await page.locator("#back-library").click();
+  pass("An object removed by undo, or left in another chapter while reading, drops out of the address");
+
   expect(errors).toEqual([]);
 } finally {
   await browser.close();

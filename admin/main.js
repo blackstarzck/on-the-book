@@ -1,5 +1,5 @@
 import { shelfHTML, bindShelfOrder, mountWorkspace, thumbnails } from "./workspace.js";
-import { parseRoute, resolveRoute, routeHref } from "./route.js";
+import { hasObject, parseRoute, resolveRoute, routeHref } from "./route.js";
 
 import { reactionSize } from "../shared/experience.js";
 import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
@@ -38,7 +38,7 @@ const app = document.querySelector("#app");
 const clientUrl = import.meta.env.VITE_CLIENT_URL || "/client/";
 const hasUnsavedChanges = () => savedLibrary && JSON.stringify(library) !== JSON.stringify(savedLibrary);
 function requestLeaveEditor(destination=null) {
-  if (leaveDialog) return;
+  if (leaveDialog?.open) return;
   if (busy) return toast('저장이 끝난 뒤 다시 이동해 주세요.');
   const leave = destination || (() => navigate(() => { inEditor=false; placementId=null; shelfQuery=shelfReturn.q; shelfStatus=shelfReturn.status; }, shelfReturn.scroll));
   if (!hasUnsavedChanges()) { dirty=false; leave(); return; }
@@ -48,7 +48,7 @@ function requestLeaveEditor(destination=null) {
   dialog.setAttribute('aria-labelledby','leave-title');
   dialog.setAttribute('aria-describedby','leave-description');
   let pending=false;
-  dialog.addEventListener('close',()=>{leaveDialog=null;});
+  dialog.addEventListener('close',()=>{if(leaveDialog===dialog)leaveDialog=null;});
   dialog.addEventListener('cancel',e=>{if(pending)e.preventDefault();});
   dialog.addEventListener('click',e=>{if(pending&&e.target===dialog)e.stopImmediatePropagation();},true);
   dialog.querySelector('[data-leave="cancel"]').onclick=()=>dialog.close();
@@ -157,8 +157,10 @@ function holdActions(dialog) {
 }
 // ---- The address (admin/route.js): the path names the page, the query what is open on it. ----
 function currentRoute() {
+  // The reader may show another chapter than the editor's; the selection belongs to the editor's chapter.
+  const shown = readerChapterId || chapterId;
   const route = tab === "books" && inEditor && book() && chapter()
-    ? { view: "editor", bookId, chapterId: readerChapterId || chapterId, objectId: placementId || undefined, reader: readerChapterId ? true : undefined, q: assetQuery || undefined }
+    ? { view: "editor", bookId, chapterId: shown, objectId: shown === chapterId && hasObject(chapter(), placementId) ? placementId : undefined, reader: readerChapterId ? true : undefined, q: assetQuery || undefined }
     : tab === "books" ? { view: "books", q: shelfQuery || undefined, status: shelfStatus || undefined }
     : tab === "models" ? { view: "models", q: query || undefined } : { view: tab };
   if (routeModal) Object.assign(route, { modal: routeModal.modal, modalId: routeModal.modalId });
@@ -183,8 +185,9 @@ function settleBack(timedOut) {
   if (!pending) return;
   clearTimeout(pending.timer);
   backPending = null;
-  history.replaceState(timedOut ? { scroll: history.state?.scroll ?? 0 } : history.state, "", pending.href);
-  pending.resolve();
+  // Release the queued writes even if the browser refuses this one.
+  try { history.replaceState(timedOut ? { scroll: history.state?.scroll ?? 0 } : history.state, "", pending.href); }
+  finally { pending.resolve(); }
 }
 // Writes the current place into this history entry's address.
 function syncUrl() {
@@ -267,7 +270,8 @@ function applyRoute(route) {
 }
 // Back or forward within one page: only the dialog differs, so the page (and the editor's 3D view) stays.
 function syncDialog(route) {
-  if (routeModal?.modal === route.modal && routeModal?.modalId === route.modalId) return;
+  // Same dialog: still tidy the address, which may name a dialog whose target is gone.
+  if (routeModal?.modal === route.modal && routeModal?.modalId === route.modalId) return syncUrl();
   closeDialogs();
   if (route.modal) {
     applying = true;
@@ -286,7 +290,7 @@ function render() {
 }
 function draw() {
   disposeModelThumbnails?.(); disposeModelThumbnails=null;
-  if(workspace){workspace.dispose();workspace=null;world=null;}
+  if(workspace){workspace.dispose();workspace=null;world=null;readerChapterId=null;}
   if(tab==='books' && inEditor && book() && chapter()) {
     world?.dispose();
     workspace=mountWorkspace(app,{book:book(),chapter:chapter(),models:library.models,selectedId:placementId,assetQuery,hooks:{

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { notices, parseRoute, resolveRoute, routeHref } from "../admin/route.js";
+import { hasObject, notices, parseRoute, resolveRoute, routeHref } from "../admin/route.js";
 
 const at = (href) => { const url = new URL(href, "http://studio.test"); return parseRoute(url.pathname, url.search); };
 const library = {
@@ -86,4 +86,14 @@ test("floor images count as objects: stored decals, or the default ones the chap
   assert.equal(object("alice-2", "decal-x"), "decal-x");
   assert.equal(object("alice-2", "decor-0"), undefined);
   assert.equal(object("alice-3", "decor-0"), undefined);
+});
+
+test("hasObject says whether an id names one of the chapter's objects", () => {
+  const [first, second] = library.books[0].chapters;
+  assert.equal(hasObject(first, "a1-clock"), true);
+  assert.equal(hasObject(first, "decor-0"), true);
+  assert.equal(hasObject(first, "a2-key"), false);
+  assert.equal(hasObject(second, "decal-x"), true);
+  assert.equal(hasObject(first, null), false);
+  assert.equal(hasObject(undefined, "a1-clock"), false);
 });
