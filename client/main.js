@@ -97,7 +97,7 @@ function header() {
 }
 function page() {
   if (view === "home") return landing(shelf(), progress, catalogState, draftPreview);
-  if (view === "book") return bookDetail({ book, chapter, library, progress, preview: draftPreview });
+  if (view === "book") return bookDetail({ book, chapter, progress, preview: draftPreview });
   const index = book.chapters.indexOf(chapter);
   return `<main class="reader is-exploring"><div class="scene-wrap" id="world"></div>
  <div class="explore-topline"><span class="live-dot"></span> ${esc(book.title)}<button id="reader-book-info" aria-label="${esc(book.title)} 작품 소개">작품 소개 ${icon("chevron-right")}</button></div>
@@ -215,7 +215,7 @@ function selectScene(sceneId, { sheet = false } = {}) {
   chapter = next;
   sceneAddressed = true;
   history.replaceState(null, "", currentUrl());
-  const options = { book, chapter, library, progress, preview: draftPreview };
+  const options = { book, chapter, progress, preview: draftPreview };
   const panel = document.querySelector(".scene-panel");
   panel.innerHTML = scenePanel(options);
   panel.scrollTop = 0;
