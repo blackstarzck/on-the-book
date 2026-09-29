@@ -7,7 +7,7 @@ import { seed } from "../server/seed.js";
 import { librarySchema } from "../shared/schema.js";
 let server;
 before(async () => {
-  server = await startServer(4274);
+  server = await startServer();
 });
 after(async () => server?.stop());
 const request = (url, method = "GET", body, headers = {}) =>
@@ -180,7 +180,7 @@ test("an image that was never uploaded cannot be saved", async () => {
   assert.equal((await res.json()).error, "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요.");
 });
 test("configured administrator password protects reads/writes and session logout", async () => {
-  const s = await startServer(4275, "test-only-password");
+  const s = await startServer({ password: "test-only-password" });
   try {
     assert.equal((await fetch(s.url + "/api/studio")).status, 401);
     const login = await fetch(s.url + "/api/login", {

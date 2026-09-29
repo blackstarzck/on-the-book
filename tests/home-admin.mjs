@@ -2,7 +2,7 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { startServer } from './helpers.js';
 
-const server = await startServer(4341);
+const server = await startServer();
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
 context.setDefaultTimeout(20000);

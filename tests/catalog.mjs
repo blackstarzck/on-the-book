@@ -2,7 +2,7 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { startServer } from './helpers.js';
 
-const server = await startServer(4336);
+const server = await startServer();
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const errors = [], results = [];
 await mkdir('test-results/catalog', { recursive: true });

@@ -266,7 +266,7 @@ admin/
 - `sceneBar`: `02 · 작아지는 문, 커지는 세계` 와 `data-enter-chapter="alice-2"`.
 - 모든 링크가 `preview: true` 에서 `&preview=draft` 를 유지한다.
 
-### 14.2 브라우저 검사 `tests/catalog.mjs`(4336 포트)
+### 14.2 브라우저 검사 `tests/catalog.mjs`
 
 1. 검색·분류·정렬 단계(기존) 뒤: `[data-book="alice"]` 클릭 → `.detail-page[data-view="book"]`, `#detail-title` "이상한 나라의 앨리스", 초점 `#detail-title`, 주소 `?book=alice`, `.journey-row` 6개 중 `[aria-current="true"]` 가 `alice-1`, `.scene-panel #panel-scene-title` "흰 토끼를 따라서", 상세 안 `img` 0개(시드). 여정 2행 클릭 → 커튼 없음(`.reader-curtain` 0), 주소 `?book=alice&scene=alice-2`, `history.length` 변화 없음(클릭 전후 `page.evaluate(() => history.length)` 비교), 패널 제목 "작아지는 문, 커지는 세계", `aria-current` 가 2행으로, `#scene-status` 에 "02". 패널의 "다음 장면" 버튼 클릭 → 3장면, 주소 `scene=alice-3`. 여정 1행 클릭 → 1장면, 주소 `scene=alice-1`. 패널 CTA 클릭 → `#world canvas`, 주소 `book=alice&chapter=alice-1`. 이어서 기존 "작품 소개" 모달 검사와 3D 안 이동·다음 챕터(02) 검사가 그대로 이어진다.
 2. 3D 안 이동·챕터 이동(기존). "책장으로" → `.catalog-card` 2개(기존).
@@ -280,7 +280,7 @@ admin/
 10. 작품 상세의 윗부분은 홈과 같은 띠 배너·로고·검색창·소개·책장 홈·이용 방법이고 `reader-header`·푸터가 없다. 18장면 픽스처(1440·1024)에서 맨 위·가운데(400px)·끝까지 스크롤해도 `.detail-top` 은 위 0 에 붙어 있고, 패널은 그 바로 아래(`--detail-top` 이 잰 높이와 같음)부터 화면 아래 끝까지 채우며 왼쪽 1px 선 외에는 테두리·모서리가 없다. 오른쪽 끝이 콘텐츠 상자에 맞고 왼쪽 열과의 간격이 48px·32px 이다. 스튜디오 썸네일은 패널의 내용 폭 전체를 채운다.
 11. 작품 상세 검색창에 "오즈" 입력 뒤 Enter → 책장, "검색 결과" 1권, 검색창에 "오즈"가 남고 초점이 있으며 `tabindex` 가 붙지 않는다. 띠 배너 → 책장의 `#scene-title` 에 초점이 있고 화면 안에 보인다.
 
-### 14.3 `tests/mobile-entry.mjs`(4321 포트)
+### 14.3 `tests/mobile-entry.mjs`
 
 `[data-book="alice"] .cover-stage` 탭 → `.detail-page[data-view="book"]` → 커튼 없음 → 스크롤 없이 보이는 `.detail-cta .primary-button` 을 `tapVisible` 로 탭 → 월드. 그 뒤 단정은 기존과 같다.
 
