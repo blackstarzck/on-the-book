@@ -242,7 +242,7 @@ Vercel 은 정적 파일을 rewrite 보다 먼저 제공하고(vercel.json 문�
 
 ### 7.2 브라우저 검사 `tests/admin-routes.mjs`
 
-다른 검사처럼 완성본 서버(`startServer`)와 설치된 Microsoft Edge 로 실행한다. 포트 4351, 비밀번호 모드. `npm run build` 뒤에 실행한다. 확인할 것:
+다른 검사처럼 완성본 서버(`startServer`)와 설치된 Microsoft Edge 로 실행한다. 포트 4353, 비밀번호 모드(처음 4351 이었으나 main 의 `tests/still-model.mjs` 가 그 포트를 써서 2026-09-29 병합 때 옮겼다). `npm run build` 뒤에 실행한다. 확인할 것:
 1. 깊은 주소(`/admin/models?modal=model&id=…`)로 들어가 로그인하면 그 창이 열린다.
 2. 네 탭: 누르면 경로가 바뀌고, 새로고침·직접 주소로 같은 탭이 열린다. 뒤로·앞으로 가기로 탭이 오간다.
 3. 도서 보관함 검색어·상태 필터와 모델 보관함 검색어가 주소에 들어가고, 새로고침 뒤 입력칸과 걸러진 목록이 그대로다.
@@ -265,7 +265,7 @@ Vercel 은 정적 파일을 rewrite 보다 먼저 제공하고(vercel.json 문�
 
 ## 8. 문서
 
-- `README.md`: 바로 확인하기에 관리자 주소 예시(`/admin/models`, `/admin/books/alice`)를 더한다. 검증 실행에 `node tests/admin-routes.mjs`, 포트 목록에 4351 을 더한다.
+- `README.md`: 바로 확인하기에 관리자 주소 예시(`/admin/models`, `/admin/books/alice`)를 더한다. 검증 실행에 `node tests/admin-routes.mjs`, 포트 목록에 4353 을 더한다.
 - `docs/ADMIN-GUIDE.md`: 첫머리에 '주소와 새로고침' 절을 두고 3절의 주소 표, 새로고침·직접 주소, 뒤로 가기(4절), 스크롤·패널 기억, 없는 주소 처리, 저장하지 않은 변경은 되살리지 않는다는 점을 적는다.
 - `docs/DEPLOYMENT.md`: 관리자 rewrite 규칙과, 배포 뒤 확인할 주소(`/admin/models`·`/admin/books/<id>` 200, `/admin/zzz` 404)를 더한다.
 - 전환 스펙 `2026-09-11-react-next-migration-design.md`: 3절(유지해야 하는 계약) URL 목록에 관리자 경로·쿼리, 4절(저장소 구조)에 `app/admin/books/[bookId]/page.tsx`(월드 편집기)와 `app/admin/page.tsx` 설명 변경, 8.1절에 선택 상태의 원본이 주소라는 점, 9절에 주소·기록 규칙(탭은 `Link`, 쿼리는 `useSearchParams` 와 `router.push`·`router.replace`, 대화상자 기록, 뒤로 가기 나가기 확인, 미리보기 iframe 기록 막기, 스크롤은 항목 상태, 패널은 `otb-studio-panels`), 14절 e2e 목록과 16절 3·4단계 완료 기준에 `admin-routes` 를 반영한다. 앞선 작업들처럼 전환 계획에 이어 담는 것이다.

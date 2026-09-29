@@ -4,6 +4,25 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { terrain, floorArt } from "./landscape.js";
 import { textPages, sideReadingPose, revealReading } from "./floor-reading.js";
 import { reactionSize, collisionSize } from "./experience.js";
+// A model file is downloaded once per page. Every placement parses its own copy, so removing one
+// placement never disposes geometry that another placement still shows.
+const modelFiles = new Map();
+function modelFile(url) {
+  if (!modelFiles.has(url))
+    modelFiles.set(
+      url,
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) throw Error(`HTTP ${response.status}`);
+          return response.arrayBuffer();
+        })
+        .catch((error) => {
+          modelFiles.delete(url);
+          throw error;
+        }),
+    );
+  return modelFiles.get(url);
+}
 const mat = (color) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02 });
 function mesh(parent, geo, color, pos = [0, 0, 0], scale = [1, 1, 1]) {
@@ -525,9 +544,9 @@ export class World {
     };
     this.objects.push(entry);
     if (model.kind === "glb") {
-      new GLTFLoader().load(
-        model.url,
-        (gltf) => {
+      modelFile(model.url)
+        .then((buffer) => new GLTFLoader().parseAsync(buffer, ""))
+        .then((gltf) => {
           if (this.dead) {
             this.disposeTree(gltf.scene);
             return;
@@ -561,15 +580,13 @@ export class World {
             entry.action.play();
             entry.action.paused = true;
           }
-        },
-        undefined,
-        () => {
+        })
+        .catch(() => {
           this.onError(`“${model.name}” 모델을 불러오지 못했습니다.`);
           if (this.modelOnly) return;
           const fallback = makeModel("cards", "#c66c65");
           group.add(fallback);
-        },
-      );
+        });
     } else group.add(makeModel(model.kind, model.color));
     const halo = mesh(
       this.root,

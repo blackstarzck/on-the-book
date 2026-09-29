@@ -4,7 +4,7 @@ import { startServer } from "./helpers.js";
 // The studio's address. The server hands out the studio page at its deep paths, and every page, selection
 // and dialog survives a reload, a direct address and the browser's back and forward buttons.
 const password = "test-only-password";
-const server = await startServer(4351, password);
+const server = await startServer(4353, password);
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
 context.setDefaultTimeout(20000);

@@ -1,13 +1,12 @@
 import express from "express";
 import multer from "multer";
-import { BlobPreconditionFailedError } from '@vercel/blob';
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { librarySchema } from "../shared/schema.js";
 import { newTriggerConflict } from '../shared/experience.js';
 import { modelInfo } from './model-info.js';
-import { cloud, uploadDir, readLibrary, persist, readAsset, writeAsset, signedAsset, removeStaging, saveSession, validSession, removeSession } from './storage.js';
+import { cloud, staging, uploadDir, readDraft, readLive, saveDraft, assetInfo, prepareUpload, takeStaged, storeUpload, signedDownload, saveSession, validSession, removeSession, readSite, siteAssetNames } from './storage.js';
 import { publicLibrary, publicAssetNames, imageUrls } from './publication.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const app = express();
@@ -17,7 +16,7 @@ app.use((req, res, next) => {
   if (cloud) {
     if (!['client', 'admin'].includes(process.env.DEPLOYMENT_APP))
       return res.status(503).json({ error: '배포 환경 설정이 필요합니다.' });
-    if (process.env.DEPLOYMENT_APP === 'client' && !((req.method === 'GET' || req.method === 'HEAD') && (req.path === '/api/library' || req.path.startsWith('/uploads/'))))
+    if (process.env.DEPLOYMENT_APP === 'client' && !((req.method === 'GET' || req.method === 'HEAD') && (req.path === '/api/library' || req.path.startsWith('/api/site/') || req.path.startsWith('/uploads/'))))
       return res.status(404).json({ error: '요청을 찾을 수 없습니다.' });
     return next();
   }
@@ -86,25 +85,34 @@ app.post("/api/logout", sameOrigin, async (req, res) => {
   res.json({ ok: true });
 });
 app.get("/api/library", async (req, res) => {
-  const { db } = await readLibrary();
+  const live = await readLive();
   res.set("Cache-Control", "no-store");
-  res.json(publicLibrary(db));
+  res.json(publicLibrary(live));
+});
+// 3D material used outside books, such as the about page journey.
+app.get("/api/site/:key", async (req, res) => {
+  const data = /^[a-z0-9-]{1,40}$/.test(req.params.key) ? await readSite(req.params.key) : null;
+  if (!data) return res.status(404).json({ error: "요청을 찾을 수 없습니다." });
+  res.set("Cache-Control", "no-store");
+  res.json(data);
 });
 app.get("/api/studio", auth, async (req, res) => {
-  const { db } = await readLibrary();
+  const current = await readDraft();
   res.set("Cache-Control", "no-store");
   res.json({
-    library: db.draft,
-    version: db.version,
-    publishedAt: db.publishedAt,
+    library: current.library,
+    version: current.version,
+    publishedAt: current.publishedAt,
     protected: !!password,
   });
 });
 let saving = false;
+const fileName = (url) => path.basename(url);
+const missingFile = () => Object.assign(new Error("Missing asset"), { code: "ENOENT" });
 app.put("/api/studio", sameOrigin, auth, async (req, res) => {
-  const snapshot = await readLibrary();
-  const { db } = snapshot;
-  if (saving || req.body.version !== db.version)
+  const current = await readDraft();
+  const draft = current.library;
+  if (saving || req.body.version !== current.version)
     return res
       .status(409)
       .json({
@@ -119,44 +127,43 @@ app.put("/api/studio", sameOrigin, auth, async (req, res) => {
   saving = true;
   try {
     if(req.body.publish)for(const b of parsed.data.books.filter(b=>b.published))for(const c of b.chapters)if(!c.mainPlacementId)return res.status(400).json({error:`“${b.title} / ${c.title}”에 메인 모델을 배치한 뒤 공개해 주세요.`});
-    for(const book of parsed.data.books)if(newTriggerConflict(book,db.draft.books.find(b=>b.id===book.id)))return res.status(400).json({error:'모델의 애니메이션 발동 영역이 겹칩니다. 위치나 발동 반경을 조정해 주세요.'});
+    for(const book of parsed.data.books)if(newTriggerConflict(book,draft.books.find(b=>b.id===book.id)))return res.status(400).json({error:'모델의 애니메이션 발동 영역이 겹칩니다. 위치나 발동 반경을 조정해 주세요.'});
+    // Only images new to the draft are checked; model files and thumbnails are checked on every save.
+    const known = imageUrls(draft);
+    const newImages = [...imageUrls(parsed.data)].filter((url) => !known.has(url));
+    const stored = await assetInfo([
+      ...parsed.data.models.flatMap((m) => [m.thumbnail, m.kind === "glb" ? m.url : undefined]),
+      ...newImages,
+    ].filter(Boolean).map(fileName));
     for (const model of parsed.data.models) {
-      const previous=db.draft.models.find(m=>m.id===model.id);
+      const previous=draft.models.find(m=>m.id===model.id);
       if ((!previous || previous.thumbnail) && !model.thumbnail)
         return res.status(400).json({error:'모델 썸네일을 등록해 주세요.'});
-      if(model.thumbnail)await readAsset(path.basename(model.thumbnail));
+      if(model.thumbnail&&!stored.has(fileName(model.thumbnail)))throw missingFile();
     }
     for (const model of parsed.data.models)
       if (model.kind === "glb") {
-        const info=modelInfo(await readAsset(path.basename(model.url)));
-        const existing=db.draft.models.find(m=>m.id===model.id&&m.url===model.url);
-        if(!info.rigged&&!existing)return res.status(400).json({error:'뼈대 애니메이션이 있는 모델만 새로 등록할 수 있습니다.'});
-        Object.assign(model,info);
+        const info=stored.get(fileName(model.url));
+        if(!info)throw missingFile();
+        Object.assign(model,{rigged:info.rigged,clips:info.clips});
       } else { model.rigged=false;model.clips=[]; }
-    const prior=new Map(db.draft.books.flatMap(b=>b.chapters.flatMap(c=>c.placements)).map(p=>[p.id,p.modelId]));
+    // A file motion needs a clip inside the file (an empty name plays the first one). Placements saved
+    // earlier are left as they are unless their model or motion changes.
+    const motion=p=>`${p.modelId}|${p.animation}|${p.clip}`;
+    const prior=new Map(draft.books.flatMap(b=>b.chapters.flatMap(c=>c.placements)).map(p=>[p.id,motion(p)]));
     for(const p of parsed.data.books.flatMap(b=>b.chapters.flatMap(c=>c.placements))){
       const model=parsed.data.models.find(m=>m.id===p.modelId);
-      if(prior.get(p.id)!==p.modelId&&model?.kind==='glb'&&(!model.rigged||p.animation!=='clip'||!model.clips.includes(p.clip)))return res.status(400).json({error:'새 배치에는 뼈대 모델과 등록된 애니메이션을 선택해 주세요.'});
+      if(prior.get(p.id)!==motion(p)&&model?.kind==='glb'&&p.animation==='clip'&&(!model.clips.length||(p.clip&&!model.clips.includes(p.clip))))return res.status(400).json({error:'모델 파일에 없는 동작입니다. 파일에 담긴 동작이나 기본 동작을 선택해 주세요.'});
     }
-    // Cloud reads download each file whole, so only images new to the draft are checked.
-    const known = imageUrls(db.draft);
-    for (const url of imageUrls(parsed.data)) if (!known.has(url)) {
-      try { await readAsset(path.basename(url)); }
-      catch (e) {
-        if (e.code === "ENOENT") return res.status(400).json({ error: "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요." });
-        throw e;
-      }
-    }
-    const next = { ...db, draft: parsed.data, version: db.version + 1 };
-    if (req.body.publish) {
-      next.live = structuredClone(parsed.data);
-      next.publishedAt = new Date().toISOString();
-    }
-    await persist(next, snapshot);
-    res.json({ version: next.version, publishedAt: next.publishedAt });
+    for (const url of newImages) if (!stored.has(fileName(url)))
+      return res.status(400).json({ error: "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요." });
+    const saved = await saveDraft({ version: current.version, library: parsed.data, publish: !!req.body.publish });
+    res.json({ version: saved.version, publishedAt: saved.publishedAt ?? current.publishedAt });
   } catch (e) {
-    if (e instanceof BlobPreconditionFailedError || e.status === 409)
+    if (e.status === 409)
       return res.status(409).json({ error: '다른 창에서 변경되었습니다. 새로고침 후 다시 저장해 주세요.' });
+    if (e.status === 426)
+      return res.status(409).json({ error: '이 관리 화면은 저장된 데이터보다 오래된 버전입니다. 최신 관리 화면에서 저장해 주세요.' });
     res
       .status(500)
       .json({
@@ -174,25 +181,29 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024, files: 1 },
 });
 const floorUpload = multer({storage:multer.memoryStorage(),limits:{fileSize:5*1024*1024,files:1}});
-if (cloud) {
+// Browsers on Vercel send files straight to storage, because a function request body is small;
+// the server then checks the staged file exactly like a direct upload.
+if (staging) {
   app.post('/api/uploads/prepare', sameOrigin, auth, async (req, res) => {
     const image = req.body.kind === 'image';
     if (!image && req.body.kind !== 'model') return res.status(400).json({ error: '파일 종류를 확인해 주세요.' });
     const limit = (image ? 5 : 25) * 1024 * 1024;
     if (!Number.isInteger(req.body.size) || req.body.size < 1 || req.body.size > limit)
       return res.status(400).json({ error: image ? 'PNG 이미지는 5MB 이하로 올려 주세요.' : '모델은 25MB 이하로 올려 주세요.' });
-    const filename = randomUUID() + (image ? '.png' : '.glb');
-    res.json({ filename, url: await signedAsset(`staging/${filename}`, 'put', limit) });
+    res.json(await prepareUpload(image ? '.png' : '.glb'));
   });
   app.use(['/api/floor/upload', '/api/models/upload'], sameOrigin, auth, async (req, res, next) => {
-    if (req.method !== 'POST') return next();
+    if (req.method !== 'POST' || !req.is('application/json')) return next();
     const filename = req.body.filename;
     const pattern = req.originalUrl.split('?')[0] === '/api/floor/upload' ? /^[a-f0-9-]{36}\.png$/ : /^[a-f0-9-]{36}\.glb$/;
     if (!pattern.test(filename || '')) return res.status(400).json({ error: '업로드한 파일을 찾을 수 없습니다.' });
-    req.file = { buffer: await readAsset(filename, true) };
+    try { req.file = { buffer: await takeStaged(filename) }; }
+    catch (e) {
+      if (e.code === 'ENOENT') return res.status(400).json({ error: '업로드한 파일을 찾을 수 없습니다.' });
+      throw e;
+    }
     if (req.file.buffer.length > (filename.endsWith('.png') ? 5 : 25) * 1024 * 1024)
       return res.status(400).json({ error: '파일 크기가 제한을 초과했습니다.' });
-    await removeStaging(filename);
     next();
   });
 }
@@ -209,7 +220,7 @@ app.post('/api/floor/upload', sameOrigin, auth, (req,res,next)=>floorUpload.sing
   if(!ended||!hasData||!width||!height||width>4096||height>4096)
     return res.status(400).json({error:'가로·세로 4096 이하의 완전한 PNG 이미지가 필요합니다.'});
   const filename=randomUUID()+'.png';
-  try{await writeAsset(filename,b);res.status(201).json({url:'/uploads/'+filename,width,height});}
+  try{await storeUpload(filename,b,{width,height});res.status(201).json({url:'/uploads/'+filename,width,height});}
   catch{res.status(500).json({error:'이미지를 저장하지 못했습니다.'});}
 });
 app.post(
@@ -241,22 +252,12 @@ app.post(
         )
       )
         throw Error();
-      const rigged = (json.nodes || []).some(n => Number.isInteger(n.skin) && json.skins?.[n.skin]?.joints?.length && json.meshes?.[n.mesh]?.primitives?.some(p => Number.isInteger(p.attributes?.JOINTS_0) && Number.isInteger(p.attributes?.WEIGHTS_0)));
-      const joints = new Set((json.skins || []).flatMap(s => s.joints || []));
-      const hasMotion = (json.animations || []).some(a => a.channels?.some(c => joints.has(c.target?.node) && ['translation','rotation','scale'].includes(c.target?.path) && json.accessors?.[a.samplers?.[c.sampler]?.input]?.count > 1));
-      if (!rigged || !hasMotion) return res.status(400).json({error:'뼈대가 연결되고 뼈대 애니메이션이 포함된 GLB 모델만 등록할 수 있습니다.'});
+      // Still scenes and props are registered too; the skeleton only decides whether the model counts as rigged.
+      const { rigged, clips } = modelInfo(b);
       const filename = randomUUID() + ".glb";
-      await writeAsset(filename, b);
-      res
-        .status(201)
-        .json({
-          url: "/uploads/" + filename,
-          clips: (json.animations || []).map(
-            (a, i) => a.name || `animation_${i}`,
-          ),
-          rigged: true,
-          bytes: b.length,
-        });
+      try { await storeUpload(filename, b, { rigged, clips }); }
+      catch { return res.status(500).json({ error: "모델을 저장하지 못했습니다. 다시 시도해 주세요." }); }
+      res.status(201).json({ url: "/uploads/" + filename, clips, rigged, bytes: b.length });
     } catch {
       res
         .status(400)
@@ -266,20 +267,31 @@ app.post(
     }
   },
 );
-if (cloud) app.get('/uploads/:filename', async (req, res) => {
-  const { filename } = req.params;
-  if (!/^[a-f0-9-]{36}\.(png|glb)$/.test(filename)) return res.sendStatus(404);
-  const { db } = await readLibrary();
-  if (!publicAssetNames(db).has(filename) && !(process.env.DEPLOYMENT_APP === 'admin' && await validSession(sessionToken(req))))
-    return res.sendStatus(404);
-  // Images may stay in the browser for 5 minutes, inside the 10-minute life of the signed address.
-  res.set('Cache-Control', filename.endsWith('.png') ? 'private, max-age=300' : 'private, no-store');
-  res.redirect(307, await signedAsset(`uploads/${filename}`));
-});
-else app.use(
+// Signed-out readers get exactly the files the public library points to. The local studio without a
+// password sees every file, as it did when files sat in its data folder.
+async function mayDownload(req, filename) {
+  if (!cloud && !password) return true;
+  if (publicAssetNames(await readLive()).has(filename) || (await siteAssetNames()).has(filename)) return true;
+  if (cloud && process.env.DEPLOYMENT_APP !== 'admin') return false;
+  return validSession(sessionToken(req));
+}
+if (uploadDir) app.use(
   "/uploads",
   express.static(uploadDir, { immutable: true, maxAge: "1y" }),
 );
+else app.get('/uploads/:filename', async (req, res) => {
+  const { filename } = req.params;
+  if (!/^[a-f0-9-]{36}\.(png|glb|webp)$/.test(filename) || !(await mayDownload(req, filename))) return res.sendStatus(404);
+  let address;
+  try { address = await signedDownload(filename); }
+  catch (e) {
+    if (e.code === 'ENOENT') return res.sendStatus(404);
+    throw e;
+  }
+  // Images may stay in the browser for 5 minutes, inside the 10-minute life of the signed address.
+  res.set('Cache-Control', filename.endsWith('.png') ? 'private, max-age=300' : 'private, no-store');
+  res.redirect(307, address);
+});
 app.use("/api", (req, res) =>
   res.status(404).json({ error: "요청을 찾을 수 없습니다." }),
 );

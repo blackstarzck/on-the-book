@@ -35,7 +35,7 @@
 - 알림 문구(스펙 5절 그대로): "요청한 도서를 찾을 수 없어 도서 보관함을 열었어요.", "요청한 챕터를 찾을 수 없어 첫 챕터를 열었어요.", "요청한 오브젝트를 찾을 수 없어 선택하지 않았어요.", "요청한 항목을 찾을 수 없어 창을 열지 않았어요." 한 번에 하나, 책 → 챕터 → 오브젝트 → 대상 순.
 - 기록 규칙: push 는 탭 이동, 로고, 표지로 편집기 열기, **← 도서 보관함**, 대화상자 열기. 나머지는 replace. 검색어는 250ms, 스크롤은 150ms 멈춘 뒤 쓴다. 대화상자 닫기의 `history.back()` 은 1초 안에 `popstate` 가 없으면 주소에서 `modal`·`id` 를 지우는 것으로 대신한다.
 - 주소 밖 저장: 스크롤 `history.state.scroll`(`history.scrollRestoration = "manual"`), 대화상자 항목 표시 `history.state.modalEntry`, 패널 접힘 `localStorage` 키 `otb-studio-panels` 값 `{ "assets"|"tiles"|"chapters"|"chapter-models"|"inspector": boolean }`(`true` 가 펼침).
-- 포트: `tests/admin-routes.mjs` 4351, 임시 개발 서버 확인 4352. 임시 스크립트는 gitignore 된 `test-results/` 에 두고 커밋하지 않는다.
+- 포트: `tests/admin-routes.mjs` 4353(실행 기록 2026-09-29: 계획은 4351 이었으나 main 의 `tests/still-model.mjs` 가 그 포트를 써서 병합 때 옮겼다. 아래 Task 코드 블록의 4351 은 실행 당시 기록이다), 임시 개발 서버 확인 4352. 임시 스크립트는 gitignore 된 `test-results/` 에 두고 커밋하지 않는다.
 - 브라우저 검사는 `channel: "msedge"`, `headless: true`. 명령은 워크트리 루트에서 실행한다.
 - 커밋 메시지는 영어 명령형 한 줄 + 필요하면 본문, 마지막 줄 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. 회귀 검사가 다시 쓰는 `docs/screenshots/*`, `docs/floor-evidence/*`, `docs/improvement-evidence/*`, `docs/preview/*`, `docs/browser-results.json`, `docs/portal-results.json` 은 `git restore` 로 되돌린다.
 - 문체: README·관리자 안내·배포 안내는 "~합니다", 스펙·계획은 "~다". 코드 주석은 영어, 화면 문구는 한국어. 주변 코드처럼 짧은 한 줄 함수와 기존 들여쓰기를 따른다.
