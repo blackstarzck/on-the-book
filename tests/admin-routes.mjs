@@ -315,6 +315,41 @@ try {
   await page.locator("#back-library").click();
   pass("Editor panels stay folded through reloads, redraws and other books");
 
+  await page.route("**/api/studio", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    const body = await response.json();
+    const alice = body.library.books[0];
+    body.library.books = Array.from({ length: 18 }, (_, i) => ({ ...structuredClone(alice), id: `shelf-${i}`, title: `${alice.title} ${i + 1}` }));
+    body.library.home = { hero: [] };
+    await route.fulfill({ response, json: body });
+  });
+  // The Korean web font (shared/style.css) is fetched from Google Fonts and swaps in a little after first
+  // paint, growing the tile text a few pixels; blocked here so the tile layout (and the scroll target
+  // computed from it) stays put instead of racing the studio's own scroll save and restore.
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  await page.goto(at("/admin/"));
+  await expect(page.locator(".book-tile")).toHaveCount(18);
+  const middle = await page.evaluate(() => { const top = Math.floor((document.documentElement.scrollHeight - innerHeight) / 2); scrollTo(0, top); return top; });
+  expect(middle).toBeGreaterThan(300);
+  await expect.poll(() => page.evaluate(() => history.state?.scroll)).toBe(middle);
+  await page.reload();
+  await expect(page.locator(".book-tile")).toHaveCount(18);
+  expect(await page.evaluate(() => scrollY)).toBe(middle);
+  await page.evaluate(() => document.querySelector('[data-open-book="shelf-5"]').click());
+  await expect(page.locator("#studio-world canvas")).toBeVisible();
+  await page.goBack();
+  await expect(page.locator(".book-tile")).toHaveCount(18);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(middle);
+  await page.evaluate(() => document.querySelector('[data-open-book="shelf-5"]').click());
+  await page.locator("#back-library").click();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(middle);
+  await page.locator('[data-tab="home"]').click();
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  await page.unroute("**/api/studio");
+  await page.unroute(/fonts\.(googleapis|gstatic)\.com/);
+  pass("The shelf returns to its scroll after a reload, back and the 도서 보관함 button, and a new page starts at the top");
+
   expect(errors).toEqual([]);
 } finally {
   await browser.close();

@@ -31,14 +31,16 @@ let library,
 let disposeModelThumbnails=null;
 let workspace=null, inEditor=false, baseline=null, savedLibrary=null, leaveDialog=null, undoStack=[], redoStack=[];
 // Shelf filters and the editor's model search live here so redraws keep them; the address mirrors them (admin/route.js).
-let shelfQuery="", shelfStatus="", assetQuery="", readerChapterId=null, shelfReturn={q:"",status:""}, applying=false, urlTimer=null, routeModal=null, backPending=null;
+let shelfQuery="", shelfStatus="", assetQuery="", readerChapterId=null, shelfReturn={q:"",status:"",scroll:0}, applying=false, urlTimer=null, routeModal=null, backPending=null, scrollTimer=null;
+// The window's scroll lives in the history entry: the browser's own restoring runs before the studio has loaded.
+history.scrollRestoration="manual";
 const app = document.querySelector("#app");
 const clientUrl = import.meta.env.VITE_CLIENT_URL || "/client/";
 const hasUnsavedChanges = () => savedLibrary && JSON.stringify(library) !== JSON.stringify(savedLibrary);
 function requestLeaveEditor(destination=null) {
   if (leaveDialog) return;
   if (busy) return toast('저장이 끝난 뒤 다시 이동해 주세요.');
-  const leave = destination || (() => navigate(() => { inEditor=false; placementId=null; shelfQuery=shelfReturn.q; shelfStatus=shelfReturn.status; }));
+  const leave = destination || (() => navigate(() => { inEditor=false; placementId=null; shelfQuery=shelfReturn.q; shelfStatus=shelfReturn.status; }, shelfReturn.scroll));
   if (!hasUnsavedChanges()) { dirty=false; leave(); return; }
   const dialog=modal(`<h2 id="leave-title">편집을 마치고 나갈까요?</h2><p id="leave-description">저장하지 않은 변경사항이 있습니다. 저장하지 않고 나가면 마지막 저장 이후의 관리자 변경사항이 사라집니다.</p><p class="leave-error" role="alert"></p><div class="leave-actions"><button type="button" class="outline-button" data-leave="cancel">계속 편집</button><button type="button" class="outline-button" data-leave="discard">저장하지 않고 나가기</button><button type="button" class="primary-button" data-leave="save">저장 후 나가기</button></div>`);
   leaveDialog=dialog;
@@ -181,7 +183,7 @@ function settleBack(timedOut) {
   if (!pending) return;
   clearTimeout(pending.timer);
   backPending = null;
-  history.replaceState(timedOut ? {} : history.state, "", pending.href);
+  history.replaceState(timedOut ? { scroll: history.state?.scroll ?? 0 } : history.state, "", pending.href);
   pending.resolve();
 }
 // Writes the current place into this history entry's address.
@@ -191,6 +193,11 @@ function syncUrl() {
   const href = routeHref(currentRoute());
   writeHistory(() => { if (href !== location.pathname + location.search) history.replaceState(history.state, "", href); });
 }
+function saveScroll() {
+  clearTimeout(scrollTimer); scrollTimer = null;
+  if (!backPending) history.replaceState({ ...history.state, scroll: scrollY }, "");
+}
+function restoreScroll(top = history.state?.scroll ?? 0) { window.scrollTo({ top, behavior: "instant" }); }
 // Typing writes the address once it pauses: Safari limits how often replaceState may run.
 function syncUrlSoon() { clearTimeout(urlTimer); urlTimer = setTimeout(syncUrl, 250); }
 // Closes every open dialog without touching history: the page they belong to is going away.
@@ -199,22 +206,25 @@ function closeDialogs() {
   document.querySelectorAll("dialog[open]").forEach((d) => d.close());
 }
 // A page move: the entry being left gets its latest address, then a new entry is pushed and drawn.
-function navigate(change) {
+function navigate(change, scroll = 0) {
   if (urlTimer) syncUrl();
+  saveScroll();
   change();
   closeDialogs();
   const href = routeHref(currentRoute());
-  writeHistory(() => history.pushState({}, "", href));
+  writeHistory(() => history.pushState({ scroll }, "", href));
   render();
+  restoreScroll(scroll);
 }
 // Ties a dialog to the address. Opened from the page it pushes its own entry; opened while an address is
 // being shown, that entry already exists. Closing steps back over a pushed entry, or drops the dialog from the address.
 function routeDialog(dialog, modal, modalId, push = !applying) {
   const entry = { modal, modalId };
   if (push && urlTimer) syncUrl();
+  if (push) saveScroll();
   routeModal = entry;
-  const href = routeHref(currentRoute());
-  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ modalEntry: true }, "", href); });
+  const href = routeHref(currentRoute()), scroll = scrollY;
+  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ scroll, modalEntry: true }, "", href); });
   dialog.addEventListener("close", () => {
     if (routeModal !== entry) return;
     routeModal = null;
@@ -253,6 +263,7 @@ function applyRoute(route) {
     if (route.modal) openRouteDialog(route);
   } finally { applying = false; }
   syncUrl();
+  restoreScroll();
 }
 // Back or forward within one page: only the dialog differs, so the page (and the editor's 3D view) stays.
 function syncDialog(route) {
@@ -314,7 +325,7 @@ function draw() {
   if (tab === "books") {
     document.querySelector('#new-book').onclick=()=>editBook(true);
     // The editor's undo covers only what happens inside it, not home or shelf changes made before.
-    document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{shelfReturn={q:shelfQuery,status:shelfStatus};navigate(()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;assetQuery="";inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);});});
+    document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY};navigate(()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;assetQuery="";inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);});});
     const filter=()=>{const query=shelfQuery.toLowerCase(),state=shelfStatus||'all';let count=0;document.querySelectorAll('[data-open-book]').forEach(button=>{const row=button.closest('.book-tile-row');row.hidden=!button.dataset.title.includes(query)||(state!=='all'&&button.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
     const search=document.querySelector('#book-search'),status=document.querySelector('#book-filter');search.value=shelfQuery;status.value=shelfStatus||'all';
     search.oninput=()=>{shelfQuery=search.value;filter();syncUrlSoon();};status.onchange=()=>{shelfStatus=status.value==='all'?'':status.value;filter();syncUrl();};filter();
@@ -475,13 +486,13 @@ function editBook(isNew = false) {
       published: f.has("published"),
       category: String(f.get("category")).trim(),
     });
-    if (isNew) {library.books.push(original);shelfReturn={q:shelfQuery,status:shelfStatus};}
+    if (isNew) {library.books.push(original);shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY};}
     bookId = original.id;
     chapterId = original.chapters[0].id;
     placementId = original.chapters[0].placements[0]?.id;
     mark();
     // A new book's editor takes over the dialog's history entry, so Back from it returns to the shelf.
-    if (isNew) { routeModal = null; inEditor = true; assetQuery = ""; writeHistory(() => history.replaceState({}, "")); }
+    if (isNew) { routeModal = null; inEditor = true; assetQuery = ""; writeHistory(() => history.replaceState({ scroll: 0 }, "")); }
     d.close();
     render();
   };
@@ -926,6 +937,8 @@ window.addEventListener("popstate", () => {
   else applyRoute(route);
   if (notice) toast(notice);
 });
+window.addEventListener("scroll", () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(saveScroll, 150); }, { passive: true });
+window.addEventListener("pagehide", () => { if (urlTimer) syncUrl(); saveScroll(); });
 async function load() {
   try {
     const result = await api("/api/studio");
