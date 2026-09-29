@@ -168,9 +168,12 @@ try {
   await page.locator('[data-book="alice"]').click();
   await expect(page).toHaveURL(/\?book=alice$/);
   await expect(page.locator('.journey-row[aria-current="true"]')).toHaveAttribute('data-scene', 'alice-2');
-  await expect(page.locator('.journey-row[data-scene="alice-2"] .journey-badge')).toHaveText('마지막에 머문 장면');
+  // The saved scene's flag ends its title in the journey row and in the panel, and only there.
+  await expect(page.locator('.journey-row[data-scene="alice-2"] strong .saved-flag svg')).toHaveCount(1);
+  await expect(page.locator('.journey-row .saved-flag')).toHaveCount(1);
   await expect(page.locator('.scene-panel #panel-scene-title')).toHaveText('작아지는 문, 커지는 세계');
-  await expect(page.locator('.scene-panel .journey-badge', { hasText: '마지막에 머문 장면' })).toHaveCount(1);
+  await expect(page.locator('.scene-panel #panel-scene-title .saved-flag svg')).toHaveCount(1);
+  await expect(page.getByRole('img', { name: '마지막에 머문 장면' })).toHaveCount(2);
   await page.locator('.scene-panel .detail-enter').click();
   await expect(page.locator('#map-button')).toContainText('02');
   await page.reload();

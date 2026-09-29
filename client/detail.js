@@ -29,9 +29,9 @@ const savedChapter = (book, progress) =>
 // The scene the panel opens on: the saved chapter while it exists, otherwise the first chapter.
 export const defaultScene = (book, progress = {}) => savedChapter(book, progress) || book.chapters[0];
 
-const themeChip = theme => `<span class="theme-chip" data-theme="${esc(theme)}" aria-hidden="true"></span>`;
-
-const savedBadge = '<span class="journey-badge">마지막에 머문 장면</span>';
+// The saved scene's mark: a flag right after the scene title, in its journey row and in the scene panel. Its title
+// names it on hover and for screen readers.
+const savedFlag = `<span class="saved-flag" role="img" title="마지막에 머문 장면">${icon("flag")}</span>`;
 
 // Blank lines split paragraphs. Stored data is not re-parsed, so a field added later may be missing.
 const paragraphsOf = text => String(text ?? "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
@@ -50,9 +50,9 @@ const introSection = ({ id, title, text, pending, name = "" }) => {
 const enterButton = (book, chapter) =>
   `<button class="primary-button detail-enter" data-enter="${esc(book.id)}" data-enter-chapter="${esc(chapter.id)}">이 장면부터 걷기 ${icon("arrow-up-right")}</button>`;
 
-// The inside of the scene panel: image, scene heading, the entry button and the neighbour buttons. The scene's
-// models are met in the 3D world, not listed here. `prefix` keeps element ids unique when the same markup also fills
-// the phone sheet.
+// The inside of the scene panel: image, scene heading (with the saved scene's flag), the entry button and the
+// neighbour buttons. The scene's models are met in the 3D world, not listed here. `prefix` keeps element ids unique
+// when the same markup also fills the phone sheet.
 export function scenePanel({ book, chapter, progress = {}, preview = false, prefix = "panel" }) {
   const index = indexOf(book, chapter);
   const previous = book.chapters[index - 1], next = book.chapters[index + 1];
@@ -64,7 +64,7 @@ export function scenePanel({ book, chapter, progress = {}, preview = false, pref
     : `<span class="neighbor-link is-disabled" aria-hidden="true">${content}</span>`;
   const neighborNav = `<nav class="neighbor-nav" aria-label="이어지는 장면">${neighbor(previous, "이전 장면", `${icon("arrow-left")} 이전 장면`)}${neighbor(next, "다음 장면", `다음 장면 ${icon("arrow-right")}`)}</nav>`;
   // The image slot is always 16:10 in the panel; a studio thumbnail fills it over the theme tint.
-  return `<span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" data-theme="${esc(chapter.theme)}" role="img" aria-label="${chapter.thumbnail ? `${esc(chapter.title)} 장면 이미지` : "장면 이미지 준비 중"}">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" decoding="async" draggable="false">` : ""}<span class="scene-number">${two(index + 1)}</span></span><span class="eyebrow">장면 ${two(index + 1)} / ${two(book.chapters.length)}</span><h2 id="${prefix}-scene-title">${esc(chapter.title)}</h2>${chapter.subtitle ? `<p class="detail-meta">${esc(chapter.subtitle)}</p>` : ""}${saved?.id === chapter.id ? savedBadge : ""}${enterButton(book, chapter)}${neighborNav}`;
+  return `<span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" data-theme="${esc(chapter.theme)}" role="img" aria-label="${chapter.thumbnail ? `${esc(chapter.title)} 장면 이미지` : "장면 이미지 준비 중"}">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" decoding="async" draggable="false">` : ""}<span class="scene-number">${two(index + 1)}</span></span><span class="eyebrow">장면 ${two(index + 1)} / ${two(book.chapters.length)}</span><h2 id="${prefix}-scene-title">${esc(chapter.title)}${saved?.id === chapter.id ? savedFlag : ""}</h2>${chapter.subtitle ? `<p class="detail-meta">${esc(chapter.subtitle)}</p>` : ""}${enterButton(book, chapter)}${neighborNav}`;
 }
 
 // The phone bar: the selected scene's number and title beside the entry button.
@@ -78,9 +78,9 @@ export const sceneStatus = ({ book, chapter }) => `${two(indexOf(book, chapter) 
 // The whole book detail page. `chapter` is the scene the panel shows; it defaults to the saved or first scene.
 export function bookDetail({ book, progress = {}, preview = false, chapter = defaultScene(book, progress) }) {
   const saved = savedChapter(book, progress);
-  // A row names the scene only; its models are listed in the scene panel.
+  // A row opens with its number and names the scene only; the saved scene's flag ends its title.
   const rows = book.chapters.map((scene, index) =>
-    `<li><a class="journey-row" href="${esc(detailUrl({ book: book.id, scene: scene.id, preview }))}" data-scene="${esc(scene.id)}" aria-current="${scene.id === chapter.id ? "true" : "false"}">${themeChip(scene.theme)}<span class="journey-number">${two(index + 1)}</span><span class="journey-copy"><strong>${esc(scene.title)}</strong>${scene.subtitle ? `<small>${esc(scene.subtitle)}</small>` : ""}</span>${scene.id === saved?.id ? savedBadge : ""}${icon("chevron-right")}</a></li>`
+    `<li><a class="journey-row" href="${esc(detailUrl({ book: book.id, scene: scene.id, preview }))}" data-scene="${esc(scene.id)}" aria-current="${scene.id === chapter.id ? "true" : "false"}"><span class="journey-number">${two(index + 1)}</span><span class="journey-copy"><strong>${esc(scene.title)}${scene.id === saved?.id ? savedFlag : ""}</strong>${scene.subtitle ? `<small>${esc(scene.subtitle)}</small>` : ""}</span>${icon("chevron-right")}</a></li>`
   ).join("");
   return `<main class="detail-page store-content" id="main-content" data-view="book">
     <div class="detail-main">
