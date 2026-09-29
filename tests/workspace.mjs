@@ -93,9 +93,9 @@ try{
  await page.locator('#publish').click();await expect(page.locator('#save-state')).toHaveText('공개 완료');const live=await(await context.request.get(server.url+'/api/library')).json();expect(live.books.find(b=>b.id===book.id).chapters[0].placements[0].y).toBe(6);
  await page.reload();await page.getByRole('button',{name:/격자 월드 테스트/}).click();await expect(page.locator('[data-select-model]')).toHaveCount(2);
  await page.locator('.world-chapter-tabs #add-chapter').click();await expect(page.locator('#chapter-form')).toBeVisible();await expect(page.locator('[data-chapter-row]')).toHaveCount(2);await page.getByRole('button',{name:'닫기',exact:true}).click();await page.locator('#undo').click();await expect(page.locator('[data-chapter-row]')).toHaveCount(1);
- const rejected=await context.request.post(server.url+'/api/models/upload',{headers:{'X-On-The-Book':'studio'},multipart:{model:{name:'notrigged.glb',mimeType:'model/gltf-binary',buffer:sampleGLB(false)}}});expect(rejected.status()).toBe(400);
+ const still=await context.request.post(server.url+'/api/models/upload',{headers:{'X-On-The-Book':'studio'},multipart:{model:{name:'still.glb',mimeType:'model/gltf-binary',buffer:sampleGLB(false,false)}}});expect(still.status()).toBe(201);expect(await still.json()).toMatchObject({rigged:false,clips:[]});
  await page.setViewportSize({width:1000,height:760});await expect(page.locator('#save')).toBeVisible();
- expect(errors).toEqual([]);console.log('PASS book creation, full-screen world, rigged upload, drag/drop, snapped XYZ, clip/radius, undo/redo, persistence and publish; unrigged upload rejected');
+ expect(errors).toEqual([]);console.log('PASS book creation, full-screen world, rigged upload, drag/drop, snapped XYZ, clip/radius, undo/redo, persistence and publish; still model upload accepted');
 }finally{await browser.close();await server.stop();}
 
 

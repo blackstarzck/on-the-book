@@ -459,8 +459,8 @@ function addPlacement() {
         scale: 1,
         rotation: 0,
         radius: 2,
-        animation: m.kind === "glb" ? "clip" : "hop",
-        clip: "",
+        animation: m.kind !== "glb" ? "hop" : m.clips?.length ? "clip" : "none",
+        clip: m.clips?.[0] || "",
         title: m.name,
         story: "이 물체 가까이에서 만나게 될 이야기를 적어 주세요.",
       };
@@ -519,8 +519,8 @@ function previewModel(m) {
     scale: 2,
     rotation: 0,
     radius: 2,
-    animation: m.kind === "glb" ? "clip" : "spin",
-    clip: "",
+    animation: m.kind !== "glb" ? "spin" : m.clips?.length ? "clip" : "none",
+    clip: m.clips?.[0] || "",
     title: m.name,
     story: "",
   };
@@ -545,7 +545,7 @@ function editModel(existing) {
     : { id: uid(), name: "", kind: "glb", color: "#8da88b", credit: "" };
   let uploading = 0;
   const d = modal(
-    `<span class="eyebrow">MODEL LIBRARY</span><h2>${existing ? "모델 정보 수정" : "새 모델 등록"}</h2><form id="model-form">${field("모델 이름", "name", draft.name, "text", 'required maxlength="200"')}${select("모델 종류", "kind", { glb: "뼈대 애니메이션 GLB 파일" }, draft.kind)}<label class="upload-field" id="upload-area">${icon("upload")}<strong>3D 모델 파일 선택</strong><span>GLB 2.0 · 최대 25MB · 텍스처 포함</span><input type="file" name="file" accept=".glb" aria-label="3D 모델 파일 선택"><span id="upload-status">${draft.url ? "등록된 파일이 있어요. 새 파일을 선택하면 교체돼요." : "파일을 선택해 주세요."}</span></label><label class="upload-field">${icon("upload")}<strong>모델 썸네일 (필수)</strong><span>실제 모델을 보여 주는 PNG · 최대 5MB · 가로·세로 4096 이하</span><input type="file" name="thumbnail" accept="image/png,.png" aria-label="모델 썸네일"><img id="thumbnail-preview" class="thumbnail-preview" alt="선택한 모델 썸네일" ${draft.thumbnail ? `src="${esc(draft.thumbnail)}"` : "hidden"}><span id="thumbnail-status">${draft.thumbnail ? "등록된 썸네일이 있어요. 새 이미지로 교체할 수 있어요." : "모델을 대표할 이미지를 선택해 주세요."}</span></label>${field("기본 모델 색상", "color", draft.color, "color")}<label class="field">제작자 및 사용 권한<textarea name="credit" rows="3" maxlength="500" required>${esc(draft.credit)}</textarea></label><p class="field-hint">모델의 제작자와 사용 허가를 기록해 주세요. 업로드한 모델은 파일 자체의 색상을 사용해요.</p><div class="modal-actions">${existing ? '<button type="button" id="delete-model" class="text-button danger">모델 삭제</button>' : ""}<button id="model-submit" class="primary-button">${existing ? "변경 적용" : "보관함에 등록"}</button></div></form>`,
+    `<span class="eyebrow">MODEL LIBRARY</span><h2>${existing ? "모델 정보 수정" : "새 모델 등록"}</h2><form id="model-form">${field("모델 이름", "name", draft.name, "text", 'required maxlength="200"')}${select("모델 종류", "kind", { glb: "GLB 파일" }, draft.kind)}<label class="upload-field" id="upload-area">${icon("upload")}<strong>3D 모델 파일 선택</strong><span>GLB 2.0 · 최대 25MB · 텍스처 포함 · 움직이지 않는 모델도 올릴 수 있어요</span><input type="file" name="file" accept=".glb" aria-label="3D 모델 파일 선택"><span id="upload-status">${draft.url ? "등록된 파일이 있어요. 새 파일을 선택하면 교체돼요." : "파일을 선택해 주세요."}</span></label><label class="upload-field">${icon("upload")}<strong>모델 썸네일 (필수)</strong><span>실제 모델을 보여 주는 PNG · 최대 5MB · 가로·세로 4096 이하</span><input type="file" name="thumbnail" accept="image/png,.png" aria-label="모델 썸네일"><img id="thumbnail-preview" class="thumbnail-preview" alt="선택한 모델 썸네일" ${draft.thumbnail ? `src="${esc(draft.thumbnail)}"` : "hidden"}><span id="thumbnail-status">${draft.thumbnail ? "등록된 썸네일이 있어요. 새 이미지로 교체할 수 있어요." : "모델을 대표할 이미지를 선택해 주세요."}</span></label>${field("기본 모델 색상", "color", draft.color, "color")}<label class="field">제작자 및 사용 권한<textarea name="credit" rows="3" maxlength="500" required>${esc(draft.credit)}</textarea></label><p class="field-hint">모델의 제작자와 사용 허가를 기록해 주세요. 업로드한 모델은 파일 자체의 색상을 사용해요.</p><div class="modal-actions">${existing ? '<button type="button" id="delete-model" class="text-button danger">모델 삭제</button>' : ""}<button id="model-submit" class="primary-button">${existing ? "변경 적용" : "보관함에 등록"}</button></div></form>`,
   );
   const form = d.querySelector("form");
   const update = () => {
@@ -570,7 +570,7 @@ function editModel(existing) {
         body: fd,
       });
       draft.url = result.url; draft.clips = result.clips; draft.rigged = result.rigged;
-      status.textContent = `업로드 완료 · ${(result.bytes / 1024).toFixed(0)} KB · 동작 ${result.clips.length}개${result.clips.length ? " (" + result.clips.join(", ") + ")" : ""}`;
+      status.textContent = `업로드 완료 · ${(result.bytes / 1024).toFixed(0)} KB · ${result.clips.length ? `동작 ${result.clips.length}개 (${result.clips.join(", ")})` : "파일 속 동작 없음 · 정적 모델"}`;
     } catch (e) {
       status.textContent = e.message;
     } finally {
@@ -598,7 +598,7 @@ function editModel(existing) {
     if (uploading) return;
     const fd = new FormData(form);
     const kind = fd.get("kind");
-    if (kind === "glb" && (!draft.url || !draft.rigged)) {
+    if (kind === "glb" && !draft.url) {
       toast("먼저 올바른 GLB 파일을 등록해 주세요.");
       return;
     }
@@ -617,7 +617,8 @@ function editModel(existing) {
       return;
     }
     if (kind !== "glb") delete draft.url;
-    if (existing) { Object.assign(existing, draft); if(draft.rigged) for(const b of library.books) for(const c of b.chapters) for(const p of c.placements) if(p.modelId===draft.id) {p.animation="clip";if(!draft.clips.includes(p.clip))p.clip=draft.clips[0];} }
+    // A file with motions plays one of them; a still file cannot keep a file motion.
+    if (existing) { Object.assign(existing, draft); for(const b of library.books) for(const c of b.chapters) for(const p of c.placements) if(p.modelId===draft.id) { if(draft.clips?.length){p.animation="clip";if(!draft.clips.includes(p.clip))p.clip=draft.clips[0];} else if(p.animation==="clip"){p.animation="none";p.clip="";} } }
     else library.models.push(draft);
     mark();
     d.close();
