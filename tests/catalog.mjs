@@ -98,11 +98,11 @@ try {
   await expect(page.locator('.detail-cta')).toBeHidden();
   await expect(page.locator('.detail-page img')).toHaveCount(0);
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
-  // The book detail's header is the logo alone, and the page has no footer.
-  await expect(page.locator('.site-header > *')).toHaveCount(1);
-  await expect(page.locator('.site-header .brand')).toBeVisible();
-  await expect(page.locator('#about-link, #library-button, #help-button, .site-footer')).toHaveCount(0);
-  pass('Book cards open the book detail with the first scene in the panel, under a logo-only header');
+  // The book detail repeats the bookshelf's top: the ribbon and the header with search, 소개, 책장 and help. No footer.
+  await expect(page.locator('.detail-top .reading-ribbon')).toBeVisible();
+  for (const item of ['.detail-top .site-header .brand', '#book-search', '#about-link', '#library-button[aria-label="책장 홈"]', '#help-button']) await expect(page.locator(item)).toBeVisible();
+  await expect(page.locator('.reader-header, .site-footer')).toHaveCount(0);
+  pass('Book cards open the book detail with the first scene in the panel, under the bookshelf top');
   // Choosing a scene swaps the panel in place: no curtain, no history entry, the address follows.
   const entries = await page.evaluate(() => history.length);
   await page.locator('.journey-row[data-scene="alice-2"]').click();
@@ -247,12 +247,38 @@ try {
   await expect(page.locator('.library-page')).toBeVisible();
   pass('The second hero slide opens its book detail');
 
+  // The shared top works from the book detail too: Enter in its search box shows the bookshelf's results with the
+  // query kept, and the ribbon opens the bookshelf on the scene previews.
+  await page.locator('[data-book="alice"]').click();
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  // The page is inert until the curtain lifts.
+  await expect(page.locator('.reader-curtain')).toHaveCount(0);
+  await page.locator('#book-search').fill('오즈');
+  await page.locator('#book-search').press('Enter');
+  await expect(page.locator('.library-page')).toBeVisible();
+  await expect(page.locator('#catalog-title')).toContainText('검색 결과');
+  await expect(page.locator('.catalog-card')).toHaveCount(1);
+  await expect(page.locator('#book-search')).toHaveValue('오즈');
+  await expect(page.locator('#book-search')).toBeFocused();
+  expect(await page.locator('#book-search').getAttribute('tabindex')).toBe(null);
+  await page.locator('#book-search').fill('');
+  await expect(page.locator('.catalog-card')).toHaveCount(2);
+  await page.locator('[data-book="alice"]').click();
+  await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
+  await expect(page.locator('.reader-curtain')).toHaveCount(0);
+  await page.locator('.detail-top .reading-ribbon').click();
+  await expect(page.locator('.library-page')).toBeVisible();
+  await expect(page.locator('#scene-title')).toBeFocused();
+  await expect(page.locator('#scene-title')).toBeInViewport();
+  pass('From the book detail, the search box shows the bookshelf results and the ribbon opens the scene previews');
+
   // Direct addresses: first load resolves the view and cleans unusable parts. No focus move on a cold load.
   await page.goto(`${server.url}/client/?book=alice`);
   await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
   await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
   await expect(page).toHaveTitle('이상한 나라의 앨리스 — On the Book');
-  await expect(page.locator('.header-search')).toHaveCount(0);
+  // The book detail carries the bookshelf's header, search box included.
+  await expect(page.locator('.detail-top .header-search')).toHaveCount(1);
   await page.goto(`${server.url}/client/?book=alice&scene=alice-2`);
   await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
   await expect(page.locator('.journey-row[aria-current="true"]')).toHaveAttribute('data-scene', 'alice-2');
@@ -299,6 +325,8 @@ try {
   // A long journey (18 chapters, intercepted response only): the panel is fixed at the screen's height, 24px clear above
   // and below, at the 400px grid (1440) and the 340px grid (1024). It holds the same place at the top, in the middle
   // and at the end of the page; its right edge meets the content box and the column gap stays clear.
+  // Since then: the bookshelf top stays pinned and the panel, without a card, fills the screen from below that top to
+  // the bottom edge, set apart from the left column by one line.
   const tall = {
     ...original,
     books: original.books.map(b => b.id !== 'alice' ? b : { ...b, chapters: [...b.chapters, ...b.chapters, ...b.chapters].map((c, i) => ({ ...c, id: `alice-tall-${i}` })) }),
@@ -316,12 +344,18 @@ try {
     expect(await long.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(await long.locator('.journey-row').evaluateAll(rows => rows.every(row => row.scrollWidth <= row.clientWidth + 1))).toBe(true);
     const placement = () => long.evaluate(() => {
-      const panel = document.querySelector('.scene-panel').getBoundingClientRect();
+      const element = document.querySelector('.scene-panel'), panel = element.getBoundingClientRect(), style = getComputedStyle(element);
+      const top = document.querySelector('.detail-top').getBoundingClientRect();
       const page = document.querySelector('.detail-page'), main = document.querySelector('.detail-main').getBoundingClientRect();
       const contentRight = page.getBoundingClientRect().right - parseFloat(getComputedStyle(page).paddingRight);
-      return { top: Math.round(panel.top), bottom: Math.round(innerHeight - panel.bottom), width: Math.round(panel.width), right: Math.round(contentRight - panel.right), gap: Math.round(panel.left - main.right) };
+      return {
+        pinned: Math.round(top.top), measured: getComputedStyle(page).getPropertyValue('--detail-top') === `${Math.round(top.height)}px`,
+        top: Math.round(panel.top - top.bottom), bottom: Math.round(innerHeight - panel.bottom), width: Math.round(panel.width),
+        right: Math.round(contentRight - panel.right), gap: Math.round(panel.left - main.right),
+        line: style.borderLeftWidth, card: `${style.borderTopWidth} ${style.borderRightWidth} ${style.borderRadius}`,
+      };
     });
-    const fixed = { top: 24, bottom: 24, width: panelWidth, right: 0, gap };
+    const fixed = { pinned: 0, measured: true, top: 0, bottom: 0, width: panelWidth, right: 0, gap, line: '1px', card: '0px 0px 0px' };
     expect(await placement()).toEqual(fixed);
     await long.evaluate(() => window.scrollTo(0, 400));
     await expect.poll(() => long.evaluate(() => Math.round(scrollY))).toBe(400);
@@ -331,7 +365,7 @@ try {
     expect(await placement()).toEqual(fixed);
     await grid.close();
   }
-  pass('The scene panel stays fixed at the screen height beside a long journey at 1440px and 1024px');
+  pass('Under the pinned top, the scene panel fills the screen height beside a long journey at 1440px and 1024px');
 
   // Studio-managed images, slides and categories, again only in intercepted responses.
   const upload = c => `/uploads/${c.repeat(8)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(12)}.png`;
@@ -399,13 +433,13 @@ try {
   await expect(home.locator('.detail-cover img')).toHaveCount(1);
   await expect.poll(() => loaded(home.locator('.detail-cover img'))).toBe(true);
   await expect(home.locator('.scene-panel .scene-image.has-image img')).toHaveCount(1);
-  // In the panel a thumbnail keeps its 16:10 shape inside the 400px column.
+  // In the panel a thumbnail keeps its 16:10 shape across the panel's full content width (400px column).
   const thumbBox = await home.locator('.scene-panel .scene-image.has-image').evaluate(element => {
-    const r = element.getBoundingClientRect();
-    return { width: r.width, height: r.height };
+    const r = element.getBoundingClientRect(), panel = element.closest('.scene-panel'), style = getComputedStyle(panel);
+    return { width: r.width, height: r.height, content: panel.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) };
   });
   expect(thumbBox.width).toBeGreaterThan(300);
-  expect(thumbBox.width).toBeLessThanOrEqual(360);
+  expect(Math.round(thumbBox.width)).toBe(Math.round(thumbBox.content));
   expect(Math.abs(thumbBox.width / thumbBox.height - 1.6)).toBeLessThan(0.02);
   await expect.poll(() => loaded(home.locator('.scene-panel .scene-image img'))).toBe(true);
   await home.screenshot({ path: 'test-results/catalog/managed-book-detail.png' });

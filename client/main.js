@@ -91,9 +91,8 @@ function pageTitle() {
 }
 function header() {
   const brand = `<a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>`;
-  // The book detail shows the logo alone; the logo also leads back to the shelf.
-  if (view === "book") return `<header class="site-header reader-header">${brand}</header>`;
-  const compact = view !== "home";
+  // The book detail shares the bookshelf's header (search, 소개, 책장, help); only the 3D world is compact.
+  const compact = view === "world";
   return `<header class="site-header${compact ? " reader-header" : ""}">${brand}${compact ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
 }
 function page() {
@@ -114,8 +113,10 @@ function render() {
   const exploring = view === "world";
   if (audioContext) exploring && sound ? audioContext.resume() : audioContext.suspend();
   document.title = pageTitle();
-  // The book detail has no footer; home and the 3D world keep theirs.
-  app.innerHTML = `${view === "home" ? announcementBanner() : ""}${header()}${page()}${view === "book" ? "" : `
+  // The book detail repeats the bookshelf's top (ribbon and header) inside .detail-top, which stays pinned above 850px
+  // so the scene panel can fill the rest of the screen. It has no footer; home and the 3D world keep theirs.
+  const top = view === "home" ? `${announcementBanner()}${header()}` : view === "book" ? `<div class="detail-top">${announcementBanner()}${header()}</div>` : header();
+  app.innerHTML = `${top}${page()}${view === "book" ? "" : `
  <footer class="site-footer"><span>${exploring ? "문장 너머의 세계를, 천천히." : "오래된 이야기, 새로운 발견."}</span>${exploring ? `<div><span>땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상</span></div>` : ""}<span class="footer-brand">ON THE BOOK © 2026</span></footer>`}`;
   if (exploring) try {
     world = new Journey(document.querySelector("#world"), {
@@ -140,16 +141,13 @@ function render() {
     document.querySelector("#fallback-read").onclick = readChapter;
   }
   icons();
-  // The book detail's header has only the logo, so it has neither the shelf nor the help button.
-  const libraryButton = document.querySelector("#library-button");
-  if (libraryButton) libraryButton.onclick = openLibrary;
+  document.querySelector("#library-button").onclick = () => openLibrary();
   document.querySelector(".site-header .brand").onclick = (event) => {
     if (modifiedClick(event)) return;
     event.preventDefault();
     openLibrary();
   };
-  const helpButton = document.querySelector("#help-button");
-  if (helpButton) helpButton.onclick = help;
+  document.querySelector("#help-button").onclick = help;
   const soundButton = document.querySelector("#sound-button");
   if (soundButton) soundButton.onclick = toggleSound;
   if (view === "home") {
@@ -191,7 +189,19 @@ function setupDetail() {
     event.preventDefault();
     selectScene(target.dataset.scene, { sheet: target.classList.contains("journey-row") && narrow() });
   }, { signal: abort.signal });
-  return () => { abort.abort(); sceneSheet?.close(); };
+  // The shared top leads back to the bookshelf: the ribbon to its scene previews, Enter in the search box to the
+  // results. Enter that only ends a Korean IME composition is not a search.
+  document.querySelector(".detail-top .reading-ribbon").addEventListener("click", () => openLibrary({ land: "scenes" }), { signal: abort.signal });
+  document.querySelector("#book-search").addEventListener("keydown", event => {
+    if (event.key !== "Enter" || event.isComposing) return;
+    catalogState.query = event.target.value;
+    openLibrary({ land: "search" });
+  }, { signal: abort.signal });
+  // The fixed scene panel starts where the pinned top ends, so it follows that top's measured height.
+  const pinned = document.querySelector(".detail-top"), detail = document.querySelector(".detail-page");
+  const measure = new ResizeObserver(() => detail.style.setProperty("--detail-top", `${pinned.offsetHeight}px`));
+  measure.observe(pinned);
+  return () => { abort.abort(); measure.disconnect(); sceneSheet?.close(); };
 }
 // Shows a scene in the panel (and in the phone sheet when asked) without leaving the page or adding history.
 function selectScene(sceneId, { sheet = false } = {}) {
@@ -309,7 +319,9 @@ async function openDetail(target, bookId, sceneId) {
     render();
   }, { label: "작품을 펼치는 중이에요…" });
 }
-async function openLibrary() {
+// `land` picks where the bookshelf opens: back where the reader left it (default), on the scene previews
+// ("scenes", from the ribbon) or at the top with the search results ("search", from the header search box).
+async function openLibrary({ land } = {}) {
   if (view === "home") {
     catalogState.query = "";
     catalogState.category = "all";
@@ -317,12 +329,18 @@ async function openLibrary() {
     document.querySelector("#catalog-title").focus();
     return;
   }
+  // The scene previews are discovery content, which a search or a category would hide.
+  if (land === "scenes") { catalogState.query = ""; catalogState.category = "all"; }
   const changed = await transitionPage(app, () => {
     view = "home";
     history.pushState(null, "", currentUrl());
     render();
-  }, { label: "책장으로 돌아가는 중이에요…", focus: "#catalog-title" });
-  if (changed) restoreCatalogPosition();
+  }, { label: "책장으로 돌아가는 중이에요…", focus: land === "scenes" ? "#scene-title" : "#catalog-title" });
+  if (!changed) return;
+  if (land === "scenes") document.querySelector("#scene-title").scrollIntoView({ block: "start" });
+  // The search box gets focus here rather than through transitionPage, which would give it tabindex="-1".
+  else if (land === "search") { window.scrollTo({ top: 0, behavior: "instant" }); document.querySelector("#book-search").focus(); }
+  else restoreCatalogPosition();
 }
 function restoreCatalogPosition() {
   window.scrollTo({ top: catalogState.scroll, behavior: "instant" });

@@ -42,11 +42,14 @@
 .theme-chip[data-theme="tea"], .scene-image[data-theme="tea"] { background: #d7c9b6; }
 .theme-chip[data-theme="rose"], .scene-image[data-theme="rose"] { background: #d8c6b7; }
 .theme-chip[data-theme="gold"], .scene-image[data-theme="gold"] { background: #dcca98; }
-/* The scene panel is fixed at the screen's height, 24px clear above and below, and does not move while the page
-   scrolls. A taller panel scrolls inside, with no visible scrollbar. Its right edge meets the .store-content box
-   (1280px column, 40px gutters above 850px). z-index 4 lifts it over the header row (3); toasts and the curtain
-   stay above it. */
-.scene-panel { position: fixed; top: 24px; bottom: 24px; right: max(40px, calc((100% - 1280px) / 2 + 40px)); z-index: 4; width: 400px; overflow-y: auto; scrollbar-width: none; padding: 20px; border: 1px solid #e7ebe7; border-radius: 14px; background: #fff; }
+/* The bookshelf's top (ribbon and header) stays pinned on the book detail above 850px; it scrolls away on phones. */
+.detail-top { position: sticky; top: 0; z-index: 6; background: #fff; }
+/* The scene panel fills the screen from the pinned top down to the bottom edge and does not move while the page
+   scrolls; a taller panel scrolls inside, with no visible scrollbar. No card: a single line on its left sets it
+   apart from the left column. Its right edge meets the .store-content box (1280px column, 40px gutters above
+   850px), so its content lines up with the header's icons. --detail-top is the pinned top's height, measured by
+   main.js; 138px is the default 50px ribbon plus the 88px header. Toasts and the curtain stay above it. */
+.scene-panel { position: fixed; top: var(--detail-top, 138px); bottom: 0; right: max(40px, calc((100% - 1280px) / 2 + 40px)); z-index: 4; width: 400px; overflow-y: auto; scrollbar-width: none; padding: 24px 0 24px 32px; border-left: 1px solid #e7ebe7; background: #fff; }
 /* Safari before 18.2 ignores scrollbar-width. The phone sheet below hides its scrollbar the same way. */
 .scene-panel::-webkit-scrollbar, .scene-sheet::-webkit-scrollbar { display: none; }
 /* Panel and sheet share their inner layout. The image slot is always 16:10; a thumbnail fills it (landing.css:
@@ -90,6 +93,7 @@
   .detail-copy h1 { font-size: 32px; }
 }
 @media (max-width: 850px) {
+  .detail-top { position: static; }
   .detail-page { display: flex; flex-direction: column; align-items: stretch; }
   .scene-panel { display: none; }
   .journey-hint--wide { display: none; }

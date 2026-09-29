@@ -13,7 +13,8 @@ try {
   await page.locator('[data-book="alice"]').click();
   await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
-  await page.mouse.move(0, 0);
+  // Park the mouse in the empty left margin; (0, 0) is on the ribbon now, and hover would restyle it.
+  await page.mouse.move(0, 400);
   await page.screenshot({ path: 'docs/preview/detail.png', fullPage: true });
   await page.locator('.scene-panel .detail-enter').click();
   await expect(page.locator('canvas')).toBeVisible();
