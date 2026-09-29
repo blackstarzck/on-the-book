@@ -47,6 +47,9 @@ try {
   expect(Math.abs(tiles.cover - 1)).toBeLessThan(.01);
   expect(Math.abs(tiles.image - 1)).toBeLessThan(.01);
   expect(tiles.span).toBe(0);
+  // The rail moves by swipe, wheel, keys and the arrow buttons; it shows no scrollbar. (Headless scrollbars take no
+  // room, so the check reads the style rather than measuring the bar.)
+  expect(await page.locator('.scene-rail').evaluate(rail => getComputedStyle(rail).scrollbarWidth)).toBe('none');
   await expect(page.locator('canvas, video, dialog[open]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /로그인|회원가입|알림/ })).toHaveCount(0);
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
@@ -80,6 +83,12 @@ try {
   await expect(page.locator('.feature-progress')).toContainText('2 / 2');
   await expect.poll(() => page.locator('.feature-card.is-active').evaluate(element => getComputedStyle(element).transform)).toBe('none');
   await expect.poll(() => page.locator('.feature-card.is-active .feature-copy > strong').evaluate(element => getComputedStyle(element).animationName)).toBe('hero-copy-in');
+  // Hovering a slide keeps its own ink: the global button:hover colour must not repaint the hero copy.
+  const ink = () => page.locator('.feature-card.is-active .feature-copy > strong').evaluate(el => getComputedStyle(el).color);
+  const resting = await ink();
+  await page.locator('.feature-card.is-active').hover();
+  expect(await ink()).toBe(resting);
+  await page.mouse.move(0, 0);
   pass('Hero swipe, progress and staggered text animation');
   await page.screenshot({ path: 'test-results/catalog/desktop.png', fullPage: true });
   await page.getByLabel('도서 제목 또는 작가 검색').fill('루이스');
@@ -480,6 +489,10 @@ try {
   await expect(first.locator('.feature-copy > strong')).toHaveText('노란 길로 떠나요');
   await expect(first.locator('.feature-art')).toHaveCount(0);
   expect(await first.locator('.feature-copy > strong').evaluate(el => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+  // The copy stays white while the pointer is over the photo.
+  await first.hover();
+  expect(await first.locator('.feature-copy > strong').evaluate(el => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+  await home.mouse.move(0, 0);
   expect(await first.locator('.feature-photo').evaluate(img => getComputedStyle(img).objectPosition)).toBe('82% 50%');
   await expect(home.locator('.feature-progress')).toContainText('1 / 3');
   // The shown photo and the next one load; the third waits for its turn.
