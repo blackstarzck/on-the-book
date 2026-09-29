@@ -121,19 +121,24 @@ test("bookDetail puts the author and book intros between the journey and the sou
   assert.ok(at('id="detail-journey"') < at('id="detail-author"'));
   assert.ok(at('id="detail-author"') < at('id="detail-book-intro"'));
   assert.ok(at('id="detail-book-intro"') < at('class="detail-source"'));
+  assert.doesNotMatch(html, /detail-intro-empty|준비 중이에요/);
 });
 
-test("bookDetail leaves out an empty or missing intro and a missing author name", () => {
+test("bookDetail keeps an empty or missing intro as a 준비 중 line and drops a missing author name", () => {
   // Stored data is not re-parsed, so a book saved before the fields existed has neither of them.
   const stored = structuredClone(alice);
   delete stored.authorIntro;
   delete stored.bookIntro;
-  assert.doesNotMatch(bookDetail({ book: stored, library }), /detail-intro/);
-  assert.doesNotMatch(bookDetail({ book: { ...alice, authorIntro: " \n\n ", bookIntro: "" }, library }), /detail-intro/);
+  for (const book of [stored, { ...alice, authorIntro: " \n\n ", bookIntro: "" }]) {
+    const html = bookDetail({ book, library });
+    assert.match(html, /<h2 id="detail-author-title">저자 소개<\/h2><\/div><p class="detail-intro-name">루이스 캐럴<\/p><p class="detail-intro-empty">저자 소개를 준비 중이에요\.<\/p><\/section>/);
+    assert.match(html, /<h2 id="detail-book-intro-title">책 소개<\/h2><\/div><p class="detail-intro-empty">책 소개를 준비 중이에요\.<\/p><\/section>/);
+    assert.doesNotMatch(html, /detail-prose/);
+  }
   const nameless = bookDetail({ book: { ...alice, author: "", authorIntro: "소개" }, library });
-  assert.match(nameless, /id="detail-author"/);
   assert.doesNotMatch(nameless, /detail-intro-name/);
-  assert.doesNotMatch(nameless, /id="detail-book-intro"/);
+  assert.match(nameless, /<h2 id="detail-author-title">저자 소개<\/h2><\/div><div class="detail-prose"><p>소개<\/p><\/div><\/section>/);
+  assert.match(nameless, /<p class="detail-intro-empty">책 소개를 준비 중이에요\.<\/p>/);
 });
 
 test("the book schema keeps the intros, fills them in for older data and caps their length", () => {

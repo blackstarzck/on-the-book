@@ -13,7 +13,9 @@
 .detail-description { max-width: 560px; margin: 0; font-size: 17px; line-height: 1.7; color: #3f4a44; word-break: keep-all; }
 .detail-section { padding-top: 36px; margin-top: 34px; border-top: 1px solid #edf0ec; }
 .detail-section .section-heading { margin-bottom: 16px; }
-/* 저자 소개·책 소개: studio prose. A single line break inside a paragraph is kept (pre-line). */
+/* 저자 소개·책 소개: studio prose. A single line break inside a paragraph is kept (pre-line); an empty field
+   shows a muted 준비 중 line. */
+.detail-intro-empty { margin: 0; font-size: 15px; line-height: 1.7; color: #7f8982; }
 .detail-intro-name { margin: 0 0 10px; font-size: 17px; font-weight: 650; letter-spacing: -.025em; color: #26312b; }
 .detail-prose { max-width: 680px; }
 .detail-prose p { margin: 0 0 14px; font-size: 16px; line-height: 1.8; color: #3f4a44; white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
@@ -107,6 +109,7 @@
   .detail-section .section-heading h2 { font-size: 21px; }
   .detail-intro-name { font-size: 16px; }
   .detail-prose p { font-size: 15px; line-height: 1.75; }
+  .detail-intro-empty { font-size: 14px; }
   .journey-row { gap: 12px; min-height: 58px; }
   .journey-model { display: none; }
 }

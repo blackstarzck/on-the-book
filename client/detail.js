@@ -43,12 +43,14 @@ const sourceNote = book =>
 // Blank lines split paragraphs. Stored data is not re-parsed, so a field added later may be missing.
 const paragraphsOf = text => String(text ?? "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
 
-// A studio-written section under the journey (저자 소개, 책 소개). An empty field leaves the section out.
-const introSection = (id, title, text, name = "") => {
+// A studio-written section under the journey (저자 소개, 책 소개). An empty field keeps the section and shows
+// its `pending` line instead.
+const introSection = ({ id, title, text, pending, name = "" }) => {
   const paragraphs = paragraphsOf(text);
-  return paragraphs.length
-    ? `<section class="detail-section detail-intro" id="${id}" aria-labelledby="${id}-title"><div class="section-heading"><h2 id="${id}-title">${title}</h2></div>${name ? `<p class="detail-intro-name">${esc(name)}</p>` : ""}<div class="detail-prose">${paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}</div></section>`
-    : "";
+  const body = paragraphs.length
+    ? `<div class="detail-prose">${paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}</div>`
+    : `<p class="detail-intro-empty">${pending}</p>`;
+  return `<section class="detail-section detail-intro" id="${id}" aria-labelledby="${id}-title"><div class="section-heading"><h2 id="${id}-title">${title}</h2></div>${name ? `<p class="detail-intro-name">${esc(name)}</p>` : ""}${body}</section>`;
 };
 
 // The single 3D entry button: it always names the scene it enters.
@@ -96,8 +98,8 @@ export function bookDetail({ book, library, progress = {}, preview = false, chap
     <div class="detail-main">
       <section class="detail-hero" aria-labelledby="detail-title"><span class="detail-cover">${bookCover(book)}</span><div class="detail-copy"><span class="eyebrow">${esc(edition(book).category)} · ${book.chapters.length}개의 장면 · ${book.year}</span><h1 id="detail-title" tabindex="-1">${esc(book.title)}</h1><p class="detail-meta">${esc(book.englishTitle)} · ${esc(book.author)}</p><p class="detail-description">${esc(book.description)}</p></div></section>
       <section class="detail-section" id="detail-journey" aria-labelledby="detail-journey-title"><div class="section-heading"><div><h2 id="detail-journey-title">이 책의 여정</h2><p><span class="journey-hint journey-hint--wide">장면을 고르면 오른쪽에서 그 장면을 먼저 볼 수 있어요.</span><span class="journey-hint journey-hint--narrow">장면을 고르면 그 장면을 먼저 볼 수 있어요.</span></p></div></div><ol class="journey-list">${rows}</ol></section>
-      ${introSection("detail-author", "저자 소개", book.authorIntro, book.author)}
-      ${introSection("detail-book-intro", "책 소개", book.bookIntro)}
+      ${introSection({ id: "detail-author", title: "저자 소개", text: book.authorIntro, pending: "저자 소개를 준비 중이에요.", name: book.author })}
+      ${introSection({ id: "detail-book-intro", title: "책 소개", text: book.bookIntro, pending: "책 소개를 준비 중이에요." })}
       ${sourceNote(book)}
     </div>
     <aside class="scene-panel" aria-labelledby="panel-scene-title">${scenePanel({ book, chapter, library, progress, preview })}</aside>

@@ -7,7 +7,7 @@
 - 처음에는 작품 상세(`?book=`)와 장면 상세(`?book=&scene=`) 두 페이지(두 뎁스)로 설계·구현했다(PR #3, 커밋 c60f7b6 까지). 같은 날 사용자가 밀리의서재 도서 상세처럼 **한 페이지 두 열**로 합치기로 결정했다. 왼쪽 열은 스크롤되는 작품 정보와 장면 목록, 오른쪽은 스크롤을 따라다니는 장면 패널이다.
 - 이 문서는 그 결정 이후의 최종 설계다. 두 뎁스 구현에서 바뀌는 점은 18절에 모았고, 구현 계획은 그 차이만 다룬다.
 - 그보다 앞서 정한 것(카드가 링크가 되는 홈 변경, 주소 규칙의 골격, `book-meta.js`·`detail.js` 분리, 표지·썸네일 표시)은 그대로 유효하다.
-- 2026-09-29 사용자 요청으로 두 가지를 더했다. 장면 패널과 시트의 스크롤바를 숨겼고(5절), '이 책의 여정' 다음에 저자 소개·책 소개 섹션과 이를 입력하는 관리자 칸을 넣었다(19절).
+- 2026-09-29 사용자 요청으로 두 가지를 더했다. 장면 패널과 시트의 스크롤바를 숨겼고(5절), '이 책의 여정' 다음에 저자 소개·책 소개 섹션과 이를 입력하는 관리자 칸을 넣었다(19절). 처음에는 빈 칸의 섹션을 숨겼으나, 같은 날 사용자 요청으로 섹션을 두고 '준비 중' 문구를 보이게 바꿨다.
 
 ## 1. 배경과 목표
 
@@ -95,8 +95,8 @@ main.detail-page.store-content#main-content[data-view="book"]
   div.detail-main                 왼쪽 열. 페이지와 함께 스크롤
     section.detail-hero           표지·분류·제목·저자·소개
     section.detail-section#detail-journey   이 책의 여정(장면 목록)
-    section.detail-section.detail-intro#detail-author       저자 소개(비어 있으면 없음, 19절)
-    section.detail-section.detail-intro#detail-book-intro   책 소개(비어 있으면 없음, 19절)
+    section.detail-section.detail-intro#detail-author       저자 소개(비어 있으면 준비 중 문구, 19절)
+    section.detail-section.detail-intro#detail-book-intro   책 소개(비어 있으면 준비 중 문구, 19절)
     section.detail-source         원작 정보
   aside.scene-panel[aria-labelledby="panel-scene-title"]   오른쪽 열. sticky
     (7절의 패널 내용)
@@ -127,7 +127,7 @@ main.detail-page.store-content#main-content[data-view="book"]
 - 대표 모델은 `chapter.mainPlacementId` 가 가리키는 배치의 `title`, 없으면 첫 배치, 배치가 없으면 생략. 테마 칩 색은 meadow `#cad7aa`, night `#929aaf`, tea `#d7c9b6`, rose `#d8c6b7`, gold `#dcca98`(3D 월드 바닥색).
 
 저자 소개·책 소개 `.detail-section.detail-intro`
-- 여정 다음, 원작 정보 앞에 저자 소개, 책 소개 순서로 놓는다. 비어 있으면 섹션을 뺀다. 자세한 규칙은 19절.
+- 여정 다음, 원작 정보 앞에 저자 소개, 책 소개 순서로 늘 놓는다. 비어 있으면 본문 자리에 준비 중 문구를 보인다. 자세한 규칙은 19절.
 
 원작 정보 `.detail-source`
 - `h2` "원작 정보", `p.source-note` 에 `book.rights`, 줄 바꿈, `<a href="{book.source}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a>`.
@@ -270,7 +270,7 @@ admin/
 
 `npm test`, `npm run build`, `node tests/catalog.mjs`, `node tests/mobile-entry.mjs`, `node tests/home-admin.mjs`, `npm run test:about`(마지막 항목은 워크트리에서만 실패하는 기존 vite 경로 문제)을 통과해야 한다. `browser.mjs`, `floor-reading.mjs`, `collision.mjs`, `admin-parity.mjs`, `floor-editor.mjs` 는 `?book&chapter` 주소로 바로 들어가므로 영향받지 않는다.
 
-스크린샷은 1440×960 과 390×844 에서 10절의 네 파일로 다시 찍는다. 장면 시트 화면은 390×844 에서 여정 2행을 누른 뒤 찍는다.
+스크린샷은 1440×960 과 390×844 에서 10절의 네 파일로 다시 찍는다. 장면 시트 화면은 390×844 에서 여정 2행을 누른 뒤 찍는다. 휴대폰 전체 페이지(`detail-book-mobile.png`)는 화면 높이를 문서 높이로 늘려 찍는다. 844px 화면 그대로 전체 페이지를 찍으면 하단 고정 바가 페이지 중간에 찍혀 글을 가리기 때문이다.
 
 ## 15. 문서 반영
 
@@ -327,19 +327,21 @@ admin/
 작품 상세
 - 왼쪽 열 순서는 히어로 → 이 책의 여정 → 저자 소개 → 책 소개 → 원작 정보다. 사용자가 말한 순서대로 저자 소개가 먼저다.
 - 마크업: `<section class="detail-section detail-intro" id="detail-author" aria-labelledby="detail-author-title">` 안에 `div.section-heading > h2#detail-author-title` "저자 소개", 저자 이름이 있으면 `p.detail-intro-name`, 그리고 `div.detail-prose` 의 문단 `p` 들. 책 소개는 `id="detail-book-intro"`, 제목 "책 소개"이고 이름 줄이 없다.
-- 빈 줄로 문단을 나눈다(장면 본문과 같은 `paragraphsOf()`). 문단 안의 한 줄 바꿈은 `white-space: pre-line` 으로 화면에 남긴다. 비었거나 공백뿐인 필드는 섹션을 통째로 뺀다. 저자 이름이 비어 있으면 이름 줄만 뺀다.
+- 빈 줄로 문단을 나눈다(장면 본문과 같은 `paragraphsOf()`). 문단 안의 한 줄 바꿈은 `white-space: pre-line` 으로 화면에 남긴다.
+- 비었거나 공백뿐인 필드도 섹션은 그대로 두고, `div.detail-prose` 대신 `p.detail-intro-empty` 에 "저자 소개를 준비 중이에요." 또는 "책 소개를 준비 중이에요."를 보인다. 글자 15px(600px 이하 14px), 줄 간격 1.7, 색 `#7f8982`. 저자 이름은 소개가 비어 있어도 있으면 보이고, 이름이 비어 있으면 이름 줄만 뺀다.
 - 글은 모두 `esc()` 로 이스케이프한다. HTML 은 쓸 수 없다.
 - 모양: 섹션 제목은 여정과 같은 `.section-heading`. 본문 16px, 줄 간격 1.8(600px 이하 15px, 1.75), 색 `#3f4a44`, 최대 폭 680px. 이름 줄 17px, 굵기 650(600px 이하 16px).
 - 등장 효과에서 `.detail-intro` 는 여정·원작 정보와 같은 단계다(5절).
 
 관리자
 - 책 정보 창의 '소개 문장' 아래에 '저자 소개'(5줄)와 '책 소개'(6줄) `textarea` 를 둔다. 둘 다 `maxlength="5000"` 이고 새 책은 빈 값으로 시작한다.
-- 도움말: "소개 문장은 작품 상세 맨 위에 보이는 짧은 글이고, 저자 소개와 책 소개는 ‘이 책의 여정’ 아래에 차례로 보여요. 빈 줄로 문단을 나누고, 비워 둔 칸의 섹션은 나오지 않아요."
+- 도움말: "소개 문장은 작품 상세 맨 위에 보이는 짧은 글이고, 저자 소개와 책 소개는 ‘이 책의 여정’ 아래에 차례로 보여요. 빈 줄로 문단을 나누고, 비워 두면 ‘준비 중’ 문구가 보여요."
 - 두 칸은 공개 조건이 아니다. 공개에 필요한 것은 기존대로 저자와 권리 정보다.
 
 검사
-- `tests/detail.test.js`: 섹션 마크업과 순서(여정 < 저자 소개 < 책 소개 < 원작 정보), 문단 나눔과 줄 바꿈 보존, 이스케이프, 비었거나 없는 필드의 섹션 생략, 이름 없는 저자 소개, 스키마 기본값과 5000자 제한.
-- `tests/home-admin.mjs`: 책 정보 창에서 두 칸을 채워 저장하면 초안에 남는다. 공개 뒤 `?book=alice` 에서 `#detail-author`·`#detail-book-intro` 가 여정 다음, 원작 정보 앞에 있고, 문단 안 줄 바꿈이 화면에 남는다(`innerText`).
+- `tests/detail.test.js`: 섹션 마크업과 순서(여정 < 저자 소개 < 책 소개 < 원작 정보), 문단 나눔과 줄 바꿈 보존, 이스케이프, 글이 있으면 준비 중 문구 없음, 비었거나 없는 필드의 준비 중 문구(이름 줄은 유지), 이름 없는 저자 소개, 스키마 기본값과 5000자 제한.
+- `tests/home-admin.mjs`: 책 정보 창에서 두 칸을 채워 저장하면 초안에 남는다. 공개 뒤 `?book=alice` 에서 `#detail-author`·`#detail-book-intro` 가 여정 다음, 원작 정보 앞에 있고, 문단 안 줄 바꿈이 화면에 남는다(`innerText`). 두 칸을 비운 채 공개된 `?book=oz` 에는 작가 이름과 두 준비 중 문구가 보인다.
+- 문서 스크린샷(14.5)은 시드에 소개가 없으므로 두 섹션이 준비 중 문구로 찍힌다.
 
 문서
 - README 의 작품 상세 문장, `docs/ADMIN-GUIDE.md` 의 도서 정보 문장, `docs/PRD.md` A-01 에 두 칸을 더한다.

@@ -148,8 +148,15 @@ try {
   expect(await detail.locator('#detail-author .detail-prose p').first().evaluate(p => p.innerText)).toBe('옥스퍼드의 수학 강사였어요.\n아이들에게 이야기를 들려주곤 했어요.');
   await expect(detail.locator('#detail-book-intro .detail-prose p')).toHaveText([bookIntro]);
   expect(await detail.locator('#detail-journey, .detail-intro, .detail-source').evaluateAll(sections => sections.map(s => s.id || s.className))).toEqual(['detail-journey', 'detail-author', 'detail-book-intro', 'detail-source']);
+  await expect(detail.locator('.detail-intro-empty')).toHaveCount(0);
+  // Oz was published with both intros left empty.
+  await detail.goto(`${server.url}/client/?book=oz`);
+  await expect(detail.locator('#detail-author .detail-intro-name')).toHaveText('L. 프랭크 바움');
+  await expect(detail.locator('#detail-author .detail-intro-empty')).toHaveText('저자 소개를 준비 중이에요.');
+  await expect(detail.locator('#detail-book-intro .detail-intro-empty')).toHaveText('책 소개를 준비 중이에요.');
+  await expect(detail.locator('.detail-prose')).toHaveCount(0);
   await detail.close();
-  pass('The published intros follow the journey on the book detail, author first');
+  pass('The published intros follow the journey on the book detail, author first; empty ones say 준비 중');
 
   await page.locator('[data-slide]').nth(1).locator('[data-slide-remove]').click();
   await page.locator('#confirm-action').click();
