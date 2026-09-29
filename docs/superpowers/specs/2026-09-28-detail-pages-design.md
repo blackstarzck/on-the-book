@@ -7,7 +7,7 @@
 - 처음에는 작품 상세(`?book=`)와 장면 상세(`?book=&scene=`) 두 페이지(두 뎁스)로 설계·구현했다(PR #3, 커밋 c60f7b6 까지). 같은 날 사용자가 밀리의서재 도서 상세처럼 **한 페이지 두 열**로 합치기로 결정했다. 왼쪽 열은 스크롤되는 작품 정보와 장면 목록, 오른쪽은 스크롤을 따라다니는 장면 패널이다.
 - 이 문서는 그 결정 이후의 최종 설계다. 두 뎁스 구현에서 바뀌는 점은 18절에 모았고, 구현 계획은 그 차이만 다룬다.
 - 그보다 앞서 정한 것(카드가 링크가 되는 홈 변경, 주소 규칙의 골격, `book-meta.js`·`detail.js` 분리, 표지·썸네일 표시)은 그대로 유효하다.
-- 2026-09-29 사용자 요청으로 두 가지를 더했다. 장면 패널과 시트의 스크롤바를 숨겼고(5절), '이 책의 여정' 다음에 저자 소개·책 소개 섹션과 이를 입력하는 관리자 칸을 넣었다(19절). 처음에는 빈 칸의 섹션을 숨겼으나, 같은 날 사용자 요청으로 섹션을 두고 '준비 중' 문구를 보이게 바꿨다. 이어서 왼쪽 열 섹션 사이의 구분선을 모두 없앴다(6절). 그다음 작품 상세에서 푸터와 헤더의 소개·책장으로·물음표를 빼 로고만 남기고, 장면 패널을 스크롤을 따라오는 sticky 대신 화면 높이에 고정했다(5절). 이어서 패널의 미리 읽기와 그 아래 글을 없애고 이전·다음을 CTA 아래 같은 너비의 버튼 둘로 옮겼으며(7절), 왼쪽 열의 원작 정보 섹션을 없앴다(6절). 이어서 작품 상세에도 홈과 같은 띠 배너와 헤더(로고·검색·소개·책장·이용 방법)를 두어 850px 초과에서 위에 고정하고, 장면 패널은 카드를 벗고 그 아래부터 화면 끝까지 채우며 왼쪽 열과는 선 하나로 나눴다(5절). 이어서 페이지 위아래 여백을 넓혔다(6절). 그다음 여정 행의 대표 모델 이름을 없애고 작품 상세의 12px 글자를 14px 로 올렸으며(6절), 마지막으로 히어로를 연도·한글 제목·저자만 남기고 패널의 "이 장면에서 만나는 것들"을 없앴다(6절·7절).
+- 2026-09-29 사용자 요청으로 두 가지를 더했다. 장면 패널과 시트의 스크롤바를 숨겼고(5절), '이 책의 여정' 다음에 저자 소개·책 소개 섹션과 이를 입력하는 관리자 칸을 넣었다(19절). 처음에는 빈 칸의 섹션을 숨겼으나, 같은 날 사용자 요청으로 섹션을 두고 '준비 중' 문구를 보이게 바꿨다. 이어서 왼쪽 열 섹션 사이의 구분선을 모두 없앴다(6절). 그다음 작품 상세에서 푸터와 헤더의 소개·책장으로·물음표를 빼 로고만 남기고, 장면 패널을 스크롤을 따라오는 sticky 대신 화면 높이에 고정했다(5절). 이어서 패널의 미리 읽기와 그 아래 글을 없애고 이전·다음을 CTA 아래 같은 너비의 버튼 둘로 옮겼으며(7절), 왼쪽 열의 원작 정보 섹션을 없앴다(6절). 이어서 작품 상세에도 홈과 같은 띠 배너와 헤더(로고·검색·소개·책장·이용 방법)를 두어 850px 초과에서 위에 고정하고, 장면 패널은 카드를 벗고 그 아래부터 화면 끝까지 채우며 왼쪽 열과는 선 하나로 나눴다(5절). 이어서 페이지 위아래 여백을 넓혔다(6절). 그다음 여정 행의 대표 모델 이름을 없애고 작품 상세의 12px 글자를 14px 로 올렸으며(6절), 그다음 히어로를 연도·한글 제목·저자만 남기고 패널의 "이 장면에서 만나는 것들"을 없앴다(6절·7절). 마지막으로 저장된 장면의 글자 배지 "마지막에 머문 장면"을 여정 행과 패널 모두 제목 끝의 주황 깃발 아이콘으로 바꾸고, 여정 행 번호 앞의 테마 칩을 없앴다(6절·7절).
 
 ## 1. 배경과 목표
 
@@ -139,11 +139,12 @@ main.detail-page.store-content#main-content[data-view="book"]
 
 여정 `.detail-section#detail-journey`
 - `h2` "이 책의 여정", 설명 `p` "장면을 고르면 오른쪽에서 그 장면을 먼저 볼 수 있어요."(850px 이하에서는 CSS 로 "장면을 고르면 그 장면을 먼저 볼 수 있어요." 를 보인다. 두 문구를 `span` 둘로 넣고 폭에 따라 하나만 보인다.)
-- `<ol class="journey-list">` 안에 챕터 순서대로 `<li><a class="journey-row" href="{detailUrl scene}" data-scene="alice-2" aria-current="true|false">`. 행 안: 테마 칩 `.theme-chip[data-theme]`(`aria-hidden`), 번호 `01`, `strong` 제목, `small` 부제, 배지 `.journey-badge` "마지막에 머문 장면"(저장된 장면 행 하나), `chevron-right` 아이콘. 행에는 대표 모델 이름을 두지 않는다(2026-09-29 사용자 요청으로 `span.journey-model` "· 조끼 입은 흰 토끼"를 없앴다. 장면의 모델은 3D 공간에서 만난다).
+- `<ol class="journey-list">` 안에 챕터 순서대로 `<li><a class="journey-row" href="{detailUrl scene}" data-scene="alice-2" aria-current="true|false">`. 행 안: 번호 `01`, `strong` 제목(저장된 장면 행 하나는 제목 끝에 깃발 `.saved-flag`), `small` 부제, `chevron-right` 아이콘. 행에는 대표 모델 이름을 두지 않는다(2026-09-29 사용자 요청으로 `span.journey-model` "· 조끼 입은 흰 토끼"를 없앴다. 장면의 모델은 3D 공간에서 만난다). 번호 앞에 있던 테마 칩(`.theme-chip`, 장면 테마 색의 작은 사각형)도 같은 날 사용자 요청으로 코드·CSS 와 함께 없앴다.
+- 저장된 장면의 표시는 깃발 하나다. `<span class="saved-flag" role="img" title="마지막에 머문 장면">` 안에 lucide `flag` 아이콘을 두고, 여정 행의 `strong` 제목과 패널·시트의 `h2` 제목 바로 끝에 붙인다. 색은 주황 `#e8590c`(흰 바탕과 선택된 행 배경 모두에서 3:1 이상)이고 깃발 천을 같은 색으로 채운다. 크기는 제목 글자를 따라 여정 행 16px, 패널 22px 이고, 제목과 0.3em 띄운다. 이름은 `title` 이 주므로 마우스를 올리면 "마지막에 머문 장면"이 보이고, 스크린 리더는 제목 뒤에 그 이름을 읽는다. 2026-09-29 사용자 요청으로 글자 배지 `.journey-badge` "마지막에 머문 장면"을 이 깃발로 바꿨다.
 - 선택된 행은 `aria-current="true"` 이고 연한 배경(`#f0f4ef`)과 왼쪽 3px 강조선(`--accent`)을 갖는다. 나머지는 `aria-current="false"`.
 - 행은 진짜 링크다. 수정키 클릭·가운데 클릭은 브라우저에 맡겨 `?book=&scene=` 을 새 탭으로 열 수 있고, 일반 클릭은 `preventDefault()` 뒤 장면 선택(4절)이다.
-- 작은 글자는 14px 이다. 히어로의 `.eyebrow`(연도)와 패널·시트의 `.eyebrow`("장면 02 / 06")가 12px(히어로 `.eyebrow` 는 600px 이하 11px)였는데, 2026-09-29 사용자 요청으로 모든 폭에서 14px 로 올렸다. 그때 함께 올린 `.panel-hint`·`.figure-story` 는 곧 모델 묶음과 함께 없앴다(7절). 13px(번호·부제·하단 바 문구)와 11px 배지는 그대로다.
-- 테마 칩 색은 meadow `#cad7aa`, night `#929aaf`, tea `#d7c9b6`, rose `#d8c6b7`, gold `#dcca98`(3D 월드 바닥색).
+- 작은 글자는 14px 이다. 히어로의 `.eyebrow`(연도)와 패널·시트의 `.eyebrow`("장면 02 / 06")가 12px(히어로 `.eyebrow` 는 600px 이하 11px)였는데, 2026-09-29 사용자 요청으로 모든 폭에서 14px 로 올렸다. 그때 함께 올린 `.panel-hint`·`.figure-story` 는 곧 모델 묶음과 함께 없앴다(7절). 13px(번호·부제·하단 바 문구)는 그대로다. 11px 배지는 깃발로 바뀌어 없어졌다.
+- 장면 테마 색은 meadow `#cad7aa`, night `#929aaf`, tea `#d7c9b6`, rose `#d8c6b7`, gold `#dcca98`(3D 월드 바닥색)이다. 여정 행의 테마 칩을 없앤 뒤로는 패널·시트의 장면 이미지 자리 배경에만 쓴다.
 
 저자 소개·책 소개 `.detail-section.detail-intro`
 - 여정 다음에 저자 소개, 책 소개 순서로 늘 놓고, 책 소개가 왼쪽 열의 끝이다. 비어 있으면 본문 자리에 준비 중 문구를 보인다. 자세한 규칙은 19절.
@@ -156,8 +157,8 @@ main.detail-page.store-content#main-content[data-view="book"]
 `scenePanel({ book, chapter, progress, preview })` 가 패널 안쪽 마크업을 돌려준다(모델 묶음을 없애 `library` 인자와 `mainPlacement()` 도 없앴다). `bookDetail()` 이 처음 그릴 때, 장면을 바꿀 때(`aside.scene-panel` 의 `innerHTML` 교체), 850px 이하의 장면 시트를 열 때 같은 함수를 쓴다. `chapter` 가 `book.chapters` 에 없으면 예외를 던진다.
 
 순서와 내용
-1. 이미지 `.scene-image.image-placeholder[data-theme]`: 패널 폭 전체, **항상 16:10**(`aspect-ratio: 16 / 10`), 모서리 10px, 배경은 테마 칩 색, 왼쪽 아래 `.scene-number` "02". 썸네일(`chapter.thumbnail`)이 있으면 `.has-image` 를 더하고 `<img>`(`alt=""`, `object-fit: cover`)가 자리를 채우며 번호는 밝은 알약 모양으로 위에 남는다. 이름표는 썸네일이 있으면 `aria-label="{장면 제목} 장면 이미지"`, 없으면 `"장면 이미지 준비 중"`. 패널이 좁아(340~400px) 16:10 이미지가 그대로 들어가므로 예전의 가로 띠와 잘림 문제가 없다.
-2. `.eyebrow` "`장면 02 / 06`", `h2#panel-scene-title` 장면 제목, `p.detail-meta` 부제(비어 있으면 생략). 저장된 장면이면 제목 아래에 배지 "마지막에 머문 장면".
+1. 이미지 `.scene-image.image-placeholder[data-theme]`: 패널 폭 전체, **항상 16:10**(`aspect-ratio: 16 / 10`), 모서리 10px, 배경은 장면 테마 색(6절), 왼쪽 아래 `.scene-number` "02". 썸네일(`chapter.thumbnail`)이 있으면 `.has-image` 를 더하고 `<img>`(`alt=""`, `object-fit: cover`)가 자리를 채우며 번호는 밝은 알약 모양으로 위에 남는다. 이름표는 썸네일이 있으면 `aria-label="{장면 제목} 장면 이미지"`, 없으면 `"장면 이미지 준비 중"`. 패널이 좁아(340~400px) 16:10 이미지가 그대로 들어가므로 예전의 가로 띠와 잘림 문제가 없다.
+2. `.eyebrow` "`장면 02 / 06`", `h2#panel-scene-title` 장면 제목, `p.detail-meta` 부제(비어 있으면 생략). 저장된 장면이면 제목 끝에 깃발 `.saved-flag`(6절)가 붙는다. 예전에는 부제 아래에 글자 배지 "마지막에 머문 장면"을 두었다.
 3. CTA: `<button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 ↗</button>`, 패널 폭 전체. 저장된 장면과 같아도 문구는 바꾸지 않는다. 어느 장면이든 들어가면 그 장면이 저장된 장면이 된다(기존 규칙).
 4. 이어지는 장면 `nav.neighbor-nav[aria-label="이어지는 장면"]`: CTA 바로 아래에 같은 너비의 버튼 두 개(`grid-template-columns: 1fr 1fr`, 간격 8px, 높이 44px, 모서리 5px, 흰 바탕에 1px 테두리). 왼쪽 "← 이전 장면", 오른쪽 "다음 장면 →". 링크는 `a.neighbor-link[href={detailUrl scene}][data-scene]` 이고, `aria-label` 은 보이는 글 뒤에 대상 장면을 붙인 "이전 장면: 01 흰 토끼를 따라서" 꼴이다. 여정 행과 같은 규칙으로 선택을 바꾼다. 첫 장면의 이전과 마지막 장면의 다음은 흐린 자리 `span.neighbor-link.is-disabled[aria-hidden="true"]` 로 남겨 두 버튼의 폭을 맞춘다. "작품 전체 보기"와 브레드크럼은 없다. 작품이 바로 왼쪽에 있기 때문이다(2026-09-29 사용자 요청으로 패널 맨 아래의 글자 링크에서 이 버튼으로 바꿨다).
 패널은 이전·다음 버튼으로 끝난다. 예전의 5번 "이 장면에서 만나는 것들"(배치 목록, 색 칩, 이야기, "장면의 중심" 배지, "가까이 다가가면 움직여요.")은 2026-09-29 사용자 요청으로 코드·CSS·검사와 함께 없앴다. 장면의 모델은 3D 공간에서 만난다. 그래서 패널 내용은 배치가 있든 없든 같다.
@@ -193,11 +194,12 @@ main.detail-page.store-content#main-content[data-view="book"]
 client/
   main.js          view 셋, resolveView(sceneAddressed), openDetail, selectScene, setupDetail   (수정)
   detail.js        detailUrl(), bookDetail(), scenePanel(), sceneBar(). sceneDetail() 삭제      (수정)
-  detail.css       두 열 격자, 화면 높이 고정 패널, 선택 행, 장면 시트, 하단 바                    (수정)
+  detail.css       두 열 격자, 화면 높이 고정 패널, 선택 행, 저장된 장면 깃발, 장면 시트, 하단 바  (수정)
   transitions.js   .detail-page 등장 그룹                                                        (수정)
   landing.js, landing.css, book-meta.js, index.html                                              (변경 없음)
 shared/
   schema.js        bookSchema 의 authorIntro·bookIntro(19절)                                     (수정)
+  ui.js            lucide 아이콘 등록에 Flag 추가(저장된 장면 깃발, 6절)                         (수정)
 tests/
   detail.test.js   bookDetail·scenePanel·sceneBar 단위 검사, 소개 섹션과 스키마(19절)              (수정)
   catalog.mjs      카드 → 상세 → 패널 → CTA → 월드, 장면 선택, 주소, 시트                          (수정)
@@ -206,7 +208,8 @@ tests/
   capture.mjs                                                                                    (선택자 확인)
 docs/
   screenshots/detail-book-desktop.png(기본 장면), detail-book-mobile.png(하단 바),
-              detail-scene-desktop.png(?scene=alice-2 선택), detail-scene-mobile.png(장면 시트 열림) (갱신)
+              detail-scene-desktop.png(?scene=alice-2 선택, 그 장면이 저장되어 깃발이 보임),
+              detail-scene-mobile.png(장면 시트 열림) (갱신)
   preview/detail.png                                                                             (갱신)
   ADMIN-GUIDE.md, README.md, superpowers/specs/2026-09-11-react-next-migration-design.md          (수정)
 admin/
@@ -223,7 +226,7 @@ admin/
 | CTA | 이 장면부터 걷기 |
 | 섹션 제목 | 이 책의 여정 / 저자 소개 / 책 소개 |
 | 섹션 설명 | 장면을 고르면 오른쪽에서 그 장면을 먼저 볼 수 있어요.(851px 이상) / 장면을 고르면 그 장면을 먼저 볼 수 있어요.(850px 이하) / 가까이 다가가면 움직여요. |
-| 배지 | 마지막에 머문 장면 |
+| 저장된 장면 깃발 | 마지막에 머문 장면(깃발의 `title`. 마우스를 올리면 보이고 스크린 리더가 읽는다) |
 | 상태 문구 | `{번호} {장면 제목}` 장면을 골랐어요 |
 | 이미지 자리 | 표지 이미지 준비 중 / 장면 이미지 준비 중 / 썸네일이 있으면 `{장면} 장면 이미지` |
 | 패널 eyebrow | 장면 02 / 06 |
@@ -245,7 +248,7 @@ admin/
 ## 13. 접근성과 반응형
 
 - 전환 후 초점은 `h1#detail-title`. 장면 선택 뒤 초점은 누른 요소에 남고 `#scene-status`(`role="status"`, 시각적으로 숨김)가 선택을 알린다.
-- 선택된 여정 행은 `aria-current="true"`. 여정 목록은 `ol`, 행 글자는 한 링크라 스크린 리더가 한 덩어리로 읽는다. 칩과 아이콘은 `aria-hidden`.
+- 선택된 여정 행은 `aria-current="true"`. 여정 목록은 `ol`, 행 글자는 한 링크라 스크린 리더가 한 덩어리로 읽는다. 아이콘은 `aria-hidden` 이고, 저장된 장면의 깃발만 `role="img"` 와 `title` "마지막에 머문 장면"으로 이름을 가져 행 링크와 패널 제목의 이름에 들어간다.
 - 패널은 `aside[aria-labelledby="panel-scene-title"]`, 이어지는 장면은 `nav[aria-label]`. 이미지 자리는 `role="img"` 와 `aria-label`.
 - 장면 시트는 `dialog.showModal()` 이라 초점이 안에 갇히고 Esc 로 닫힌다. 닫으면 초점이 누른 행으로 돌아간다.
 - 하단 바는 `env(safe-area-inset-bottom)` 을 더하고, 페이지 끝에 바 높이만큼 여백을 두어 책 소개가 가려지지 않게 한다.
@@ -258,8 +261,8 @@ admin/
 `client/detail.js` 와 `client/book-meta.js` 를 Node 에서 import 한다. 도서 데이터는 `librarySchema.parse(seed)` 의 앨리스·오즈다.
 
 - `detailUrl`(기존 검사 유지).
-- `bookDetail`: 저장 없음이면 여정 1행이 `aria-current="true"` 이고 패널 제목이 1장면, CTA `data-enter-chapter="alice-1"`. 저장(`alice-2`)이면 2행이 선택·배지, 패널이 2장면, 패널 제목 아래 배지. `chapter` 인자로 3장면을 넘기면 3행 선택·패널 3장면(주소로 연 경우). 히어로에 버튼이 없다(`data-enter` 는 패널과 하단 바에만, 합계 2개). 여정 행 `href` 가 `detailUrl` 과 같다. 표지가 있으면 `.detail-cover img` 하나, 없으면 "표지 이미지 준비 중". 제목에 `<` 가 든 가짜 책으로 이스케이프 확인.
-- `scenePanel`: 16:10 이미지 자리와 번호, 썸네일이 있으면 `has-image`·`<img>`·`aria-label="{제목} 장면 이미지"`(`"`·`<` 가 든 제목의 이스케이프 포함), 없으면 "장면 이미지 준비 중". `h2#panel-scene-title`. CTA 하나. 모델 묶음·본문·미리 읽기·바닥 글귀 안내는 없고, 이전·다음 버튼이 CTA 바로 뒤에서 패널을 끝낸다. 배치가 있든 없든 패널은 같다. 첫 장면의 이전과 마지막 장면의 다음은 흐린 자리다. `bookDetail` 히어로는 연도·한글 제목·저자만이고 분류·장면 수·영문 제목·소개 문장이 없으며, 저자가 비면 저자 줄이 없다. 저장된 장면이면 배지. 없는 챕터는 예외.
+- `bookDetail`: 저장 없음이면 여정 1행이 `aria-current="true"` 이고 패널 제목이 1장면, CTA `data-enter-chapter="alice-1"`. 저장(`alice-2`)이면 2행이 선택되고 패널이 2장면이며, 깃발이 2행 `strong` 제목과 패널 `h2` 제목 끝에 하나씩(합계 2개) 붙는다. 글자 배지와 테마 칩은 없다. 저장된 장이 없어졌으면 깃발도 없다. `chapter` 인자로 3장면을 넘기면 3행 선택·패널 3장면(주소로 연 경우). 히어로에 버튼이 없다(`data-enter` 는 패널과 하단 바에만, 합계 2개). 여정 행 `href` 가 `detailUrl` 과 같다. 표지가 있으면 `.detail-cover img` 하나, 없으면 "표지 이미지 준비 중". 제목에 `<` 가 든 가짜 책으로 이스케이프 확인.
+- `scenePanel`: 16:10 이미지 자리와 번호, 썸네일이 있으면 `has-image`·`<img>`·`aria-label="{제목} 장면 이미지"`(`"`·`<` 가 든 제목의 이스케이프 포함), 없으면 "장면 이미지 준비 중". `h2#panel-scene-title`. CTA 하나. 모델 묶음·본문·미리 읽기·바닥 글귀 안내는 없고, 이전·다음 버튼이 CTA 바로 뒤에서 패널을 끝낸다. 배치가 있든 없든 패널은 같다. 첫 장면의 이전과 마지막 장면의 다음은 흐린 자리다. `bookDetail` 히어로는 연도·한글 제목·저자만이고 분류·장면 수·영문 제목·소개 문장이 없으며, 저자가 비면 저자 줄이 없다. 저장된 장면이면 `h2` 제목 끝에 깃발. 없는 챕터는 예외.
 - `sceneBar`: `02 · 작아지는 문, 커지는 세계` 와 `data-enter-chapter="alice-2"`.
 - 모든 링크가 `preview: true` 에서 `&preview=draft` 를 유지한다.
 
@@ -267,7 +270,7 @@ admin/
 
 1. 검색·분류·정렬 단계(기존) 뒤: `[data-book="alice"]` 클릭 → `.detail-page[data-view="book"]`, `#detail-title` "이상한 나라의 앨리스", 초점 `#detail-title`, 주소 `?book=alice`, `.journey-row` 6개 중 `[aria-current="true"]` 가 `alice-1`, `.scene-panel #panel-scene-title` "흰 토끼를 따라서", 상세 안 `img` 0개(시드). 여정 2행 클릭 → 커튼 없음(`.reader-curtain` 0), 주소 `?book=alice&scene=alice-2`, `history.length` 변화 없음(클릭 전후 `page.evaluate(() => history.length)` 비교), 패널 제목 "작아지는 문, 커지는 세계", `aria-current` 가 2행으로, `#scene-status` 에 "02". 패널의 "다음 장면" 버튼 클릭 → 3장면, 주소 `scene=alice-3`. 여정 1행 클릭 → 1장면, 주소 `scene=alice-1`. 패널 CTA 클릭 → `#world canvas`, 주소 `book=alice&chapter=alice-1`. 이어서 기존 "작품 소개" 모달 검사와 3D 안 이동·다음 챕터(02) 검사가 그대로 이어진다.
 2. 3D 안 이동·챕터 이동(기존). "책장으로" → `.catalog-card` 2개(기존).
-3. "읽던 작품 이어 보기" → `[data-book="alice"]` 클릭 → 저장된 2장면 행이 선택·배지, 패널 제목 "작아지는 문, 커지는 세계"와 배지 "마지막에 머문 장면", 주소는 `?book=alice`(기본 선택이라 `scene` 없음). CTA 클릭 → `#map-button` 에 "02". `reload` 뒤에도 "02".
+3. "읽던 작품 이어 보기" → `[data-book="alice"]` 클릭 → 저장된 2장면 행이 선택되고 그 행 제목 끝에 깃발(여정의 깃발은 하나), 패널 제목 "작아지는 문, 커지는 세계" 끝에도 깃발, 이름이 "마지막에 머문 장면"인 `img` 역할이 둘, 주소는 `?book=alice`(기본 선택이라 `scene` 없음). CTA 클릭 → `#map-button` 에 "02". `reload` 뒤에도 "02".
 4. `goBack()` → 작품 상세(선택 유지, 주소에 `scene`), 한 번 더 → `.library-page`, `goForward()` 두 번 → 월드.
 5. 홈에서 `[data-scene-chapter="alice-3"]` 클릭 → `.detail-page[data-view="book"]`, 주소 `?book=alice&scene=alice-3`, 3행 선택, 패널 제목 "버섯 숲의 수수께끼", 본문 문단·모델 묶음 없음, 패널의 마지막 요소는 이전·다음 버튼, "이전 장면"은 `alice-2`, "다음 장면"은 `alice-4`. 두 버튼은 CTA 바로 아래 한 줄에 같은 폭이고 합친 폭이 CTA 와 같다. CTA → 월드 `chapter=alice-3`.
 6. 홈에서 `.feature-card.is-active`(앨리스) 클릭 → 작품 상세. 로고 → `.feature-card.is-active` 에 초점, 5.6초 뒤에도 유지(기존. 작품 상세에 "책장으로"가 없어져 로고를 누른다).

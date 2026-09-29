@@ -59,9 +59,10 @@ test("bookDetail opens the panel on the first scene when nothing is saved", () =
   assert.equal(count(html, 'aria-current="true"'), 1);
   assert.match(html, /data-scene="alice-1" aria-current="true"/);
   assert.match(html, /<h2 id="detail-journey-title">이 책의 여정<\/h2><p><span class="journey-hint journey-hint--wide">장면을 고르면 오른쪽에서 그 장면을 먼저 볼 수 있어요\.<\/span><span class="journey-hint journey-hint--narrow">장면을 고르면 그 장면을 먼저 볼 수 있어요\.<\/span><\/p>/);
-  // A journey row names the scene only; the scene's main model is left to the panel.
-  assert.match(html, /<span class="journey-copy"><strong>흰 토끼를 따라서<\/strong><small>익숙한 오후, 낯선 모험의 시작<\/small><\/span><i data-lucide="chevron-right" aria-hidden="true"><\/i><\/a>/);
-  assert.doesNotMatch(html, /journey-model/);
+  // A journey row opens with its number (no theme chip in front) and names the scene only; the scene's models are
+  // met in the 3D world.
+  assert.match(html, /data-scene="alice-1" aria-current="true"><span class="journey-number">01<\/span><span class="journey-copy"><strong>흰 토끼를 따라서<\/strong><small>익숙한 오후, 낯선 모험의 시작<\/small><\/span><i data-lucide="chevron-right" aria-hidden="true"><\/i><\/a>/);
+  assert.doesNotMatch(html, /journey-model|theme-chip/);
   assert.match(html, /<aside class="scene-panel" aria-labelledby="panel-scene-title">/);
   assert.match(html, /<h2 id="panel-scene-title">흰 토끼를 따라서<\/h2>/);
   assert.equal(count(html, 'data-enter="alice"'), 2);
@@ -77,15 +78,19 @@ test("bookDetail opens on the saved scene and marks it in the journey and the pa
   const html = bookDetail({ book: alice, progress: { alice: { chapter: "alice-2" } }, preview: true });
   assert.match(html, /data-scene="alice-2" aria-current="true"/);
   assert.equal(count(html, 'aria-current="true"'), 1);
+  // The saved scene carries a flag right after its title, in the journey row and in the panel; the flag's title
+  // names it for the mouse and for screen readers. There is no text badge any more.
+  const flag = '<span class="saved-flag" role="img" title="마지막에 머문 장면"><i data-lucide="flag" aria-hidden="true"></i></span>';
+  assert.equal(count(html, flag), 2);
   assert.equal(count(html, "마지막에 머문 장면"), 2);
-  const savedRow = html.split("<li>").find(row => row.includes('data-scene="alice-2"'));
-  assert.ok(savedRow.includes("마지막에 머문 장면"));
-  assert.match(html, /<h2 id="panel-scene-title">작아지는 문, 커지는 세계<\/h2>/);
+  assert.ok(html.includes(`<strong>작아지는 문, 커지는 세계${flag}</strong>`));
+  assert.ok(html.includes(`<h2 id="panel-scene-title">작아지는 문, 커지는 세계${flag}</h2>`));
+  assert.doesNotMatch(html, /journey-badge/);
   assert.equal(count(html, 'data-enter-chapter="alice-2"'), 2);
   assert.match(html, /href="\?book=alice&amp;scene=alice-2&amp;preview=draft" data-scene="alice-2"/);
   const gone = bookDetail({ book: alice, progress: { alice: { chapter: "gone" } } });
   assert.match(gone, /data-scene="alice-1" aria-current="true"/);
-  assert.doesNotMatch(gone, /마지막에 머문 장면/);
+  assert.doesNotMatch(gone, /saved-flag|마지막에 머문 장면/);
 });
 
 test("bookDetail takes an explicit scene from the address", () => {
@@ -173,7 +178,7 @@ test("scenePanel shows the scene and ends with the neighbour buttons under the C
 
 test("scenePanel marks the saved scene and keeps its ids unique with a prefix", () => {
   const saved = scenePanel({ book: alice, chapter: alice.chapters[1], progress: { alice: { chapter: "alice-2" } } });
-  assert.match(saved, /<p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><span class="journey-badge">마지막에 머문 장면<\/span><button /);
+  assert.match(saved, /<h2 id="panel-scene-title">작아지는 문, 커지는 세계<span class="saved-flag" role="img" title="마지막에 머문 장면"><i data-lucide="flag" aria-hidden="true"><\/i><\/span><\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button /);
   assert.equal(count(saved, "마지막에 머문 장면"), 1);
   const sheet = scenePanel({ book: alice, chapter: alice.chapters[1], prefix: "sheet" });
   assert.match(sheet, /<h2 id="sheet-scene-title">/);

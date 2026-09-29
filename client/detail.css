@@ -36,15 +36,19 @@
 .journey-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .journey-copy strong { font-size: 16px; font-weight: 650; letter-spacing: -.025em; overflow-wrap: anywhere; }
 .journey-copy small { font-size: 13px; color: #768079; }
-.journey-badge { flex: none; padding: 4px 9px; border-radius: 20px; background: #e8f0e6; color: #2f5a41; font-size: 11px; font-weight: 650; white-space: nowrap; }
-.journey-row svg { flex: none; width: 16px; height: 16px; margin-left: auto; color: #93a094; }
-/* Theme colours mirror the 3D floor (shared/world.js themes[*].ground). meadow is the default. */
-.theme-chip { flex: none; width: 14px; height: 14px; border-radius: 4px; }
-.theme-chip, .scene-image[data-theme] { background: #cad7aa; }
-.theme-chip[data-theme="night"], .scene-image[data-theme="night"] { background: #929aaf; }
-.theme-chip[data-theme="tea"], .scene-image[data-theme="tea"] { background: #d7c9b6; }
-.theme-chip[data-theme="rose"], .scene-image[data-theme="rose"] { background: #d8c6b7; }
-.theme-chip[data-theme="gold"], .scene-image[data-theme="gold"] { background: #dcca98; }
+/* The row's chevron only; the flag inside the title keeps its own size and colour. */
+.journey-row > svg { flex: none; width: 16px; height: 16px; margin-left: auto; color: #93a094; }
+/* The saved scene's flag ends its title, in the journey row and in the scene panel. It is filled orange so it stands
+   out on the green page (3:1 or more on white and on the selected row), and it follows the title's size: 16px in a
+   row, 22px in the panel. */
+.saved-flag { display: inline-block; margin-left: .3em; line-height: 0; vertical-align: -.12em; color: #e8590c; }
+.saved-flag svg { display: block; width: 1em; height: 1em; fill: currentColor; }
+/* The scene image's tint mirrors the 3D floor (shared/world.js themes[*].ground). meadow is the default. */
+.scene-image[data-theme] { background: #cad7aa; }
+.scene-image[data-theme="night"] { background: #929aaf; }
+.scene-image[data-theme="tea"] { background: #d7c9b6; }
+.scene-image[data-theme="rose"] { background: #d8c6b7; }
+.scene-image[data-theme="gold"] { background: #dcca98; }
 /* The bookshelf's top (ribbon and header) stays pinned on the book detail above 850px; it scrolls away on phones. */
 .detail-top { position: sticky; top: 0; z-index: 6; background: #fff; }
 /* The scene panel fills the screen from the pinned top down to the bottom edge and does not move while the page
@@ -62,7 +66,6 @@
 .scene-panel .eyebrow, .scene-sheet .eyebrow { margin: 16px 0 8px; font-size: 14px; letter-spacing: .08em; color: #75867a; }
 .scene-panel h2, .scene-sheet h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
 .scene-panel .detail-meta, .scene-sheet .detail-meta { margin: 0 0 10px; font-size: 14px; color: #6b7567; }
-.scene-panel > .journey-badge, .scene-sheet > .journey-badge { display: inline-block; margin-bottom: 12px; }
 .scene-panel .detail-enter, .scene-sheet .detail-enter { width: 100%; margin: 6px 0 4px; justify-content: space-between; }
 /* Previous and next: two buttons of the same width right under the CTA. A missing side stays as a dimmed slot. */
 .neighbor-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
