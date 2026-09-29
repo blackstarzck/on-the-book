@@ -91,7 +91,7 @@ try{
  await page.locator('[data-chapter-edit]').first().click();await page.getByLabel('오른쪽에 보여 줄 글귀',{exact:true}).fill('새로운 챕터의 내용');await page.getByRole('button',{name:'변경 적용',exact:true}).click();
  await page.locator('#edit-book').click();await page.getByLabel('작가',{exact:true}).fill('테스트 저자');await page.getByLabel('권리 및 번역·각색 정보').fill('직접 작성한 테스트');await page.getByLabel('사용자 화면 공개 대상에 포함').check();await page.getByRole('button',{name:'변경 적용',exact:true}).click();
  await page.locator('#publish').click();await expect(page.locator('#save-state')).toHaveText('공개 완료');const live=await(await context.request.get(server.url+'/api/library')).json();expect(live.books.find(b=>b.id===book.id).chapters[0].placements[0].y).toBe(6);
- await page.reload();await page.getByRole('button',{name:/격자 월드 테스트/}).click();await expect(page.locator('[data-select-model]')).toHaveCount(2);
+ await page.goto(server.url+'/admin/');await page.getByRole('button',{name:/격자 월드 테스트/}).click();await expect(page.locator('[data-select-model]')).toHaveCount(2);
  await page.locator('.world-chapter-tabs #add-chapter').click();await expect(page.locator('#chapter-form')).toBeVisible();await expect(page.locator('[data-chapter-row]')).toHaveCount(2);await page.getByRole('button',{name:'닫기',exact:true}).click();await page.locator('#undo').click();await expect(page.locator('[data-chapter-row]')).toHaveCount(1);
  const rejected=await context.request.post(server.url+'/api/models/upload',{headers:{'X-On-The-Book':'studio'},multipart:{model:{name:'notrigged.glb',mimeType:'model/gltf-binary',buffer:sampleGLB(false)}}});expect(rejected.status()).toBe(400);
  await page.setViewportSize({width:1000,height:760});await expect(page.locator('#save')).toBeVisible();

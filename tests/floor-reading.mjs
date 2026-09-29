@@ -83,7 +83,7 @@ try {
   await admin.locator("#save").click(); await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
   let live = await (await context.request.get(server.url + "/api/library")).json();
   expect(live.books[0].chapters[0].floorText || "").toBe("");
-  await admin.reload(); await admin.locator('[data-open-book="alice"]').click(); await admin.locator("#edit-story").click();
+  await admin.goto(server.url + "/admin/"); await admin.locator('[data-open-book="alice"]').click(); await admin.locator("#edit-story").click();
   await expect(admin.getByLabel("글귀 카메라 여백 배율")).toHaveValue("1.3");
   await admin.keyboard.press("Escape");
   await admin.locator("#publish").click(); await expect(admin.locator("#save-state")).toHaveText("공개 완료");
