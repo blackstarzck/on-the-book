@@ -1389,6 +1389,11 @@ git add admin/main.js tests/admin-routes.mjs
 git commit -m "Give studio dialogs an address and a history entry" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
+실행 기록(2026-09-29): 검토에서 두 가지가 드러나 수정 라운드(443a11a)를 거쳤다.
+- 창의 `close` 이벤트는 비동기라, 책 정보 변경 적용 뒤의 새 위치가 떠나는 대화상자 항목에 쓰였다. 그래서 기록 주소를 요청 시점에 잡고, 되돌리기로 도착한 항목에 창이 닫힐 때의 페이지 주소를 쓰게 했다(`stepBack(href)`, `settleBack`). `modalEntry` 판정은 `writeHistory` 콜백 안으로 옮겼다.
+- 새 책을 버린 뒤의 `stale` 판정, 나가기 확인 창의 `leaveDialog?.open` 판정, 저장 중인 홈 미리보기의 주소 유지를 더했다.
+- 검사 "Applying a dialog leaves the page's new place in the address" 를 추가해 PASS 는 13줄이다.
+
 ---
 
 ### Task 5: 독자 체험과 편집기 패널 접힘
@@ -1465,7 +1470,7 @@ git commit -m "Give studio dialogs an address and a history entry" -m "Co-Author
 - [ ] **Step 2: 실패 확인**
 
 Run: `npm run build && node tests/admin-routes.mjs`
-Expected: PASS 12줄 뒤 실패. `#preview-client` 를 누른 뒤 `toHaveURL` 이 `…&mode=reader` 를 기다리다 시간 초과.
+Expected: PASS 13줄 뒤 실패. `#preview-client` 를 누른 뒤 `toHaveURL` 이 `…&mode=reader` 를 기다리다 시간 초과.
 
 - [ ] **Step 3: `inlineReader` 가 챕터 변경을 알리게**
 
@@ -1627,7 +1632,7 @@ search:q=>{assetQuery=q;syncUrlSoon();},reader:id=>{readerChapterId=id;syncUrl()
 - [ ] **Step 7: 통과 확인**
 
 Run: `npm run build && node tests/admin-routes.mjs`
-Expected: PASS 14줄, 오류 없이 종료.
+Expected: PASS 15줄, 오류 없이 종료.
 
 Run: `node tests/leave-guard.mjs`
 Expected: 기존 PASS 줄 그대로, 종료 코드 0.
@@ -1690,7 +1695,7 @@ git commit -m "Keep reader mode in the address and remember folded editor panels
 - [ ] **Step 2: 실패 확인**
 
 Run: `npm run build && node tests/admin-routes.mjs`
-Expected: PASS 14줄 뒤 실패. `history.state?.scroll` 을 기다리는 `expect.poll` 이 `undefined` 로 시간 초과.
+Expected: PASS 15줄 뒤 실패. `history.state?.scroll` 을 기다리는 `expect.poll` 이 `undefined` 로 시간 초과.
 
 - [ ] **Step 3: 상태와 저장·복원 함수**
 
@@ -1720,6 +1725,8 @@ function restoreScroll(top = history.state?.scroll ?? 0) { window.scrollTo({ top
 
 - [ ] **Step 4: 이동·대화상자·되돌리기·주소 적용에 스크롤 반영**
 
+(Task 4 수정 라운드(443a11a)에서 기록 주소를 요청 시점에 잡도록 바뀐 코드 기준이다.)
+
 `navigate` 전체
 
 ```js
@@ -1727,7 +1734,8 @@ function navigate(change) {
   if (urlTimer) syncUrl();
   change();
   closeDialogs();
-  writeHistory(() => history.pushState({}, "", routeHref(currentRoute())));
+  const href = routeHref(currentRoute());
+  writeHistory(() => history.pushState({}, "", href));
   render();
 }
 ```
@@ -1740,7 +1748,8 @@ function navigate(change, scroll = 0) {
   saveScroll();
   change();
   closeDialogs();
-  writeHistory(() => history.pushState({ scroll }, "", routeHref(currentRoute())));
+  const href = routeHref(currentRoute());
+  writeHistory(() => history.pushState({ scroll }, "", href));
   render();
   restoreScroll(scroll);
 }
@@ -1751,7 +1760,8 @@ function navigate(change, scroll = 0) {
 ```js
   if (push && urlTimer) syncUrl();
   routeModal = entry;
-  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ modalEntry: true }, "", routeHref(currentRoute())); });
+  const href = routeHref(currentRoute());
+  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ modalEntry: true }, "", href); });
 ```
 
 를 다음으로 바꾼다.
@@ -1760,19 +1770,20 @@ function navigate(change, scroll = 0) {
   if (push && urlTimer) syncUrl();
   if (push) saveScroll();
   routeModal = entry;
-  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ scroll: scrollY, modalEntry: true }, "", routeHref(currentRoute())); });
+  const href = routeHref(currentRoute()), scroll = scrollY;
+  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ scroll, modalEntry: true }, "", href); });
 ```
 
 `settleBack` 에서
 
 ```js
-  if (timedOut) history.replaceState({}, "", routeHref(currentRoute()));
+  history.replaceState(timedOut ? {} : history.state, "", pending.href);
 ```
 
 를 다음으로 바꾼다.
 
 ```js
-  if (timedOut) history.replaceState({ scroll: history.state?.scroll ?? 0 }, "", routeHref(currentRoute()));
+  history.replaceState(timedOut ? { scroll: history.state?.scroll ?? 0 } : history.state, "", pending.href);
 ```
 
 `applyRoute` 끝의
@@ -1850,7 +1861,7 @@ button.onclick=()=>{shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY}
 - [ ] **Step 6: 통과 확인**
 
 Run: `npm run build && node tests/admin-routes.mjs`
-Expected: PASS 15줄, 오류 없이 종료.
+Expected: PASS 16줄, 오류 없이 종료.
 
 - [ ] **Step 7: 커밋**
 
