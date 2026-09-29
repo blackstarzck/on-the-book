@@ -285,6 +285,12 @@ app.use("/api", (req, res) =>
 );
 app.get("/", (req, res) => res.redirect("/client/"));
 app.get("/about", (req, res) => res.redirect("/client/about/"));
+// The studio is one page: its deep addresses (/admin/models, /admin/books/:id) all get admin/index.html.
+const studioPage = /^\/admin\/(?:home|models|settings|books\/[^/]+)\/?$/;
+app.use((req, res, next) => {
+  if ((req.method === "GET" || req.method === "HEAD") && studioPage.test(req.path)) req.url = "/admin/index.html";
+  next();
+});
 if (!cloud && process.argv.includes("--production"))
   app.use(express.static(path.join(root, "dist")));
 else if (!cloud) {
