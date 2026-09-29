@@ -98,7 +98,11 @@ try {
   await expect(page.locator('.detail-cta')).toBeHidden();
   await expect(page.locator('.detail-page img')).toHaveCount(0);
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
-  pass('Book cards open the book detail with the first scene in the panel');
+  // The book detail's header is the logo alone, and the page has no footer.
+  await expect(page.locator('.site-header > *')).toHaveCount(1);
+  await expect(page.locator('.site-header .brand')).toBeVisible();
+  await expect(page.locator('#about-link, #library-button, #help-button, .site-footer')).toHaveCount(0);
+  pass('Book cards open the book detail with the first scene in the panel, under a logo-only header');
   // Choosing a scene swaps the panel in place: no curtain, no history entry, the address follows.
   const entries = await page.evaluate(() => history.length);
   await page.locator('.journey-row[data-scene="alice-2"]').click();
@@ -212,7 +216,8 @@ try {
   await page.locator('.feature-card.is-active').evaluate(element => element.click());
   await expect(page).toHaveURL(/\?book=alice$/);
   await expect(page.locator('#detail-title')).toHaveText('이상한 나라의 앨리스');
-  await page.getByRole('button', { name: '책장으로', exact: true }).click();
+  // The book detail has no 책장으로 button; its logo goes back to the shelf.
+  await page.locator('.site-header .brand').click();
   await expect(page.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
   await expect(page.locator('.feature-card.is-active')).toBeFocused();
   // Autoplay (5.2 s) must not steal the restored focus.
@@ -228,7 +233,7 @@ try {
   await page.locator('.feature-card.is-active').evaluate(element => element.click());
   await expect(page).toHaveURL(/\?book=oz$/);
   await expect(page.locator('#detail-title')).toHaveText('오즈의 마법사');
-  await page.getByRole('button', { name: '책장으로', exact: true }).click();
+  await page.locator('.site-header .brand').click();
   await expect(page.locator('.library-page')).toBeVisible();
   pass('The second hero slide opens its book detail');
 
@@ -281,14 +286,14 @@ try {
   pass('18-book responsive grid without changing real library');
   await context.close();
 
-  // A long journey (18 chapters, intercepted response only): the panel sticks at 24px while the left column scrolls,
-  // at the 400px grid (1440) and the 340px grid (1024). Sticky can only be seen while the scroll stays inside the
-  // grid row, so the check scrolls to the middle of the page, not the bottom.
+  // A long journey (18 chapters, intercepted response only): the panel is fixed at the screen's height, 24px clear above
+  // and below, at the 400px grid (1440) and the 340px grid (1024). It holds the same place at the top, in the middle
+  // and at the end of the page; its right edge meets the content box and the column gap stays clear.
   const tall = {
     ...original,
     books: original.books.map(b => b.id !== 'alice' ? b : { ...b, chapters: [...b.chapters, ...b.chapters, ...b.chapters].map((c, i) => ({ ...c, id: `alice-tall-${i}` })) }),
   };
-  for (const [width, height, panelWidth] of [[1440, 1000, 400], [1024, 800, 340]]) {
+  for (const [width, height, panelWidth, gap] of [[1440, 1000, 400, 48], [1024, 800, 340, 32]]) {
     const grid = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
     const long = await grid.newPage();
     long.on('pageerror', error => errors.push(error.message));
@@ -296,16 +301,27 @@ try {
     await long.goto(`${server.url}/client/?book=alice`);
     await expect(long.locator('.journey-row')).toHaveCount(18);
     await expect(long.locator('.reader-curtain')).toHaveCount(0);
-    expect(Math.round(await long.locator('.scene-panel').evaluate(element => element.getBoundingClientRect().width))).toBe(panelWidth);
+    // The panel slides in with the page; measure once it has settled.
+    await long.waitForFunction(() => document.getAnimations().length === 0);
     expect(await long.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(await long.locator('.journey-row').evaluateAll(rows => rows.every(row => row.scrollWidth <= row.clientWidth + 1))).toBe(true);
-    const resting = await long.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top));
-    expect(resting).toBeGreaterThan(24);
+    const placement = () => long.evaluate(() => {
+      const panel = document.querySelector('.scene-panel').getBoundingClientRect();
+      const page = document.querySelector('.detail-page'), main = document.querySelector('.detail-main').getBoundingClientRect();
+      const contentRight = page.getBoundingClientRect().right - parseFloat(getComputedStyle(page).paddingRight);
+      return { top: Math.round(panel.top), bottom: Math.round(innerHeight - panel.bottom), width: Math.round(panel.width), right: Math.round(contentRight - panel.right), gap: Math.round(panel.left - main.right) };
+    });
+    const fixed = { top: 24, bottom: 24, width: panelWidth, right: 0, gap };
+    expect(await placement()).toEqual(fixed);
     await long.evaluate(() => window.scrollTo(0, 400));
-    await expect.poll(() => long.locator('.scene-panel').evaluate(element => Math.round(element.getBoundingClientRect().top))).toBe(24);
+    await expect.poll(() => long.evaluate(() => Math.round(scrollY))).toBe(400);
+    expect(await placement()).toEqual(fixed);
+    await long.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect.poll(() => long.evaluate(() => Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight)).toBe(true);
+    expect(await placement()).toEqual(fixed);
     await grid.close();
   }
-  pass('The scene panel sticks beside a long journey at 1440px and 1024px');
+  pass('The scene panel stays fixed at the screen height beside a long journey at 1440px and 1024px');
 
   // Studio-managed images, slides and categories, again only in intercepted responses.
   const upload = c => `/uploads/${c.repeat(8)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(4)}-${c.repeat(12)}.png`;
@@ -387,13 +403,13 @@ try {
   await home.locator('.journey-row[data-scene="alice-2"]').click();
   await expect(home.locator('.scene-panel .scene-image.has-image')).toHaveCount(0);
   await expect(home.locator('.scene-panel .scene-image[data-theme="night"]')).toHaveCount(1);
-  await home.getByRole('button', { name: '책장으로', exact: true }).click();
+  await home.locator('.site-header .brand').click();
   await expect(home.locator('.library-page')).toBeVisible();
   await home.locator('a.scene-card', { has: home.locator('.scene-image.has-image') }).click();
   await expect(home.locator('.detail-page[data-view="book"]')).toBeVisible();
   await expect(home.locator('.journey-row[aria-current="true"]')).toHaveAttribute('data-scene', 'alice-1');
   await expect(home.locator('.scene-panel .scene-image.has-image img')).toHaveCount(1);
-  await home.getByRole('button', { name: '책장으로', exact: true }).click();
+  await home.locator('.site-header .brand').click();
   await expect(home.locator('.library-page')).toBeVisible();
   const single = await managedPage(desktop, { ...managed, home: { hero: [managed.home.hero[1]] } });
   await expect(single.locator('.feature-card')).toHaveCount(1);

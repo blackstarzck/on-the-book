@@ -39,7 +39,7 @@ function reveal(app) {
   const groups = app.querySelector(".library-page")
     ? [".site-header", ".featured-section", ".quick-menu", ".catalog", ".scene-section, .experience-banner", ".site-footer"]
     : app.querySelector(".detail-page")
-      ? [".site-header", ".detail-hero", "#detail-journey, .detail-intro, .detail-source", ".scene-panel, .detail-cta", ".site-footer"]
+      ? [".site-header", ".detail-hero", "#detail-journey, .detail-intro, .detail-source", ".scene-panel, .detail-cta"]
       : [".site-header", ".journey-controls", ".touch-pad, .move-hint", ".site-footer"];
   groups.forEach((selector, index) => {
     for (const element of app.querySelectorAll(selector)) {

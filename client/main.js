@@ -90,8 +90,11 @@ function pageTitle() {
   return baseTitle;
 }
 function header() {
+  const brand = `<a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>`;
+  // The book detail shows the logo alone; the logo also leads back to the shelf.
+  if (view === "book") return `<header class="site-header reader-header">${brand}</header>`;
   const compact = view !== "home";
-  return `<header class="site-header${compact ? " reader-header" : ""}"><a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>${compact ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
+  return `<header class="site-header${compact ? " reader-header" : ""}">${brand}${compact ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
 }
 function page() {
   if (view === "home") return landing(shelf(), progress, catalogState, draftPreview);
@@ -111,8 +114,9 @@ function render() {
   const exploring = view === "world";
   if (audioContext) exploring && sound ? audioContext.resume() : audioContext.suspend();
   document.title = pageTitle();
-  app.innerHTML = `${view === "home" ? announcementBanner() : ""}${header()}${page()}
- <footer class="site-footer"><span>${exploring ? "문장 너머의 세계를, 천천히." : "오래된 이야기, 새로운 발견."}</span>${exploring ? `<div><span>땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상</span></div>` : ""}<span class="footer-brand">ON THE BOOK © 2026</span></footer>`;
+  // The book detail has no footer; home and the 3D world keep theirs.
+  app.innerHTML = `${view === "home" ? announcementBanner() : ""}${header()}${page()}${view === "book" ? "" : `
+ <footer class="site-footer"><span>${exploring ? "문장 너머의 세계를, 천천히." : "오래된 이야기, 새로운 발견."}</span>${exploring ? `<div><span>땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상</span></div>` : ""}<span class="footer-brand">ON THE BOOK © 2026</span></footer>`}`;
   if (exploring) try {
     world = new Journey(document.querySelector("#world"), {
       chapter,
@@ -136,13 +140,16 @@ function render() {
     document.querySelector("#fallback-read").onclick = readChapter;
   }
   icons();
-  document.querySelector("#library-button").onclick = openLibrary;
+  // The book detail's header has only the logo, so it has neither the shelf nor the help button.
+  const libraryButton = document.querySelector("#library-button");
+  if (libraryButton) libraryButton.onclick = openLibrary;
   document.querySelector(".site-header .brand").onclick = (event) => {
     if (modifiedClick(event)) return;
     event.preventDefault();
     openLibrary();
   };
-  document.querySelector("#help-button").onclick = help;
+  const helpButton = document.querySelector("#help-button");
+  if (helpButton) helpButton.onclick = help;
   const soundButton = document.querySelector("#sound-button");
   if (soundButton) soundButton.onclick = toggleSound;
   if (view === "home") {

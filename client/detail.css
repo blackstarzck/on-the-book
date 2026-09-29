@@ -1,5 +1,6 @@
-/* The book detail: a scrolling left column and a sticky scene panel. Phones get a scene sheet and a pinned bar.
-   Type, gutters (.store-content) and section headings come from the bookshelf. */
+/* The book detail: a scrolling left column and a scene panel fixed at the screen's height. Phones get a scene sheet
+   and a pinned bar. Type, gutters (.store-content) and section headings come from the bookshelf.
+   The second track stays empty on purpose: the fixed panel sits over it, so the left column keeps its width. */
 .detail-page { display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 48px; align-items: start; }
 .detail-page h1, .detail-page h2, .detail-page h3 { font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
 .detail-main { min-width: 0; }
@@ -44,8 +45,11 @@
 .detail-source { padding-top: 34px; margin-top: 34px; }
 .detail-source h2 { margin: 0 0 10px; font-size: 15px; color: #4f5f56; }
 .detail-source .source-note { padding: 0; border: 0; font-size: 12px !important; line-height: 1.8; color: #7f8982; }
-/* The scene panel follows the scroll; when it is taller than the screen it scrolls inside, with no visible scrollbar. */
-.scene-panel { position: sticky; top: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; scrollbar-width: none; padding: 20px; border: 1px solid #e7ebe7; border-radius: 14px; background: #fff; }
+/* The scene panel is fixed at the screen's height, 24px clear above and below, and does not move while the page
+   scrolls. A taller panel scrolls inside, with no visible scrollbar. Its right edge meets the .store-content box
+   (1280px column, 40px gutters above 850px). z-index 4 lifts it over the header row (3); toasts and the curtain
+   stay above it. */
+.scene-panel { position: fixed; top: 24px; bottom: 24px; right: max(40px, calc((100% - 1280px) / 2 + 40px)); z-index: 4; width: 400px; overflow-y: auto; scrollbar-width: none; padding: 20px; border: 1px solid #e7ebe7; border-radius: 14px; background: #fff; }
 /* Safari before 18.2 ignores scrollbar-width. The phone sheet below hides its scrollbar the same way. */
 .scene-panel::-webkit-scrollbar, .scene-sheet::-webkit-scrollbar { display: none; }
 /* Panel and sheet share their inner layout. The image slot is always 16:10; a thumbnail fills it (landing.css:
@@ -86,6 +90,7 @@
 .scene-sheet .close-modal { z-index: 1; }
 @media (max-width: 1100px) {
   .detail-page { grid-template-columns: minmax(0, 1fr) 340px; column-gap: 32px; }
+  .scene-panel { width: 340px; }
   .detail-copy h1 { font-size: 32px; }
 }
 @media (max-width: 850px) {

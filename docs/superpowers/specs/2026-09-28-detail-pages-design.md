@@ -7,7 +7,7 @@
 - 처음에는 작품 상세(`?book=`)와 장면 상세(`?book=&scene=`) 두 페이지(두 뎁스)로 설계·구현했다(PR #3, 커밋 c60f7b6 까지). 같은 날 사용자가 밀리의서재 도서 상세처럼 **한 페이지 두 열**로 합치기로 결정했다. 왼쪽 열은 스크롤되는 작품 정보와 장면 목록, 오른쪽은 스크롤을 따라다니는 장면 패널이다.
 - 이 문서는 그 결정 이후의 최종 설계다. 두 뎁스 구현에서 바뀌는 점은 18절에 모았고, 구현 계획은 그 차이만 다룬다.
 - 그보다 앞서 정한 것(카드가 링크가 되는 홈 변경, 주소 규칙의 골격, `book-meta.js`·`detail.js` 분리, 표지·썸네일 표시)은 그대로 유효하다.
-- 2026-09-29 사용자 요청으로 두 가지를 더했다. 장면 패널과 시트의 스크롤바를 숨겼고(5절), '이 책의 여정' 다음에 저자 소개·책 소개 섹션과 이를 입력하는 관리자 칸을 넣었다(19절). 처음에는 빈 칸의 섹션을 숨겼으나, 같은 날 사용자 요청으로 섹션을 두고 '준비 중' 문구를 보이게 바꿨다. 이어서 왼쪽 열 섹션 사이의 구분선을 모두 없앴다(6절).
+- 2026-09-29 사용자 요청으로 두 가지를 더했다. 장면 패널과 시트의 스크롤바를 숨겼고(5절), '이 책의 여정' 다음에 저자 소개·책 소개 섹션과 이를 입력하는 관리자 칸을 넣었다(19절). 처음에는 빈 칸의 섹션을 숨겼으나, 같은 날 사용자 요청으로 섹션을 두고 '준비 중' 문구를 보이게 바꿨다. 이어서 왼쪽 열 섹션 사이의 구분선을 모두 없앴다(6절). 그다음 작품 상세에서 푸터와 헤더의 소개·책장으로·물음표를 빼 로고만 남기고, 장면 패널을 스크롤을 따라오는 sticky 대신 화면 높이에 고정했다(5절).
 
 ## 1. 배경과 목표
 
@@ -17,7 +17,7 @@
 
 - 홈의 카드는 모두 **작품 상세** 한 페이지로 이동한다. 장면 카드는 그 장면이 선택된 상태로 연다. 페이지의 장면 패널에 있는 CTA "이 장면부터 걷기"가 3D 월드 진입의 유일한 입구다.
 - 구조는 A 안이다. 기존 SPA(`client/main.js`) 안의 화면 상태와 쿼리 주소를 쓴다. 별도 진입점이나 경로형 주소는 쓰지 않는다.
-- 레이아웃은 밀리의서재 도서 상세를 따른다. 왼쪽 열은 페이지와 함께 스크롤되고, 오른쪽 열은 `position: sticky` 로 화면에 붙어 따라다닌다. 장면 목록에서 행을 누르면 페이지를 옮기지 않고 오른쪽 패널만 그 장면으로 바뀐다.
+- 레이아웃은 밀리의서재 도서 상세를 따른다. 왼쪽 열은 페이지와 함께 스크롤되고, 오른쪽 장면 패널은 화면 높이에 고정되어 스크롤해도 움직이지 않는다(처음에는 `position: sticky` 로 따라다니게 했다). 장면 목록에서 행을 누르면 페이지를 옮기지 않고 오른쪽 패널만 그 장면으로 바뀐다.
 - 패널은 항상 장면 하나를 보여 준다(1안). 처음에는 저장된 장면("이어 읽기")이 있으면 그 장면, 없으면 첫 장면이 선택되어 있다. 작품 단위의 "이야기 속으로 들어가기"·"처음부터 시작하기" 버튼은 두지 않는다. 주 CTA 가 한 곳에만 있어야 흐름이 단순하다.
 - 상세 페이지는 관리자가 올린 표지(`book.cover`)와 장면 썸네일(`chapter.thumbnail`)을 보여 주고, 등록되지 않은 칸은 이름표(`aria-label`)가 달린 빈 자리로 둔다(2026-09-28 홈 화면 관리 PR #2 반영). 모델 썸네일은 표시하지 않는다.
 
@@ -75,7 +75,7 @@
 | 작품 상세 | 패널의 이전·다음 장면 | 같은 페이지, 이웃 장면 | `replaceState` | 없음 |
 | 작품 상세(850px 이하) | 여정 행 | 장면 시트가 열리고 패널 내용이 그 안에 보임. 선택도 바뀜 | `replaceState` | 없음 |
 | 작품 상세 | 패널·시트·하단 바의 CTA "이 장면부터 걷기" | 3D 월드, 선택된 장면 | `pushState`(`enterBook(id, sceneId)`) | 이야기 속으로 들어가는 중이에요…(기존) |
-| 작품 상세 | 헤더 "책장으로", 로고 | 홈. 책장 스크롤 위치와 카드 초점 복원 | `pushState` | 책장으로 돌아가는 중이에요…(기존) |
+| 작품 상세 | 로고(헤더에 다른 버튼 없음) | 홈. 책장 스크롤 위치와 카드 초점 복원 | `pushState` | 책장으로 돌아가는 중이에요…(기존) |
 | 3D 월드 | "책장으로" | 홈(기존) | `pushState` | 기존 |
 | 어디서든 | 브라우저 뒤로·앞으로 | 주소가 가리키는 화면 | `popstate` | 문구 없음(기존) |
 
@@ -86,7 +86,7 @@
 
 ## 5. 공통 셸과 두 열 뼈대
 
-헤더는 `home` 에 검색창과 아이콘 책장 버튼, `book`·`world` 에 검색창 없는 글자 버튼 "책장으로"(`reader-header` 모양), 소리 버튼은 `world` 에만(기존). 상단 안내 리본은 홈에만. 푸터 문구는 `home`·`book` "오래된 이야기, 새로운 발견.", `world` "문장 너머의 세계를, 천천히."(기존).
+헤더는 `home` 에 검색창·소개·아이콘 책장 버튼·이용 방법(물음표), `world` 에 소개·글자 버튼 "책장으로"(`reader-header` 모양)·소리·이용 방법(기존). `book`(작품 상세)의 헤더는 로고 하나뿐이고, 로고가 책장으로 돌아가는 길이다(2026-09-29 사용자 요청으로 소개·책장으로·물음표를 뺐다. `header()` 가 `book` 에서 로고만 돌려주고, `render()` 는 없는 책장·이용 방법 버튼에 이벤트를 걸지 않는다). 상단 안내 리본은 홈에만. 푸터는 `home` "오래된 이야기, 새로운 발견.", `world` "문장 너머의 세계를, 천천히."(기존)이고, `book` 에는 푸터가 없다.
 
 작품 상세의 뼈대는 다음과 같다.
 
@@ -98,16 +98,16 @@ main.detail-page.store-content#main-content[data-view="book"]
     section.detail-section.detail-intro#detail-author       저자 소개(비어 있으면 준비 중 문구, 19절)
     section.detail-section.detail-intro#detail-book-intro   책 소개(비어 있으면 준비 중 문구, 19절)
     section.detail-source         원작 정보
-  aside.scene-panel[aria-labelledby="panel-scene-title"]   오른쪽 열. sticky
+  aside.scene-panel[aria-labelledby="panel-scene-title"]   오른쪽 열. 화면 높이에 고정(fixed)
     (7절의 패널 내용)
   div.detail-cta                  850px 이하에서만 보이는 하단 고정 바
   p.reader-sr-only[role="status"]#scene-status   장면 선택 안내
 ```
 
 - 1101px 이상: `grid-template-columns: minmax(0, 1fr) 400px`, 열 간격 48px. 851~1100px: 오른쪽 열 340px, 간격 32px. 850px 이하: 한 열. `.store-content` 로 홈과 같은 1280px 폭과 좌우 여백을 쓴다.
-- 오른쪽 `aside.scene-panel` 은 `position: sticky; top: 24px; align-self: start; max-height: calc(100dvh - 48px); overflow-y: auto` 다. 패널이 화면보다 길면 패널 안에서만 스크롤되고, 스크롤바는 보이지 않게 숨긴다(`scrollbar-width: none`, 사파리용 `::-webkit-scrollbar`). 흰 배경, 1px 경계선(`#e7ebe7`), 모서리 14px, 안쪽 여백 20px.
+- 오른쪽 `aside.scene-panel` 은 `position: fixed; top: 24px; bottom: 24px` 로 화면 높이(위아래 24px 여백)에 고정되어, 페이지 맨 위에서 끝까지 스크롤해도 같은 자리에 있다(2026-09-29 사용자 요청. 그 전에는 `position: sticky` 라 맨 위에서는 헤더 아래에 있다가 스크롤하면 올라와 붙었다). 오른쪽 끝은 `.store-content` 콘텐츠 상자의 오른쪽 끝에 맞춘다(`right: max(40px, calc((100% - 1280px) / 2 + 40px))`, 851px 이상의 좌우 여백 40px). 폭은 격자의 오른쪽 열과 같은 400px(1100px 이하 340px)이고, 격자의 오른쪽 열은 비워 둬서 왼쪽 열 폭은 그대로다. `z-index: 4` 로 헤더 줄(3) 위, 알림(100)·커튼(1000) 아래에 둔다. 패널이 화면보다 길면 패널 안에서만 스크롤되고, 스크롤바는 보이지 않게 숨긴다(`scrollbar-width: none`, 사파리용 `::-webkit-scrollbar`). 흰 배경, 1px 경계선(`#e7ebe7`), 모서리 14px, 안쪽 여백 20px.
 - 850px 이하에서는 `aside.scene-panel` 을 `display: none` 으로 숨긴다. 같은 내용은 여정 행을 눌렀을 때 장면 시트(7절)로 보인다. 하단 고정 바 `.detail-cta` 는 851px 이상에서 `display: none` 이다. 그래서 어떤 폭에서도 보이는 CTA 는 하나이고, 숨긴 쪽은 접근성 트리에서도 빠진다.
-- 등장 순서: `transitions.js` 의 `reveal()` 에서 `.detail-page` 그룹은 `[".site-header", ".detail-hero", "#detail-journey, .detail-intro, .detail-source", ".scene-panel, .detail-cta", ".site-footer"]` 다.
+- 등장 순서: `transitions.js` 의 `reveal()` 에서 `.detail-page` 그룹은 `[".site-header", ".detail-hero", "#detail-journey, .detail-intro, .detail-source", ".scene-panel, .detail-cta"]` 다(작품 상세에는 푸터가 없다).
 - 전환 후 초점은 `h1#detail-title`(책 제목, `tabindex="-1"`). `transitionPage()` 의 기본 초점 대상 순서 `#library-title` → `#detail-title` → `#world canvas, #fallback-read` 는 기존과 같다.
 
 ## 6. 왼쪽 열
@@ -177,7 +177,7 @@ main.detail-page.store-content#main-content[data-view="book"]
 client/
   main.js          view 셋, resolveView(sceneAddressed), openDetail, selectScene, setupDetail   (수정)
   detail.js        detailUrl(), bookDetail(), scenePanel(), sceneBar(). sceneDetail() 삭제      (수정)
-  detail.css       두 열 격자, sticky 패널, 선택 행, 장면 시트, 하단 바                            (수정)
+  detail.css       두 열 격자, 화면 높이 고정 패널, 선택 행, 장면 시트, 하단 바                    (수정)
   transitions.js   .detail-page 등장 그룹                                                        (수정)
   landing.js, landing.css, book-meta.js, index.html                                              (변경 없음)
 shared/
@@ -214,7 +214,7 @@ admin/
 | 패널 eyebrow | 장면 02 / 06 |
 | 하단 바 | `02 · 장면 제목` |
 | 링크 | 원작 정보 보기 ↗ |
-| 헤더 | 책장으로 |
+| 헤더 | 로고만(글자 버튼 없음) |
 | 홈 히어로 카드 | 작품 살펴보기 |
 | `aria-label` | `{책} — 작품 상세` / `{책} · {장면} — 작품 상세` / `이어지는 장면` / 시트 닫기 "닫기"(기존 `modal()`) |
 
@@ -255,10 +255,11 @@ admin/
 3. "읽던 작품 이어 보기" → `[data-book="alice"]` 클릭 → 저장된 2장면 행이 선택·배지, 패널 제목 "작아지는 문, 커지는 세계"와 배지 "마지막에 머문 장면", 주소는 `?book=alice`(기본 선택이라 `scene` 없음). CTA 클릭 → `#map-button` 에 "02". `reload` 뒤에도 "02".
 4. `goBack()` → 작품 상세(선택 유지, 주소에 `scene`), 한 번 더 → `.library-page`, `goForward()` 두 번 → 월드.
 5. 홈에서 `[data-scene-chapter="alice-3"]` 클릭 → `.detail-page[data-view="book"]`, 주소 `?book=alice&scene=alice-3`, 3행 선택, 패널 제목 "버섯 숲의 수수께끼", `#panel-preview .reading-text p` 한 문단, `.figure-list li` 3개, 첫 항목 "장면의 중심", 이전 "02", 다음 "04". CTA → 월드 `chapter=alice-3`.
-6. 홈에서 `.feature-card.is-active`(앨리스) 클릭 → 작품 상세. "책장으로" → `.feature-card.is-active` 에 초점, 5.6초 뒤에도 유지(기존).
+6. 홈에서 `.feature-card.is-active`(앨리스) 클릭 → 작품 상세. 로고 → `.feature-card.is-active` 에 초점, 5.6초 뒤에도 유지(기존. 작품 상세에 "책장으로"가 없어져 로고를 누른다).
 7. 주소 직접 열기(기존 7단계에 더해): `?book=alice&scene=alice-2` 는 2행 선택과 패널 2장면, 문서 제목은 책 제목. 나머지(`?book=nope`, `?scene=alice-2`, `?book=alice&chapter=nope`, `?book=alice&scene=nope&preview=draft`, 초안 미리보기의 빈 책장)는 기존 단정 유지.
 8. 홈 화면 관리 묶음("Studio covers…" 단계, 가로챈 응답): `[data-book="alice"]` → `.detail-cover img` 1개; 썸네일이 있는 장면 카드 → 패널 `.scene-panel .scene-image.has-image img` 1개, 그 자리의 폭/높이 비 1.6(±0.02).
 9. 휴대폰 반복(320·390·768): 카드 탭 → 상세, `aside.scene-panel` 은 보이지 않고 `.detail-cta` 가 화면 아래에 있으며 폭 전체(`left 0`, `right = innerWidth`). 여정 2행 탭 → `dialog.scene-sheet[open]` 안에 `#sheet-scene-title` "작아지는 문, 커지는 세계", 하단 바 문구 "02 ·". 시트 안 이전·다음 링크는 시트·여정 선택·하단 바를 함께 바꾸고, 시트 안 CTA 탭 → `#world canvas`, 주소 `chapter=<그 장면>`. 768px 도 한 열이므로 같은 흐름이다.
+10. 작품 상세의 헤더는 로고 하나이고 소개·책장으로·물음표·푸터가 없다. 18장면 픽스처(1440·1024)에서 패널은 맨 위·가운데(400px)·끝까지 스크롤해도 위아래 24px, 오른쪽 끝이 콘텐츠 상자에 맞고, 왼쪽 열과의 간격이 48px·32px 이다.
 
 ### 14.3 `tests/mobile-entry.mjs`(4321 포트)
 
