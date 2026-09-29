@@ -368,6 +368,13 @@ try {
   await page.locator("#back-library").click();
   pass("An object removed by undo, or left in another chapter while reading, drops out of the address");
 
+  await page.goto(at("/admin/models"));
+  await expect(page.locator(".model-grid")).toBeVisible();
+  await page.evaluate(() => { history.pushState(null, "", "/admin/models?modal=model&id=missing"); history.pushState(null, "", "/admin/models"); history.back(); });
+  await expect(page.locator("#toast")).toHaveText("요청한 항목을 찾을 수 없어 창을 열지 않았어요.");
+  await expect(page).toHaveURL(at("/admin/models"));
+  pass("Back to a dialog whose target is gone shows the notice and tidies the address");
+
   expect(errors).toEqual([]);
 } finally {
   await browser.close();

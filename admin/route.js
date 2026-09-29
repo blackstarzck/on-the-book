@@ -81,7 +81,7 @@ export function resolveRoute(route, library) {
       chapter = book.chapters[0];
       next.chapterId = chapter.id;
     }
-    if (next.objectId && !objectIds(chapter).includes(next.objectId)) { delete next.objectId; miss("object"); }
+    if (next.objectId && !hasObject(chapter, next.objectId)) { delete next.objectId; miss("object"); }
     if (next.modal === "chapter" && !book.chapters.some((c) => c.id === next.modalId)) dropDialog();
   }
   if ((next.modal === "model" || next.modal === "model-preview") && !library.models.some((m) => m.id === next.modalId)) dropDialog();
