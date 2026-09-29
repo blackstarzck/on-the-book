@@ -39,8 +39,8 @@
 - 업로드 URL `/uploads/<uuid>.png|glb`. 이 URL 이 데이터에 저장되어 있으므로 두 앱 모두 루트 `/uploads/` 에서 서빙한다. 따라서 관리자 앱에 Next `basePath` 를 쓰지 않고 `app/admin/…` 폴더 라우팅으로 `/admin` 주소를 만든다.
 - API 경로와 메서드, 요청·응답 JSON, 상태 코드, 한국어 오류 메시지: `POST /api/login`, `POST /api/logout`, `GET /api/library`, `GET|PUT /api/studio`, `POST /api/uploads/prepare`(cloud), `POST /api/floor/upload`, `POST /api/models/upload`, `GET /uploads/:filename`. `GET /api/library` 응답은 `books`·`models`·`home`(공개 대상 책을 가리키는 슬라이드만)·`publishedAt` 이고(`server/publication.js` 의 `publicLibrary`), cloud 의 `GET /uploads/:filename` 은 그 응답이 가리키는 파일만 허용하며 PNG 에 `private, max-age=300` 을 준다.
 - 헤더 `X-On-The-Book: studio` same-origin 검사, 쿠키 `otb_session`(httpOnly, sameSite strict, 8시간), 로그인 시도 제한 10회/60초, 저장 버전 충돌 409, Blob ETag 충돌 409.
-- 사용자 진행 기록 localStorage 키 `otb-reader` 와 값 구조 `{ [bookId]: { chapter } }`.
-- 사용자 화면 URL: `/`, `/client/`, 쿼리 `book`, `chapter`, `preview=draft`, `model`. 소개 페이지 `/about`(로컬 `/client/about/`). 관리자 URL: `/admin/`.
+- 사용자 진행 기록 localStorage 키 `otb-reader` 와 값 구조 `{ [bookId]: { chapter } }`. 관리자 편집기 패널 접힘 키 `otb-studio-panels` 와 값 구조 `{ [panel]: boolean }`(`assets`·`tiles`·`chapters`·`chapter-models`·`inspector`, `true` 가 펼침).
+- 사용자 화면 URL: `/`, `/client/`, 쿼리 `book`, `chapter`, `preview=draft`, `model`. 소개 페이지 `/about`(로컬 `/client/about/`). 관리자 URL: `/admin/`(도서 보관함, 쿼리 `q`·`status`·`modal`), `/admin/home`(`modal`), `/admin/models`(`q`·`modal`·`id`), `/admin/settings`, `/admin/books/:bookId`(월드 편집기, `chapter`·`object`·`mode=reader`·`q`·`modal`·`id`). `modal` 값, 매개변수 순서, 보정 규칙은 `2026-09-28-admin-url-state-design.md` 3·5절을 따른다.
 - 정적 자산 경로 `/brand/*`, `/floor-assets/*`, `/ornaments/*`, `/favicon.svg`.
 
 ## 4. 저장소 구조
@@ -56,7 +56,8 @@ apps/client/                 Next 16. 사용자 화면
   next.config.ts             rewrite /client, /client/:path* -> /, /:path*
 apps/admin/                  Next 16. 관리자
   app/page.tsx               / -> /admin redirect
-  app/admin/page.tsx         도서 보관함 + 전체화면 월드 편집기(클라이언트 상태)
+  app/admin/page.tsx         도서 보관함(?q&status&modal)
+  app/admin/books/[bookId]/page.tsx  전체화면 월드 편집기(?chapter&object&mode&q&modal&id)
   app/admin/home/page.tsx    홈 화면 탭(추천 슬라이드)
   app/admin/models/page.tsx
   app/admin/settings/page.tsx
@@ -183,6 +184,8 @@ type StudioState = {
 
 액션: `load`, `login`, `logout`, `mark`(baseline 을 undo 에 push, redo 비움, baseline 갱신), `undo`, `redo`(현재 `historyMove` 와 같이 선택 상태 보정), `save(publish)`, `mutate(fn)`(immer 로 library 수정 후 `mark`), 선택·편집기 액션. `dirty` 는 `JSON.stringify(library) !== JSON.stringify(savedLibrary)` 셀렉터로 파생한다. 드래그처럼 연속 변경은 `mutate` 없이 즉시 수정하고 종료 시점에 한 번 `mark` 한다.
 
+선택(`selection`)과 독자 체험 여부(`editor.readerMode`)의 원본은 주소다. 페이지가 주소를 읽어 store 에 넣고, store 의 이동 액션은 주소를 바꾼다(9절).
+
 ### 8.2 사용자 `useReaderStore`
 
 ```ts
@@ -200,6 +203,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 - `app/layout.tsx`: `AntdRegistry`, `ConfigProvider`(locale `ko_KR`, 토큰: `colorPrimary #809b72`, `colorBgElevated #24342f`, `colorText #e0e8e0`, `colorTextSecondary #b3bfae`, `borderRadius 8`, `fontSize 12`, `fontFamily system-ui`), 전역 CSS, next/font.
 - `StudioShell`: 사이드바(도서 보관함·홈 화면·3D 모델 보관함·공개 및 안내 탭은 Next `Link`), 헤더의 저장 상태·임시 저장·공개, 로그아웃(보호 모드). 편집기가 열려 있고 저장하지 않은 변경이 있으면 사이드바 이동·로그아웃 전에 `LeaveEditorDialog` 를 띄운다.
+- 주소 상태(`2026-09-28-admin-url-state-design.md`): 탭과 편집기 열기는 `Link`·`router.push`, 같은 페이지의 챕터·선택·검색어·독자 체험은 `window.history.replaceState`(검색어는 250ms 멈춘 뒤)로 쓴다. Next 14.1 이상은 이 호출을 `useSearchParams` 와 맞춘다. 대화상자는 열 때 `window.history.pushState` 로 항목 상태 `modalEntry` 를 남기고, 닫을 때 `history.back()` 으로 되돌리며, 직접 주소로 연 창은 `modal`·`id` 만 지운다. 되돌리기가 끝나기 전의 기록 쓰기는 미루고, 1초 안에 `popstate` 가 없으면 주소만 고친다. 저장하지 않은 변경이 있을 때 뒤로 가기로 편집기를 떠나면 주소를 편집기로 되돌리고 `LeaveEditorDialog` 를 띄운다. 없는 책·챕터·오브젝트·대상은 도서 보관함·첫 챕터·선택 없음·창 없음으로 보정하고 알림을 띄운다. 홈 미리보기 iframe 은 불러올 때마다 안쪽 `pushState` 를 `replaceState` 로 바꿔 끼운다. 스크롤은 `history.state.scroll`(`scrollRestoration = "manual"`), 편집기 패널 접힘은 `otb-studio-panels` 에 둔다.
 - `LoginScreen`, `LoadingError`(다시 시도).
 - `BookShelf`: 검색·상태 필터·새 도서·표지 타일. 타일 클릭 시 편집기 상태로 전환하며, 이때 실행 취소 기록을 비운다. 타일 옆 끌기 손잡이(`[data-book-row]`, `[data-book-drag]`)와 Alt+←→로 책 순서를 바꾸며, 칸 사이에 놓으면 무시하고 검색·필터 중에는 막는다(`admin/workspace.js` 의 `bindShelfOrder`).
 - `HomePage`: 추천 슬라이드 목록(최대 5개). 슬라이드마다 연결 책·사진(PNG)·사진 초점·작은 문구·제목·설명, 위·아래 이동, 삭제. 빈 문구는 흐린 글씨의 기본값을 보여 주고, 글자 입력은 즉시 반영하되 실행 취소 기록은 change 에서 남긴다. 홈 미리보기는 임시 저장 뒤 `book` 없는 `/admin/preview` 를 연다. DOM 훅 `#add-slide`, `[data-slide]`, `#slide-N-book|focus|file|preview`, `[data-slide-move]`, `[data-slide-remove]`, `#preview-home` 를 유지한다.
@@ -269,7 +273,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 - 단위(Vitest): `@otb/shared`(schema, home, experience, collision, landscape 수학, textPages), `@otb/server`(validation, publication, storage 로컬 모드, upgrade, seed), `@otb/scene` 의 순수 함수(`sideReadingPose`).
 - API 블랙박스(Vitest): 빌드된 admin 앱을 임시 `DATA_DIR`, 고유 포트로 `next start` 해 현재 `tests/server.test.js` 의 모든 케이스를 통과시킨다. client 앱에 관리자 API 가 없음을 확인하는 케이스를 추가한다.
-- e2e(@playwright/test): `webServer` 로 빌드된 두 앱을 같은 `DATA_DIR` 로 띄운다. 현재 14개 스크립트(`admin-parity`, `browser`, `catalog`, `collision`, `floor-editor`, `floor-reading`, `home-admin`, `leave-guard`, `mobile-entry`, `model-thumbnails`, `workspace`, `capture`, `cloud`, `about`) 의 검증을 spec 으로 이관한다. `cloud` 는 `BLOB_READ_WRITE_TOKEN` 이 있을 때만 실행한다. `window.__editorWorld`, `window.__testReader` 는 빌드 환경변수 `NEXT_PUBLIC_TEST_HOOKS=1` 일 때 노출되는 `window.__otb = { studio, reader, scene }` 로 대체한다.
+- e2e(@playwright/test): `webServer` 로 빌드된 두 앱을 같은 `DATA_DIR` 로 띄운다. 현재 15개 스크립트(`admin-parity`, `admin-routes`, `browser`, `catalog`, `collision`, `floor-editor`, `floor-reading`, `home-admin`, `leave-guard`, `mobile-entry`, `model-thumbnails`, `workspace`, `capture`, `cloud`, `about`) 의 검증을 spec 으로 이관한다. `cloud` 는 `BLOB_READ_WRITE_TOKEN` 이 있을 때만 실행한다. `window.__editorWorld`, `window.__testReader` 는 빌드 환경변수 `NEXT_PUBLIC_TEST_HOOKS=1` 일 때 노출되는 `window.__otb = { studio, reader, scene }` 로 대체한다.
 - 시각 확인: 단계별로 `docs/screenshots` 의 기존 화면과 같은 구도로 스크린샷을 남겨 비교한다.
 - QA-UAT: 7단계에서 셀렉터를 갱신하고 `node tests/qa-uat/run-all.mjs` 를 재실행한다. Playwright MCP 방식은 유지한다.
 - 정적 검사: `tsc --noEmit`(모든 패키지·앱), `next lint`, `next build`.
@@ -288,8 +292,8 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 0. 진행 중인 모델 썸네일 변경(10개 파일) 커밋. 사용자 확인 후 수행.
 1. 뼈대: workspaces, `apps/*` 빈 Next 앱, `@otb/shared`(현재 shared 순수 모듈 TS 이식), `@otb/server`, `@otb/ui`(Toast·Modal·api·CSS·자산 동기화), 모든 Route Handler, Vitest 설정, API 블랙박스 테스트 통과, Vercel 설정 파일. 완료 기준: `tsc`, 두 앱 `next build`, API 테스트 전부 통과, 로그인·로딩 화면 표시.
 2. `@otb/scene`: 7.1 공용 컴포넌트와 `JourneyController`, `JourneyScene`, 순수 함수 단위 테스트, Playwright 스모크(캔버스 렌더, 이동, 반응 범위 진입 시 애니메이션). 완료 기준: 스모크 통과, 탐험 스크린샷.
-3. 관리자 셸: 9절의 편집기 제외 전체. 완료 기준: `browser`, `leave-guard`, `model-thumbnails` 의 관리자 검증과 `home-admin` 의 도서 보관함 정렬·홈 화면 탭 검증 이관 통과.
-4. 관리자 월드 편집기: 7.2 와 9절 `WorldEditor`. 완료 기준: `workspace`, `floor-editor`, `admin-parity`, `collision` 의 편집기 검증과 `home-admin` 의 나머지(편집기 안의 도서 정보·장면 썸네일) 이관 통과, 스크린샷.
+3. 관리자 셸: 9절의 편집기 제외 전체. 완료 기준: `browser`, `leave-guard`, `model-thumbnails` 의 관리자 검증과 `home-admin` 의 도서 보관함 정렬·홈 화면 탭 검증 이관 통과, `admin-routes` 의 깊은 경로·탭·검색·편집기 밖 대화상자·스크롤 검증 이관 통과.
+4. 관리자 월드 편집기: 7.2 와 9절 `WorldEditor`. 완료 기준: `workspace`, `floor-editor`, `admin-parity`, `collision` 의 편집기 검증과 `home-admin` 의 나머지(편집기 안의 도서 정보·장면 썸네일) 이관 통과, `admin-routes` 의 편집기(챕터·선택·나가기 확인)·편집기 안 대화상자·독자 체험·패널 접힘 검증 이관 통과, 스크린샷.
 5. antd Tour: 11절. 완료 기준: 투어 e2e 통과, 다른 e2e 가 우회 플래그로 통과.
 6. `@otb/reader` 와 사용자 앱(소개 페이지 포함), `/admin/preview`: 10절. 완료 기준: `floor-reading`, `mobile-entry`, `catalog`, `browser` 의 사용자 검증과 `about` 검증 이관 통과, `tests/about-compare.mjs` 로 이관 전후 소개 페이지 비교, 390×844 스크린샷.
 7. 정리: `client/`, `admin/`, `shared/`, `server/`, `vite.config.js`, 구 테스트 스크립트 제거, `capture`·`cloud` 이관, QA-UAT 재실행, README·DEPLOYMENT·ADMIN-GUIDE 갱신. 완료 기준: 저장소에 Vite 흔적 없음, 모든 테스트 통과, 문서의 주소·명령이 실제와 일치.
