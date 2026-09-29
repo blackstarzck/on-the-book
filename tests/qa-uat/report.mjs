@@ -2,7 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {cases} from './catalog.mjs';
-const root=process.cwd(),dir=path.join(root,'docs/qa/2026-09-08'),runtime=path.join(root,'test-results/qa-uat-2026-09-08');
+import {runtime} from './runtime.mjs';
+const root=process.cwd(),dir=path.join(root,'docs/qa/2026-09-08');
 const files=(await fs.readdir(dir)).filter(f=>f.endsWith('.json')&&!['scenario-catalog.json','results.json'].includes(f));
 const runs=[];
 for(const f of files){const d=JSON.parse(await fs.readFile(path.join(dir,f),'utf8'));if(d.records&&d.completedAt&&(!process.env.QA_RUN_STARTED||d.startedAt>=process.env.QA_RUN_STARTED))runs.push({...d,file:f});}

@@ -3,15 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { applyJourneyCamera } from './journey-camera.js';
 import { createJourneyPresentation, journeyBeat } from './journey-presentation.js';
 
-// Static URLs let Vite fingerprint each file; a template path would bundle the whole folder.
-const ASSET_URLS = {
-  'clay-journey.json': new URL('./assets/clay-journey.json', import.meta.url).href,
-  'clay-journey.glb': new URL('./assets/clay-journey.glb', import.meta.url).href,
-  'journey-walk.webp': new URL('./assets/journey-walk.webp', import.meta.url).href,
-  'journey-approach.webp': new URL('./assets/journey-approach.webp', import.meta.url).href,
-  'journey-read.webp': new URL('./assets/journey-read.webp', import.meta.url).href,
-};
-const asset = (name) => ASSET_URLS[name];
+// The journey model, its three photos and its path data live in the database like every other 3D asset.
+const JOURNEY_URL = '/api/site/about-journey';
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 const PHOTO_NAMES = ['Walk', 'Approach', 'Read'];
 
@@ -132,15 +125,16 @@ export async function createClayJourney(canvas, options = {}) {
   }
 
   try {
-    const response = await fetch(asset('clay-journey.json'));
-    if (!response.ok) throw new Error(`Clay journey metadata: HTTP ${response.status}`);
-    const metadata = await response.json();
-    if (!Array.isArray(metadata.path) || metadata.path.length < 2) throw new Error('Clay journey path is missing.');
+    const response = await fetch(JOURNEY_URL);
+    if (!response.ok) throw new Error(`Clay journey: HTTP ${response.status}`);
+    const journey = await response.json();
+    const metadata = journey.meta;
+    if (!Array.isArray(metadata?.path) || metadata.path.length < 2) throw new Error('Clay journey path is missing.');
     const loader = new THREE.TextureLoader();
     const results = await Promise.allSettled([
-      new GLTFLoader().loadAsync(asset('clay-journey.glb')).then((gltf) => { scene.add(gltf.scene); return gltf; }),
+      new GLTFLoader().loadAsync(journey.model).then((gltf) => { scene.add(gltf.scene); return gltf; }),
       ...['walk', 'approach', 'read'].map(async (name) => {
-        const texture = await loader.loadAsync(asset(`journey-${name}.webp`));
+        const texture = await loader.loadAsync(journey.photos[name]);
         textures.add(texture);
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.flipY = false;

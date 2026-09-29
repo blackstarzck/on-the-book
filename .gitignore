@@ -10,5 +10,13 @@ uploads/
 test-results/
 .codex-remote-attachments/
 
+# 3D models, Blender sources and their work files live in Supabase, never in the project.
+output/
+*.glb
+*.gltf
+*.blend
+*.blend1
+
 .vercel
 .env*
+!.env.example
