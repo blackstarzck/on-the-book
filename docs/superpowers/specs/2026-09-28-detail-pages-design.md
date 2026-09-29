@@ -366,4 +366,8 @@ admin/
 - README 의 작품 상세 문장, `docs/ADMIN-GUIDE.md` 의 도서 정보 문장, `docs/PRD.md` A-01 에 두 칸을 더한다.
 
 저장소 전환과의 관계
-- Supabase 저장소 브랜치(`claude/supabase-storage`)의 `server/rows.js` 는 책 필드를 표의 열 단위로 옮긴다. 그 브랜치와 합칠 때 `books` 표에 두 열(`author_intro`, `book_intro`)을 더하는 이전 SQL 과 `rows.js` 대응표 두 줄이 필요하다. 빠뜨리면 저장할 때 두 필드가 조용히 사라진다.
+- Supabase 저장소(main 의 #4)의 `server/rows.js` 는 책 필드를 표의 열 단위로 옮기고, `save_draft` 는 `jsonb_populate_recordset` 으로 넣어 표에 없는 항목을 조용히 버린다. 그래서 2026-09-29 main 을 이 브랜치에 합치며 다음을 더했다.
+  - `supabase/migrations/20260929090000_book_intros.sql`: `books` 에 `author_intro`·`book_intro`(text, NULL 허용). NULL 을 허용해야 두 키를 보내지 않는 옛 관리자의 저장이 깨지지 않는다. `load_draft` 는 `to_jsonb(b)` 라 새 열을 저절로 돌려준다.
+  - `server/rows.js` books 대응표 두 줄(`optional`): NULL 은 필드를 빼서 스키마 기본값 빈 글이 채운다.
+  - `server/storage.js` 의 `SCHEMA_VERSION` 1 → 2(`docs/DEPLOYMENT.md` 규칙). 새 코드로 한 번 저장하면 두 필드를 모르는 옛 관리자는 저장이 거부된다.
+  - `tests/rows.test.js`: 글이 든 두 필드가 행으로 갔다 와도 남고, 두 열이 NULL 인 옛 행은 빈 글로 읽힌다. 시드는 빈 글이라 기존 왕복 검사로는 빠뜨려도 드러나지 않는다.
