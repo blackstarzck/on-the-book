@@ -162,6 +162,18 @@ try {
   pass("A dialog gets its own entry: back closes it without rebuilding the editor, and a reloaded one steps back on close");
 
   await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-chapter="alice-2"]').click();
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-2" }));
+  await page.locator("#edit-book").click();
+  await page.locator('#book-form button[type="submit"]').click();
+  await expect(page.locator("#book-form")).toHaveCount(0);
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1", object: "a1-rabbit" }));
+  await page.locator("#undo").click();
+  await page.locator("#back-library").click();
+  await expect(page.locator(".book-shelf")).toBeVisible();
+  pass("Applying a dialog leaves the page's new place in the address");
+
+  await page.locator('[data-open-book="alice"]').click();
   await page.locator('[data-chapter-edit="alice-2"]').click();
   await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1", modal: "chapter", id: "alice-2" }));
   await page.reload();

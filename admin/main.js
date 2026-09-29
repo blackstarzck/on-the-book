@@ -167,32 +167,29 @@ function writeHistory(write) {
   if (backPending) backPending.done.then(() => writeHistory(write));
   else write();
 }
-// Steps back over a closed dialog's own entry. Without a popstate within a second (a preview iframe's
-// entries can swallow the step), the dialog is dropped from this entry's address instead.
-function stepBack() {
-  writeHistory(() => {
-    let resolve;
-    const done = new Promise((r) => { resolve = r; });
-    backPending = { done, resolve, timer: setTimeout(() => settleBack(true), 1000) };
-    history.back();
-  });
+// Steps back over a closed dialog's own entry, then writes `href` (the page's place when the dialog closed)
+// into the entry it lands on. Without a popstate within a second (a preview iframe's own entries can swallow
+// the step), `href` goes into the current entry instead.
+function stepBack(href) {
+  let resolve;
+  const done = new Promise((r) => { resolve = r; });
+  backPending = { done, resolve, href, timer: setTimeout(() => settleBack(true), 1000) };
+  history.back();
 }
 function settleBack(timedOut) {
   const pending = backPending;
   if (!pending) return;
   clearTimeout(pending.timer);
   backPending = null;
-  if (timedOut) history.replaceState({}, "", routeHref(currentRoute()));
+  history.replaceState(timedOut ? {} : history.state, "", pending.href);
   pending.resolve();
 }
 // Writes the current place into this history entry's address.
 function syncUrl() {
   clearTimeout(urlTimer); urlTimer = null;
   if (applying) return;
-  writeHistory(() => {
-    const href = routeHref(currentRoute());
-    if (href !== location.pathname + location.search) history.replaceState(history.state, "", href);
-  });
+  const href = routeHref(currentRoute());
+  writeHistory(() => { if (href !== location.pathname + location.search) history.replaceState(history.state, "", href); });
 }
 // Typing writes the address once it pauses: Safari limits how often replaceState may run.
 function syncUrlSoon() { clearTimeout(urlTimer); urlTimer = setTimeout(syncUrl, 250); }
@@ -206,7 +203,8 @@ function navigate(change) {
   if (urlTimer) syncUrl();
   change();
   closeDialogs();
-  writeHistory(() => history.pushState({}, "", routeHref(currentRoute())));
+  const href = routeHref(currentRoute());
+  writeHistory(() => history.pushState({}, "", href));
   render();
 }
 // Ties a dialog to the address. Opened from the page it pushes its own entry; opened while an address is
@@ -215,12 +213,14 @@ function routeDialog(dialog, modal, modalId, push = !applying) {
   const entry = { modal, modalId };
   if (push && urlTimer) syncUrl();
   routeModal = entry;
-  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ modalEntry: true }, "", routeHref(currentRoute())); });
+  const href = routeHref(currentRoute());
+  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ modalEntry: true }, "", href); });
   dialog.addEventListener("close", () => {
     if (routeModal !== entry) return;
     routeModal = null;
-    if (history.state?.modalEntry) stepBack();
-    else syncUrl();
+    const page = routeHref(currentRoute());
+    // Decided once earlier writes have landed, so the check reads the dialog's own entry.
+    writeHistory(() => { if (history.state?.modalEntry) stepBack(page); else history.replaceState(history.state, "", page); });
   });
 }
 // Opens the dialog an address names.
@@ -910,15 +910,15 @@ window.addEventListener("popstate", () => {
   if (!library) return; // the login and loading screens read the address themselves once the studio loads
   const { route, notice } = resolveRoute(parseRoute(location.pathname, location.search), library);
   const current = currentRoute();
-  if (current.view === "editor" && !(route.view === "editor" && route.bookId === current.bookId) && (leaveDialog || busy || hasUnsavedChanges())) {
+  if (current.view === "editor" && !(route.view === "editor" && route.bookId === current.bookId) && (leaveDialog?.open || busy || hasUnsavedChanges())) {
     // Keep the editor's address while the leave dialog decides; leaving then steps back to where the browser was going.
     history.pushState({}, "", routeHref(current));
-    if (!leaveDialog) requestLeaveEditor(() => history.back());
+    if (!leaveDialog?.open) requestLeaveEditor(() => history.back());
     return;
   }
   const page = (r) => routeHref({ ...r, modal: undefined, modalId: undefined });
-  // A discarded new book leaves inEditor set but book() unresolved, so currentRoute() falls back to "books";
-  // trust that fallback only when it agrees inEditor is really over, or a same-page dialog change looks like a full leave.
+  // A discarded new book leaves inEditor set with no book, so currentRoute() already reads "books";
+  // without this check a full leave of the editor would look like a same-page dialog change.
   const stale = inEditor && current.view !== "editor";
   if (!stale && page(route) === page(current)) syncDialog(route);
   else applyRoute(route);
@@ -970,7 +970,10 @@ async function previewClient(modelId = '') {
 // address, the home preview saves only when something is unsaved.
 async function openPreview(query, heading, note, saveFirst = true) {
   const push = !applying;
-  if (saveFirst && !await save(false)) return;
+  // Reopened from its address, the home preview holds the address while the draft saves; Back meanwhile cancels it.
+  const held = !query && !push ? (routeModal = { modal: "home-preview" }) : null;
+  if (saveFirst && !await save(false)) { if (held && routeModal === held) { routeModal = null; syncUrl(); } return; }
+  if (held && routeModal !== held) return;
   if (!query && tab !== "home") return;
   const d = modal(`<h2>${esc(heading)}</h2><p>${esc(note)}</p><div class="preview-size-controls"><button id="preview-desktop" class="outline-button">넓은 화면</button><button id="preview-mobile" class="outline-button">모바일 화면</button></div><iframe title="공개 전 독자 화면" src="/client/?preview=draft${query}"></iframe>`);
   d.classList.add('client-preview-dialog');
@@ -978,6 +981,7 @@ async function openPreview(query, heading, note, saveFirst = true) {
   d.querySelector('#preview-desktop').onclick = () => d.classList.remove('mobile-preview');
   // Frames share the window's history: the preview moves by replacing its entry, so Back closes the dialog.
   const frame = d.querySelector('iframe');
+  // Another origin's frame cannot be patched; the one-second step-back fallback covers it.
   frame.addEventListener('load', () => { try { const h = frame.contentWindow.history; h.pushState = h.replaceState.bind(h); } catch {} });
   d.addEventListener('close', () => { d.querySelector('iframe')?.remove(); }, {once:true});
   if (!query) routeDialog(d, "home-preview", undefined, push);
