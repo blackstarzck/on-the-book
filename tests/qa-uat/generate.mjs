@@ -1,9 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {cases} from './catalog.mjs';
+import {runtime as runtimeFolder} from './runtime.mjs';
 const root=process.cwd().replaceAll('\\','/');
 const out=root+'/docs/qa/2026-09-08';
-const runtime=root+'/test-results/qa-uat-2026-09-08';
+const runtime=runtimeFolder.replaceAll('\\','/');
 const baseline=JSON.parse(await fs.readFile(runtime+'/baseline.json','utf8'));
 const selectedIds=process.argv.slice(3);
 const groups=selectedIds.length?[process.argv[2]]:[...new Set(cases.map(c=>c.group))];

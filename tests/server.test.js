@@ -209,3 +209,44 @@ test("configured administrator password protects reads/writes and session logout
     await s.stop();
   }
 });
+test("still and unrigged GLB models are registered and placed like any other model", async () => {
+  const upload = async (buffer) => {
+    const f = new FormData();
+    f.append("model", new Blob([buffer]), "scene.glb");
+    const r = await fetch(server.url + "/api/models/upload", { method: "POST", headers: { "X-On-The-Book": "studio" }, body: f });
+    assert.equal(r.status, 201, await r.clone().text());
+    return r.json();
+  };
+  const still = await upload(sampleGLB(false, false));
+  assert.equal(still.rigged, false);
+  assert.deepEqual(still.clips, []);
+  const moving = await upload(sampleGLB(false));
+  assert.equal(moving.rigged, false);
+  assert.deepEqual(moving.clips, ["Float"]);
+  const thumbnail = await uploadPng();
+  const state = await (await request("/api/studio")).json();
+  const library = structuredClone(state.library);
+  library.models.push(
+    { id: "still-scene", name: "정적 장면", kind: "glb", url: still.url, thumbnail, credit: "Blender", color: "#777777" },
+    { id: "moving-prop", name: "움직이는 소품", kind: "glb", url: moving.url, thumbnail, credit: "Blender", color: "#777777" },
+  );
+  const placement = (id, modelId, x, animation) =>
+    ({ id, modelId, x, z: 22, scale: 1, rotation: 0, radius: 2, animation, clip: "", title: id, story: "" });
+  const chapter = library.books[0].chapters[0];
+  chapter.placements.push(placement("still-place", "still-scene", -26, "none"), placement("moving-place", "moving-prop", 26, "clip"));
+  const save = (lib) => request("/api/studio", "PUT", { library: lib, version: state.version });
+  const asksForMissingMotion = structuredClone(library);
+  asksForMissingMotion.books[0].chapters[0].placements.find((p) => p.id === "still-place").animation = "clip";
+  const refused = await save(asksForMissingMotion);
+  assert.equal(refused.status, 400);
+  assert.match((await refused.json()).error, /동작/);
+  const saved = await save(library);
+  assert.equal(saved.status, 200, await saved.clone().text());
+  const after = await (await request("/api/studio")).json();
+  const models = Object.fromEntries(after.library.models.map((m) => [m.id, m]));
+  assert.deepEqual([models["still-scene"].rigged, models["still-scene"].clips], [false, []]);
+  assert.deepEqual([models["moving-prop"].rigged, models["moving-prop"].clips], [false, ["Float"]]);
+  const placed = after.library.books[0].chapters[0].placements;
+  assert.equal(placed.find((p) => p.id === "still-place").animation, "none");
+  assert.equal(placed.find((p) => p.id === "moving-place").animation, "clip");
+});
