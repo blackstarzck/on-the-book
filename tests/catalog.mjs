@@ -39,14 +39,17 @@ try {
   await expect(page.locator('.scene-cover')).toHaveText('이상한 나라의 앨리스');
   await expect(page.locator('.scene-card')).toHaveCount(6);
   await expect(page.locator('.scene-index')).toHaveText(['Chapter. 01', 'Chapter. 02', 'Chapter. 03', 'Chapter. 04', 'Chapter. 05', 'Chapter. 06']);
-  const tiles = await page.locator('.scene-rail').evaluate(rail => {
-    const cover = rail.querySelector('.scene-cover').getBoundingClientRect();
-    const image = rail.querySelector('.scene-card .scene-image').getBoundingClientRect();
-    return { cover: cover.width / cover.height, image: image.width / image.height, span: Math.round(cover.width - 2 * image.width - parseFloat(getComputedStyle(rail).columnGap)) };
+  const tiles = await page.locator('.scene-shelf').evaluate(shelf => {
+    const cover = shelf.querySelector('.scene-cover').getBoundingClientRect();
+    const image = shelf.querySelector('.scene-card .scene-image').getBoundingClientRect();
+    return { cover: cover.width / cover.height, image: image.width / image.height, span: Math.round(cover.width - 2 * image.width - parseFloat(getComputedStyle(shelf.querySelector('.scene-rail')).columnGap)) };
   });
   expect(Math.abs(tiles.cover - 1)).toBeLessThan(.01);
   expect(Math.abs(tiles.image - 1)).toBeLessThan(.01);
   expect(tiles.span).toBe(0);
+  // The rail moves by swipe, wheel, keys and the arrow buttons; it shows no scrollbar. (Headless scrollbars take no
+  // room, so the check reads the style rather than measuring the bar.)
+  expect(await page.locator('.scene-rail').evaluate(rail => getComputedStyle(rail).scrollbarWidth)).toBe('none');
   await expect(page.locator('canvas, video, dialog[open]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /로그인|회원가입|알림/ })).toHaveCount(0);
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
@@ -80,6 +83,12 @@ try {
   await expect(page.locator('.feature-progress')).toContainText('2 / 2');
   await expect.poll(() => page.locator('.feature-card.is-active').evaluate(element => getComputedStyle(element).transform)).toBe('none');
   await expect.poll(() => page.locator('.feature-card.is-active .feature-copy > strong').evaluate(element => getComputedStyle(element).animationName)).toBe('hero-copy-in');
+  // Hovering a slide keeps its own ink: the global button:hover colour must not repaint the hero copy.
+  const ink = () => page.locator('.feature-card.is-active .feature-copy > strong').evaluate(el => getComputedStyle(el).color);
+  const resting = await ink();
+  await page.locator('.feature-card.is-active').hover();
+  expect(await ink()).toBe(resting);
+  await page.mouse.move(0, 0);
   pass('Hero swipe, progress and staggered text animation');
   await page.screenshot({ path: 'test-results/catalog/desktop.png', fullPage: true });
   await page.getByLabel('도서 제목 또는 작가 검색').fill('루이스');
@@ -204,8 +213,18 @@ try {
   pass('Both real books enter their own world; trailer opens and closes');
 
   await expect(page.locator('[data-rail="-1"]')).toBeDisabled();
+  // The cover tile stays put while the arrows move the chapter cards beside it, and no card slides over it.
+  await page.evaluate(() => document.querySelector('#scene-title').scrollIntoView({ block: 'start', behavior: 'instant' }));
+  const place = () => page.locator('.scene-shelf').evaluate(shelf => {
+    const cover = shelf.querySelector('.scene-cover'), box = cover.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.right - 4, box.top + box.height / 2);
+    return { cover: Math.round(box.left), first: Math.round(shelf.querySelector('.scene-card').getBoundingClientRect().left), onTop: cover.contains(hit) };
+  });
+  const before = await place();
   await page.getByRole('button', { name: '다음 장면들', exact: true }).click();
   await expect.poll(() => page.locator('.scene-rail').evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+  await expect.poll(async () => (await place()).first).toBeLessThan(before.first);
+  expect(await place()).toMatchObject({ cover: before.cover, onTop: true });
   await page.locator('.scene-rail').focus();
   await page.keyboard.press('Home');
   await expect(page.locator('[data-rail="-1"]')).toBeDisabled();
@@ -483,6 +502,10 @@ try {
   await expect(first.locator('.feature-copy > strong')).toHaveText('노란 길로 떠나요');
   await expect(first.locator('.feature-art')).toHaveCount(0);
   expect(await first.locator('.feature-copy > strong').evaluate(el => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+  // The copy stays white while the pointer is over the photo.
+  await first.hover();
+  expect(await first.locator('.feature-copy > strong').evaluate(el => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+  await home.mouse.move(0, 0);
   expect(await first.locator('.feature-photo').evaluate(img => getComputedStyle(img).objectPosition)).toBe('82% 50%');
   await expect(home.locator('.feature-progress')).toContainText('1 / 3');
   // The shown photo and the next one load; the third waits for its turn.

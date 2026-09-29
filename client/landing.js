@@ -64,21 +64,28 @@ const two = n => String(n).padStart(2, "0");
 // first book. Undefined only when the draft preview's shelf is empty.
 const sceneBookOf = (books, id) => books.find(b => b.id === id) || books[0];
 
-// The chosen book's tiles in the rail: its cover (opens the book detail), then a card per chapter (opens that scene).
-function sceneTiles(book, preview) {
-  const cover = `<a class="scene-cover${book.cover ? " has-image" : ""}" href="${esc(detailUrl({ book: book.id, preview }))}" data-scene-cover="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">${book.cover ? `<img src="${esc(book.cover)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<strong>${esc(book.title)}</strong></a>`;
-  return cover + book.chapters.map((chapter, index) => `<a class="scene-card" href="${esc(detailUrl({ book: book.id, scene: chapter.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${two(index + 1)} ${esc(chapter.title)} — 작품 상세"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}</span><span class="scene-index">Chapter. ${two(index + 1)}</span><strong>${esc(chapter.title)}</strong></a>`).join("");
+// The chosen book's cover tile, which opens the book detail. It stays put beside the rail.
+function sceneCover(book, preview) {
+  return `<a class="scene-cover${book.cover ? " has-image" : ""}" href="${esc(detailUrl({ book: book.id, preview }))}" data-scene-cover="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">${book.cover ? `<img src="${esc(book.cover)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<strong>${esc(book.title)}</strong></a>`;
 }
 
-// A tab per book picks whose tiles fill the rail. A single book needs no picker, so its rail is a plain region.
+// The chosen book's chapter cards for the rail; each opens its scene on the book detail.
+function sceneCards(book, preview) {
+  return book.chapters.map((chapter, index) => `<a class="scene-card" href="${esc(detailUrl({ book: book.id, scene: chapter.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${two(index + 1)} ${esc(chapter.title)} — 작품 상세"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}</span><span class="scene-index">Chapter. ${two(index + 1)}</span><strong>${esc(chapter.title)}</strong></a>`).join("");
+}
+
+// A tab per book picks what fills the shelf: the cover tile and, in the scrolling rail beside it, the chapter cards.
+// The shelf is the tab panel; the rail is its own named region because it takes focus to scroll. A single book needs
+// no picker.
 function sceneSection(books, state, preview) {
   const book = sceneBookOf(books, state.sceneBook);
   const picked = books.indexOf(book);
   const picker = books.length > 1
     ? `<div class="scene-books" role="tablist" aria-label="장면을 볼 도서">${books.map((b, i) => `<button type="button" role="tab" id="scene-tab-${i}" data-scene-tab="${esc(b.id)}" aria-selected="${i === picked}" aria-controls="scene-shelf" tabindex="${i === picked ? 0 : -1}">${esc(b.title)}</button>`).join("")}</div>`
     : "";
-  const shelf = books.length > 1 ? `role="tabpanel" aria-labelledby="scene-tab-${picked}"` : `role="region" aria-label="${book ? `${esc(book.title)} 장면 목록` : "책 속 장면 목록"}"`;
-  return `<section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면부터 살펴보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div>${picker}<div class="scene-rail" id="scene-shelf" tabindex="0" ${shelf}>${book ? sceneTiles(book, preview) : ""}</div></section>`;
+  const panel = books.length > 1 ? ` role="tabpanel" aria-labelledby="scene-tab-${picked}"` : "";
+  const rail = `<div class="scene-rail" tabindex="0" role="region" aria-label="${book ? `${esc(book.title)} 장면 목록` : "책 속 장면 목록"}">${book ? sceneCards(book, preview) : ""}</div>`;
+  return `<section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면부터 살펴보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div>${picker}<div class="scene-shelf" id="scene-shelf"${panel}>${book ? sceneCover(book, preview) : ""}${rail}</div></section>`;
 }
 
 export function announcementBanner() {
@@ -173,8 +180,9 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
     page.querySelector('[data-rail="-1"]').disabled = rail.scrollLeft <= 1;
     page.querySelector('[data-rail="1"]').disabled = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
   };
-  // Picking a book swaps the rail's tiles in place and starts it from the cover again. The pick lives in `state`,
-  // so the bookshelf comes back on it (and can refocus a card) after a visit to the book detail.
+  // Picking a book swaps the cover tile and the rail's cards in place and starts the rail from its first chapter. The
+  // rail element itself stays, so its listeners do too. The pick lives in `state`, so the bookshelf comes back on it
+  // (and can refocus a card) after a visit to the book detail.
   const showSceneBook = (id, { focus = false } = {}) => {
     const book = library.books.find(b => b.id === id);
     const tab = sceneTabs.find(t => t.dataset.sceneTab === id);
@@ -186,10 +194,13 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
       other.setAttribute("aria-selected", String(other === tab));
       other.tabIndex = other === tab ? 0 : -1;
     }
-    rail.setAttribute("aria-labelledby", tab.id);
-    // From the first swap on, new tiles slide in (see .scene-rail.is-swapped); the first render comes with the page.
-    rail.classList.add("is-swapped");
-    rail.innerHTML = sceneTiles(book, preview);
+    const shelf = rail.parentElement;
+    shelf.setAttribute("aria-labelledby", tab.id);
+    // From the first swap on, new tiles slide in (see .scene-shelf.is-swapped); the first render comes with the page.
+    shelf.classList.add("is-swapped");
+    shelf.querySelector(".scene-cover").outerHTML = sceneCover(book, preview);
+    rail.setAttribute("aria-label", `${book.title} 장면 목록`);
+    rail.innerHTML = sceneCards(book, preview);
     rail.scrollTo({ left: 0, behavior: "instant" });
     updateRail();
   };
