@@ -1,4 +1,5 @@
 import { shelfHTML, bindShelfOrder, mountWorkspace, thumbnails } from "./workspace.js";
+import { parseRoute, resolveRoute, routeHref } from "./route.js";
 
 import { reactionSize } from "../shared/experience.js";
 import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
@@ -29,13 +30,15 @@ let library,
   query = "";
 let disposeModelThumbnails=null;
 let workspace=null, inEditor=false, baseline=null, savedLibrary=null, leaveDialog=null, undoStack=[], redoStack=[];
+// Shelf filters and the editor's model search live here so redraws keep them; the address mirrors them (admin/route.js).
+let shelfQuery="", shelfStatus="", assetQuery="", shelfReturn={q:"",status:""}, applying=false, urlTimer=null;
 const app = document.querySelector("#app");
 const clientUrl = import.meta.env.VITE_CLIENT_URL || "/client/";
 const hasUnsavedChanges = () => savedLibrary && JSON.stringify(library) !== JSON.stringify(savedLibrary);
 function requestLeaveEditor(destination=null) {
   if (leaveDialog) return;
   if (busy) return toast('저장이 끝난 뒤 다시 이동해 주세요.');
-  const leave = destination || (() => { inEditor=false; placementId=null; render(); });
+  const leave = destination || (() => navigate(() => { inEditor=false; placementId=null; shelfQuery=shelfReturn.q; shelfStatus=shelfReturn.status; }));
   if (!hasUnsavedChanges()) { dirty=false; leave(); return; }
   const dialog=modal(`<h2 id="leave-title">편집을 마치고 나갈까요?</h2><p id="leave-description">저장하지 않은 변경사항이 있습니다. 저장하지 않고 나가면 마지막 저장 이후의 관리자 변경사항이 사라집니다.</p><p class="leave-error" role="alert"></p><div class="leave-actions"><button type="button" class="outline-button" data-leave="cancel">계속 편집</button><button type="button" class="outline-button" data-leave="discard">저장하지 않고 나가기</button><button type="button" class="primary-button" data-leave="save">저장 후 나가기</button></div>`);
   leaveDialog=dialog;
@@ -150,17 +153,65 @@ function holdActions(dialog) {
   const buttons = [...dialog.querySelectorAll(".modal-actions button")].map((b) => [b, b.disabled]);
   return (busy) => buttons.forEach(([b, disabled]) => (b.disabled = busy || disabled));
 }
+// ---- The address (admin/route.js): the path names the page, the query what is open on it. ----
+function currentRoute() {
+  if (tab === "books" && inEditor && book() && chapter())
+    return { view: "editor", bookId, chapterId, objectId: placementId || undefined, q: assetQuery || undefined };
+  if (tab === "books") return { view: "books", q: shelfQuery || undefined, status: shelfStatus || undefined };
+  return tab === "models" ? { view: "models", q: query || undefined } : { view: tab };
+}
+// Writes the current place into this history entry's address.
+function syncUrl() {
+  clearTimeout(urlTimer); urlTimer = null;
+  if (applying) return;
+  const href = routeHref(currentRoute());
+  if (href !== location.pathname + location.search) history.replaceState(history.state, "", href);
+}
+// Typing writes the address once it pauses: Safari limits how often replaceState may run.
+function syncUrlSoon() { clearTimeout(urlTimer); urlTimer = setTimeout(syncUrl, 250); }
+// A page move: the entry being left gets its latest address, then a new entry is pushed and drawn.
+function navigate(change) {
+  if (urlTimer) syncUrl();
+  change();
+  document.querySelectorAll("dialog[open]").forEach((d) => d.close());
+  history.pushState({}, "", routeHref(currentRoute()));
+  render();
+}
+// Shows the place an address names, on load and when the browser moves through history.
+function applyRoute(route) {
+  document.querySelectorAll("dialog[open]").forEach((d) => d.close());
+  const entering = route.view === "editor" && !(inEditor && bookId === route.bookId);
+  tab = route.view === "editor" ? "books" : route.view;
+  inEditor = route.view === "editor";
+  if (entering) { undoStack = []; redoStack = []; baseline = structuredClone(library); }
+  if (inEditor) { bookId = route.bookId; chapterId = route.chapterId; placementId = route.objectId ?? null; assetQuery = route.q ?? ""; }
+  else placementId = null;
+  if (route.view === "books") { shelfQuery = route.q ?? ""; shelfStatus = route.status ?? ""; }
+  if (route.view === "models") query = route.q ?? "";
+  applying = true;
+  try { render(); } finally { applying = false; }
+  syncUrl();
+}
+function openAddress() {
+  const { route, notice } = resolveRoute(parseRoute(location.pathname, location.search), library);
+  applyRoute(route);
+  if (notice) toast(notice);
+}
 function render() {
+  draw();
+  if (!urlTimer) syncUrl();
+}
+function draw() {
   disposeModelThumbnails?.(); disposeModelThumbnails=null;
   if(workspace){workspace.dispose();workspace=null;world=null;}
   if(tab==='books' && inEditor && book() && chapter()) {
     world?.dispose();
-    workspace=mountWorkspace(app,{book:book(),chapter:chapter(),models:library.models,selectedId:placementId,hooks:{
-      select:id=>placementId=id,change:mark,back:()=>requestLeaveEditor(),editBook:()=>editBook(),editChapter,addChapter,
+    workspace=mountWorkspace(app,{book:book(),chapter:chapter(),models:library.models,selectedId:placementId,assetQuery,hooks:{
+      select:id=>{placementId=id;syncUrl();},change:mark,back:()=>requestLeaveEditor(),editBook:()=>editBook(),editChapter,addChapter,search:q=>{assetQuery=q;syncUrlSoon();},
       reorderChapters:ids=>{const chapters=book().chapters;if(ids.length!==chapters.length||new Set(ids).size!==chapters.length||ids.some(id=>!chapters.some(c=>c.id===id)))return;book().chapters=ids.map(id=>chapters.find(c=>c.id===id));mark();render();},
       preview:()=>previewClient(),
       addModel:()=>editModel(),editModel,save:()=>save(false),publish:()=>save(true),
-      chapter:id=>{chapterId=id;placementId=null;},undo:()=>historyMove('undo'),redo:()=>historyMove('redo'),canUndo:undoStack.length,canRedo:redoStack.length
+      chapter:id=>{chapterId=id;placementId=null;syncUrl();},undo:()=>historyMove('undo'),redo:()=>historyMove('redo'),canUndo:undoStack.length,canRedo:redoStack.length
     }});world=workspace.world;document.querySelector('#save-state').textContent=dirty?'저장하지 않은 변경사항':'변경사항 저장됨';return;
   }
   world?.dispose();
@@ -175,10 +226,13 @@ function render() {
     )}</nav><div class="sidebar-note">${icon("sparkles")}<p>한 장면의 작은 움직임이<br>이야기에 생명을 불어넣어요.</p></div><a class="visit-client" href="${esc(clientUrl)}" target="_blank">사용자 화면 열기 ${icon("arrow-up-right")}</a><div class="studio-user"><span>O</span><div><strong>On the Book</strong><small>${protectedMode ? "관리자 로그인됨" : "내 컴퓨터 작업 공간"}</small></div>${protectedMode ? `<button id="logout" class="icon-button" aria-label="로그아웃">${icon("log-out")}</button>` : ""}</div></aside><div class="studio-main"><header class="studio-header"><div><span>워크스페이스</span>${icon("chevron-right")}<strong>${tabs.find(([id]) => id === tab)[2]}</strong></div><div><span id="save-state">${dirty ? "저장하지 않은 변경사항" : "변경사항 저장됨"}</span><button id="save" class="outline-button" ${busy ? "disabled" : ""}>${icon("save")} 임시 저장</button><button id="publish" class="primary-button" ${busy ? "disabled" : ""}>${icon("eye")} 사용자 화면에 공개</button></div></header><main class="studio-content">${tab === "books" ? shelfHTML(library.books) : tab === "home" ? homeView() : tab === "models" ? modelsView() : settingsView()}</main></div></div>`;
   icons();
   for (const b of document.querySelectorAll("[data-tab]"))
-    b.onclick = () => {
-      tab = b.dataset.tab;
-      render();
-    };
+    b.onclick = () => { if (b.dataset.tab !== tab) navigate(() => { tab = b.dataset.tab; }); };
+  // The logo moves within the studio like the 도서 보관함 tab; modified clicks keep the browser's own handling.
+  document.querySelector(".studio-sidebar .brand").onclick = (e) => {
+    if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    if (tab !== "books") navigate(() => { tab = "books"; });
+  };
   document.querySelector("#save").onclick = () => save(false);
   document.querySelector("#publish").onclick = () => save(true);
   document.querySelector("#logout")?.addEventListener("click", () => requestLeaveEditor(async () => {
@@ -188,9 +242,10 @@ function render() {
   if (tab === "books") {
     document.querySelector('#new-book').onclick=()=>editBook(true);
     // The editor's undo covers only what happens inside it, not home or shelf changes made before.
-    document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);render();});
-    const filter=()=>{const query=document.querySelector('#book-search').value.toLowerCase(),state=document.querySelector('#book-filter').value;let count=0;document.querySelectorAll('[data-open-book]').forEach(button=>{const row=button.closest('.book-tile-row');row.hidden=!button.dataset.title.includes(query)||(state!=='all'&&button.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
-    document.querySelector('#book-search').oninput=filter;document.querySelector('#book-filter').onchange=filter;filter();
+    document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{shelfReturn={q:shelfQuery,status:shelfStatus};navigate(()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;assetQuery="";inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);});});
+    const filter=()=>{const query=shelfQuery.toLowerCase(),state=shelfStatus||'all';let count=0;document.querySelectorAll('[data-open-book]').forEach(button=>{const row=button.closest('.book-tile-row');row.hidden=!button.dataset.title.includes(query)||(state!=='all'&&button.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
+    const search=document.querySelector('#book-search'),status=document.querySelector('#book-filter');search.value=shelfQuery;status.value=shelfStatus||'all';
+    search.oninput=()=>{shelfQuery=search.value;filter();syncUrlSoon();};status.onchange=()=>{shelfStatus=status.value==='all'?'':status.value;filter();syncUrl();};filter();
     bindShelfOrder(app,(ids,moved)=>{
       if(ids.length!==library.books.length||ids.some(id=>!library.books.some(b=>b.id===id)))return;
       library.books=ids.map(id=>library.books.find(b=>b.id===id));mark();render();
@@ -347,13 +402,14 @@ function editBook(isNew = false) {
       published: f.has("published"),
       category: String(f.get("category")).trim(),
     });
-    if (isNew) {library.books.push(original);inEditor=true;}
+    if (isNew) {library.books.push(original);shelfReturn={q:shelfQuery,status:shelfStatus};}
     bookId = original.id;
     chapterId = original.chapters[0].id;
     placementId = original.chapters[0].placements[0]?.id;
     mark();
     d.close();
-    render();
+    if (isNew) navigate(() => { inEditor = true; assetQuery = ""; });
+    else render();
   };
   d.querySelector("#delete-book")?.addEventListener("click", () => {
     d.close();
@@ -495,6 +551,7 @@ function bindModels() {
   search.oninput = (e) => {
     query = e.target.value;
     const pos = e.target.selectionStart;
+    syncUrlSoon();
     render();
     const input = document.querySelector("#model-search");
     input.focus();
@@ -770,6 +827,19 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "";
   }
 });
+window.addEventListener("popstate", () => {
+  if (!library) return; // the login and loading screens read the address themselves once the studio loads
+  const { route, notice } = resolveRoute(parseRoute(location.pathname, location.search), library);
+  const current = currentRoute();
+  if (current.view === "editor" && !(route.view === "editor" && route.bookId === current.bookId) && (leaveDialog || busy || hasUnsavedChanges())) {
+    // Keep the editor's address while the leave dialog decides; leaving then steps back to where the browser was going.
+    history.pushState({}, "", routeHref(current));
+    if (!leaveDialog) requestLeaveEditor(() => history.back());
+    return;
+  }
+  applyRoute(route);
+  if (notice) toast(notice);
+});
 async function load() {
   try {
     const result = await api("/api/studio");
@@ -781,10 +851,7 @@ async function load() {
     version = result.version;
     publishedAt = result.publishedAt;
     protectedMode = result.protected;
-    bookId = library.books[0]?.id;
-    chapterId = book()?.chapters[0]?.id;
-    placementId = chapter()?.placements[0]?.id;
-    render();
+    openAddress();
   } catch (e) {
     if (e.status === 401) {
       app.innerHTML = `<main class="login-screen"><a class="brand" href="${esc(clientUrl)}">${logo}</a><h1>이야기를 만드는 공간</h1><p>관리자 비밀번호로 스튜디오를 열어 주세요.</p><form id="login-form">${field("관리자 비밀번호", "password", "", "password", 'required autocomplete="current-password"')}<p id="login-error" role="alert"></p><button class="primary-button full">스튜디오 들어가기 ${icon("arrow-right")}</button></form></main>`;
