@@ -40,7 +40,7 @@
 
 모든 표는 행 수준 보안(RLS)을 켜고 허용 규칙을 두지 않았습니다. 서버만 service_role 키로 접근하며, 이 키는 서버 환경에만 등록하고 프런트엔드에 전달하지 않습니다. 공개용 anon 키로는 표·함수·파일 어디에도 접근할 수 없습니다.
 
-2026-09-28에 운영 Blob(`prod/`)의 편집본·공개본과 파일 10개를 `scripts/migrate-blob-to-supabase.mjs`로 옮겼습니다. 스크립트는 되읽은 편집본·공개본이 원본과 같은지, 파일마다 SHA-256이 같은지 확인했습니다. 같은 날 소개 페이지 여정 자료를 `client/about/assets`에서, 블렌더 원본과 도면을 작업 폴더에서 저장소로 옮겼습니다. Blob 저장소의 옛 데이터는 백업으로 남겨 두었고, 미리보기 구역(접두어 없음)의 데이터는 옮기지 않았습니다.
+2026-09-28에 운영 Blob(`prod/`)의 편집본·공개본과 파일 10개를 `scripts/migrate-blob-to-supabase.mjs`로 옮겼습니다. 스크립트는 되읽은 편집본·공개본이 원본과 같은지, 파일마다 SHA-256이 같은지 확인했습니다. 같은 날 소개 페이지 여정 자료를 `client/about/assets`에서, 블렌더 원본과 도면을 작업 폴더에서 저장소로 옮겼습니다. Blob 저장소의 옛 데이터는 백업으로 남겨 두었고, 미리보기 구역(접두어 없음)의 데이터는 옮기지 않았습니다. 운영이 Supabase로 바뀐 뒤 2026-09-29에 이 이관 스크립트와 그것만 쓰던 `@vercel/blob` 의존성을 지웠습니다. 스크립트가 다시 필요하면 `git show 5ee5620:scripts/migrate-blob-to-supabase.mjs`로 꺼내고, 쓰기 전에 `@vercel/blob`을 개발 의존성으로 잠시 설치합니다.
 
 같은 날 앨리스·오즈가 쓰던 코드로 그린 기본 모델 9종(`rabbit`·`mushroom`·`teapot`·`tree`·`rose`·`key`·`clock`·`cards`·`house`)을 같은 ID의 GLB로 바꾸고 공개했습니다. 원본은 91~95점으로 검수를 통과한 블렌더 파일(`Desktop/workspace/blender-modeling`)이며, `scripts/blender/export-web-glb.py`로 내보내 관리자 업로드 경로로 올렸습니다. 원본 `.blend`는 `archive` 버킷의 `blender/alice/`에 있습니다. 독자 화면은 GLB의 가장 긴 변을 2로 맞추므로, 배치 24개의 배율은 예전 모델 크기에 맞춰 보정했고 충돌 반경은 월드 기준 크기가 그대로이도록 함께 조정했습니다. 시험용 시드 데이터(`server/seed.js`)는 여전히 코드로 그린 모델을 씁니다.
 
