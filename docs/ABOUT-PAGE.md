@@ -36,13 +36,13 @@
 
 ## 에셋
 
-`client/about/assets/`에는 페이지가 참조하는 파일 17개만 있습니다. 빌드하면 해시가 붙은 파일명으로 나가며 관리자 빌드에는 들어가지 않습니다.
+`client/about/assets/`에는 페이지가 참조하는 파일 12개만 있습니다. 빌드하면 해시가 붙은 파일명으로 나가며 관리자 빌드에는 들어가지 않습니다.
+
+여정 장면의 3D 모델(`clay-journey.glb`, 1.4MB), 경로 데이터(`clay-journey.json`, 87KB), 모델 표면에 입히는 사진 3장(`journey-walk·approach·read.webp`, 합계 1.1MB)은 2026-09-28에 Supabase로 옮겼습니다. 모델과 사진은 `uploads` 버킷에, 경로 데이터는 `site_assets` 표의 `about-journey` 행에 있고, `clay-scene.js`가 `/api/site/about-journey`에서 주소를 받아 불러옵니다. 프로젝트 폴더에는 3D 모델 파일을 두지 않습니다.
 
 | 파일 | 처리 | 크기 |
 | --- | --- | --- |
 | `trailer.mp4` | 그대로 | 9.0MB |
-| `clay-journey.glb`, `clay-journey.json` | 그대로 | 1.4MB, 87KB |
-| `journey-walk.webp`, `journey-approach.webp`, `journey-read.webp` | 그대로 | 합계 1.1MB |
 | `garden.webp`, `wander.webp`, `invitation.webp` | 그대로 | 합계 406KB |
 | `footer-books-hairline.webp`, `footer-door-hairline.webp`, `footer-reader-hairline.webp` | 그대로 | 합계 266KB |
 | `scene-concepts/card-0N-*-a.webp` 4장 | PNG에서 변환 | 합계 1.3MB |

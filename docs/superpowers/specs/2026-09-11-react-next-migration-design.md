@@ -38,7 +38,7 @@
 - `library.json` 구조와 `librarySchema`(zod). 2026-09-28 에 추가한 `book.category`(8자 이하, `all`·`reading` 금지), `chapter.thumbnail`, `home.hero`(최대 5개, 슬라이드 `id`·`bookId`·`image`·`focus`·`kicker`·`title`·`description`)를 포함한다. 이 항목이 없는 예전 저장 데이터도 `shared/home.js` 의 대체 규칙(옛 분류 대응표, 앞 두 권 히어로)으로 그대로 보여야 한다. `home` 기본값은 파싱마다 새 배열이 되도록 `prefault` 로 준다. Blob 저장 경로 `library.json`, `uploads/`, `staging/`, `sessions/`. `BLOB_NAMESPACE` 접두어.
 - 업로드 URL `/uploads/<uuid>.png|glb`. 이 URL 이 데이터에 저장되어 있으므로 두 앱 모두 루트 `/uploads/` 에서 서빙한다. 따라서 관리자 앱에 Next `basePath` 를 쓰지 않고 `app/admin/…` 폴더 라우팅으로 `/admin` 주소를 만든다.
 - API 경로와 메서드, 요청·응답 JSON, 상태 코드, 한국어 오류 메시지: `POST /api/login`, `POST /api/logout`, `GET /api/library`, `GET|PUT /api/studio`, `POST /api/uploads/prepare`(cloud), `POST /api/floor/upload`, `POST /api/models/upload`, `GET /uploads/:filename`. `GET /api/library` 응답은 `books`·`models`·`home`(공개 대상 책을 가리키는 슬라이드만)·`publishedAt` 이고(`server/publication.js` 의 `publicLibrary`), cloud 의 `GET /uploads/:filename` 은 그 응답이 가리키는 파일만 허용하며 PNG 에 `private, max-age=300` 을 준다.
-- 헤더 `X-On-The-Book: studio` same-origin 검사, 쿠키 `otb_session`(httpOnly, sameSite strict, 8시간), 로그인 시도 제한 10회/60초, 저장 버전 충돌 409, Blob ETag 충돌 409.
+- 헤더 `X-On-The-Book: studio` same-origin 검사, 쿠키 `otb_session`(httpOnly, sameSite strict, 8시간), 로그인 시도 제한 10회/60초, 저장 버전 충돌 409(DB 함수 `save_draft` 의 버전 검사 포함).
 - 사용자 진행 기록 localStorage 키 `otb-reader` 와 값 구조 `{ [bookId]: { chapter } }`.
 - 사용자 화면 URL: `/`, `/client/`, 쿼리 `book`, `chapter`, `preview=draft`, `model`. 소개 페이지 `/about`(로컬 `/client/about/`). 관리자 URL: `/admin/`.
 - 정적 자산 경로 `/brand/*`, `/floor-assets/*`, `/ornaments/*`, `/favicon.svg`.
@@ -89,7 +89,7 @@ scripts/sync-public.mjs      packages/ui/public 을 각 앱 public 으로 복사
 | 아이콘 | lucide-react | 현재 `lucide` 대체 |
 | 폰트 | next/font/google: DM Sans, Noto Sans KR, Noto Serif KR | 현재 CSS `@import` 대체 |
 | 검증 | zod 4(유지) | |
-| 저장 | @vercel/blob(유지) | |
+| 저장 | Supabase(on-the-project) 표·저장소, `@supabase/supabase-js` | 2026-09-28 Vercel Blob 에서 전환 |
 | 테스트 | Vitest 5, @playwright/test 1.63 | Microsoft Edge 채널 유지 |
 | 개발 실행 | concurrently | `npm run dev` 가 두 앱을 동시에 띄움 |
 
@@ -113,22 +113,23 @@ Node 는 현재 문서 기준 20.19 이상 또는 22.12 이상을 유지한다.
 | `multer` | `await request.formData()`. 필드 `image`/`model` 의 `File` 을 `arrayBuffer` 로 읽음. 크기 초과 400/413 메시지 동일 |
 | `res.cookie` | `Set-Cookie` 헤더. `secure` 는 요청 프로토콜 기준 |
 | `trust proxy` | IP 는 `x-forwarded-for` 첫 항목, 없으면 `x-real-ip` |
-| `saving` 플래그 | 모듈 스코프 변수 유지. Blob ETag 조건 검사가 실제 충돌을 막는다 |
-| 로컬 정적 `/uploads` | `app/uploads/[filename]/route.ts` 가 `DATA_DIR/uploads` 파일을 스트리밍. `Cache-Control: public, max-age=31536000, immutable` |
-| cloud `/uploads` | 공개 자산 또는 관리자 세션 확인 후 서명 URL 로 307 |
-| 세션·로그인 시도 Map | 모듈 스코프 유지(현재와 같은 best-effort) |
+| `saving` 플래그 | 모듈 스코프 변수 유지. DB 함수 `save_draft` 의 버전 검사가 실제 충돌을 막는다 |
+| 시험용 정적 `/uploads` | `DATA_DIR` 이 있을 때만 `app/uploads/[filename]/route.ts` 가 `DATA_DIR/uploads` 파일을 스트리밍. `Cache-Control: public, max-age=31536000, immutable` |
+| Supabase `/uploads` | 공개 자산·사이트 자산 또는 관리자 세션 확인 후 서명 URL 로 307. 비밀번호 없는 로컬은 모두 허용 |
+| 세션 | Supabase `sessions` 표(시험용 `DATA_DIR` 에서는 메모리) |
+| 로그인 시도 Map | 모듈 스코프 유지(현재와 같은 best-effort) |
 
 ### 6.3 저장소 변경점
 
-로컬 모드는 현재 프로세스 메모리에 DB 를 캐시한다. 새 구조는 client 와 admin 이 별도 프로세스이므로 `readLibrary()` 가 매 요청 `library.json` 을 읽고, 쓰기는 `.tmp` 에 쓴 뒤 `rename` 한다. 최초 실행의 `upgrade` 백업 동작은 유지한다. 세션 저장은 현재 `storage.js` 구현을 그대로 이식하며 admin 프로세스만 사용한다. cloud 모드는 변경 없다.
+2026-09-28 부터 로컬·미리보기·운영이 모두 Supabase 를 쓴다. `server/storage.js` 의 `readDraft`·`readLive`·`saveDraft`·`assetInfo`·업로드·세션·`readSite` 함수와 `server/rows.js`(책장 문서 ↔ 표 행 변환)를 그대로 이식한다. 폴더 저장(`library.json`, `.tmp` 뒤 `rename`, 최초 실행 `upgrade` 백업)은 시험이 `DATA_DIR` 을 줄 때만 쓰며, client 와 admin 이 별도 프로세스이므로 이 경우 매 요청 `library.json` 을 읽는다. 새 앱도 3D 모델·블렌더 파일을 저장소 밖(프로젝트 폴더)에 두지 않는다.
 
 ### 6.4 업로드 흐름
 
-브라우저 `api()` 는 현재 `import.meta.env.MODE` 로 cloud 여부를 판단한다. 새 구현은 Vercel 이 자동으로 노출하는 `NEXT_PUBLIC_VERCEL_ENV` 가 있으면 cloud 로 보고 `POST /api/uploads/prepare` 로 서명 URL 을 받아 Blob `staging/` 에 직접 PUT 한 뒤 파일명을 JSON 으로 등록 API 에 보낸다. 없으면 multipart 로 등록 API 에 직접 보낸다. 서버는 현재와 같이 cloud 에서만 `prepare` 와 staging 검증 경로를 노출한다.
+브라우저 `api()` 는 현재 `import.meta.env.MODE` 로 cloud 여부를 판단한다. 새 구현은 Vercel 이 자동으로 노출하는 `NEXT_PUBLIC_VERCEL_ENV` 가 있으면 cloud 로 보고 `POST /api/uploads/prepare` 로 Supabase 서명 업로드 URL 을 받아 `uploads/staging/` 에 직접 PUT 한 뒤 파일명을 JSON 으로 등록 API 에 보낸다. 없으면 multipart 로 등록 API 에 직접 보낸다. 서버는 Supabase 저장소를 쓸 때 `prepare` 와 staging 검증 경로를 노출하고, 등록 API 는 JSON 이 아닌 요청을 multipart 로 처리한다.
 
 ### 6.5 검증 규칙
 
-PNG 시그니처·IHDR·IDAT·IEND·4096 한도, GLB 헤더·JSON 청크·외부 URI 금지·뼈대 애니메이션 필수, 저장 시 썸네일 필수, 메인 모델 없는 챕터의 공개 거부, 발동 영역 겹침 거부, 자산 존재 확인은 `@otb/server/validation` 으로 옮기고 단위 테스트를 붙인다. 메시지 문자열은 현재와 동일하다. 이미지 존재 확인(표지·바닥 그림·장면 썸네일·히어로 사진)은 초안에 새로 나타난 PNG 주소만 대상으로 하며(`imageUrls`), 없으면 400 "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요." 를 돌려준다. 추천 슬라이드의 책 참조와 분류 예약어 검증은 schema 에 있다.
+PNG 시그니처·IHDR·IDAT·IEND·4096 한도, GLB 헤더·JSON 청크·외부 URI 금지(2026-09-28 부터 뼈대·동작 없는 정적 GLB 도 등록, 파일 동작 배치는 파일에 담긴 동작만), 저장 시 썸네일 필수, 메인 모델 없는 챕터의 공개 거부, 발동 영역 겹침 거부, 자산 존재 확인은 `@otb/server/validation` 으로 옮기고 단위 테스트를 붙인다. 메시지 문자열은 현재와 동일하다. 이미지 존재 확인(표지·바닥 그림·장면 썸네일·히어로 사진)은 초안에 새로 나타난 PNG 주소만 대상으로 하며(`imageUrls`), 없으면 400 "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요." 를 돌려준다. 추천 슬라이드의 책 참조와 분류 예약어 검증은 schema 에 있다.
 
 ## 7. 3D 설계 (@otb/scene)
 
@@ -237,7 +238,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 | # | data-tour | 제목 | 설명 | 위치 |
 | --- | --- | --- | --- | --- |
-| 1 | assets | 모델 보관함 | 애니메이션이 있는 모델을 월드로 드래그해 배치합니다. ＋ 등록으로 새 GLB 를 올리고, 카드에 마우스를 올리면 동작을 미리 봅니다. | right |
+| 1 | assets | 모델 보관함 | 모델을 월드로 드래그해 배치합니다. ＋ 등록으로 새 GLB 를 올리고, 카드에 마우스를 올리면 동작을 미리 봅니다. | right |
 | 2 | tiles | 바닥 이미지 | 화살표·나뭇잎 같은 손그림과 등록한 PNG 를 바닥에 끌어 놓습니다. 배치한 이미지는 월드에서 선택해 위치·크기·방향을 바꿀 수 있습니다. | right |
 | 3 | (없음, 중앙) | 월드 조작 | 왼쪽 드래그로 회전, 오른쪽 드래그로 화면 이동, 휠로 확대합니다. 금색 원은 애니메이션이 반응하는 범위, 붉은 원은 캐릭터가 지나갈 수 없는 충돌 범위입니다. | center |
 | 4 | tools | 도구 모음 | 이동 W, 방향 E, 크기 S, 발동 범위 R 을 전환합니다. 격자 단위를 바꾸고 시점 초기화로 카메라를 되돌립니다. ▶ 독자 체험은 현재 월드를 실제 독자처럼 걸어 봅니다. | top |
@@ -269,7 +270,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 
 - 단위(Vitest): `@otb/shared`(schema, home, experience, collision, landscape 수학, textPages), `@otb/server`(validation, publication, storage 로컬 모드, upgrade, seed), `@otb/scene` 의 순수 함수(`sideReadingPose`).
 - API 블랙박스(Vitest): 빌드된 admin 앱을 임시 `DATA_DIR`, 고유 포트로 `next start` 해 현재 `tests/server.test.js` 의 모든 케이스를 통과시킨다. client 앱에 관리자 API 가 없음을 확인하는 케이스를 추가한다.
-- e2e(@playwright/test): `webServer` 로 빌드된 두 앱을 같은 `DATA_DIR` 로 띄운다. 현재 14개 스크립트(`admin-parity`, `browser`, `catalog`, `collision`, `floor-editor`, `floor-reading`, `home-admin`, `leave-guard`, `mobile-entry`, `model-thumbnails`, `workspace`, `capture`, `cloud`, `about`) 의 검증을 spec 으로 이관한다. `cloud` 는 `BLOB_READ_WRITE_TOKEN` 이 있을 때만 실행한다. `window.__editorWorld`, `window.__testReader` 는 빌드 환경변수 `NEXT_PUBLIC_TEST_HOOKS=1` 일 때 노출되는 `window.__otb = { studio, reader, scene }` 로 대체한다.
+- e2e(@playwright/test): `webServer` 로 빌드된 두 앱을 같은 `DATA_DIR` 로 띄운다. 현재 14개 스크립트(`admin-parity`, `browser`, `catalog`, `collision`, `floor-editor`, `floor-reading`, `home-admin`, `leave-guard`, `mobile-entry`, `model-thumbnails`, `workspace`, `capture`, `supabase`, `about`) 의 검증을 spec 으로 이관한다. `supabase` 는 `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY` 가 있을 때만 실행한다. `window.__editorWorld`, `window.__testReader` 는 빌드 환경변수 `NEXT_PUBLIC_TEST_HOOKS=1` 일 때 노출되는 `window.__otb = { studio, reader, scene }` 로 대체한다.
 - 시각 확인: 단계별로 `docs/screenshots` 의 기존 화면과 같은 구도로 스크린샷을 남겨 비교한다.
 - QA-UAT: 7단계에서 셀렉터를 갱신하고 `node tests/qa-uat/run-all.mjs` 를 재실행한다. Playwright MCP 방식은 유지한다.
 - 정적 검사: `tsc --noEmit`(모든 패키지·앱), `next lint`, `next build`.
@@ -277,7 +278,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 ## 15. 배포와 로컬 실행
 
 - Vercel 프로젝트 둘 유지. Root Directory `apps/client`, `apps/admin`. Framework Next.js. Install 은 저장소 루트에서 workspaces 로 실행. `.vercelignore` 유지, `api/index.js` 와 `vercel.json` rewrite 제거. `git.deploymentEnabled.main=false` 는 각 앱 `vercel.json` 에 유지.
-- 환경변수: 공통 `BLOB_READ_WRITE_TOKEN`, `BLOB_NAMESPACE`. admin `ADMIN_PASSWORD`(cloud 필수), `NEXT_PUBLIC_CLIENT_URL`(공개 화면 링크). `DEPLOYMENT_APP`, `VITE_CLIENT_URL` 은 제거.
+- 환경변수: 공통 `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`(서버 전용). admin `ADMIN_PASSWORD`(cloud 필수), `NEXT_PUBLIC_CLIENT_URL`(공개 화면 링크). `DEPLOYMENT_APP`, `VITE_CLIENT_URL` 은 제거.
 - 로컬: `npm run dev` 가 client 3000, admin 3001 을 동시에 띄운다. 두 프로세스가 같은 `data/` 를 읽고 쓴다. `npm run build` 가 두 앱을 빌드하고 `npm start` 가 둘을 띄운다. README 의 주소를 `http://localhost:3000/`, `http://localhost:3001/admin/` 로 갱신한다.
 - 서버 바인딩: 로컬 `next start -H 127.0.0.1` 로 현재의 로컬 전용 동작을 유지한다.
 
