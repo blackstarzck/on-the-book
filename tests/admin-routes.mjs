@@ -266,6 +266,55 @@ try {
   await expect(page).toHaveURL(at("/admin/models"));
   pass("The home preview reopens without saving, its frame keeps no history, and closing it never stalls later moves");
 
+  await page.locator('[data-tab="books"]').click();
+  await page.locator('[data-open-book="alice"]').click();
+  const readerEntries = await entries();
+  await page.locator("#preview-client").click();
+  await expect(page.locator(".inplace-reader")).toBeVisible();
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1", mode: "reader" }));
+  await page.locator(".reader-mode-bar select").selectOption("2");
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-3", mode: "reader" }));
+  expect(await entries()).toBe(readerEntries);
+  await page.locator("#exit-reader").click();
+  await expect(page.locator(".inplace-reader")).toHaveCount(0);
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1" }));
+  await page.locator("#preview-client").click();
+  await page.locator(".reader-mode-bar select").selectOption("2");
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-3", mode: "reader" }));
+  await page.reload();
+  await expect(page.locator(".inplace-reader")).toBeVisible();
+  await expect(page.locator(".reader-mode-bar select")).toHaveValue("2");
+  await page.locator("#exit-reader").click();
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-3" }));
+  await expect(page.locator('[data-chapter-row="alice-3"]')).toHaveClass(/active/);
+  await page.goto(at("/admin/books/alice", { chapter: "alice-1", mode: "reader", modal: "book" }));
+  await expect(page.locator(".inplace-reader")).toBeVisible();
+  await expect(page.locator("#book-form")).toHaveCount(0);
+  await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1", mode: "reader" }));
+  pass("Reader mode and its chapter live in the address and come back after a reload");
+
+  const tilesOpen = () => page.locator(".world-tiles details").evaluate((details) => details.open);
+  await page.locator("#exit-reader").click();
+  await page.locator(".world-tiles summary").click();
+  await expect.poll(tilesOpen).toBe(false);
+  await page.reload();
+  await expect(page.locator("#studio-world canvas")).toBeVisible();
+  expect(await tilesOpen()).toBe(false);
+  expect(await page.locator(".world-assets details").evaluate((details) => details.open)).toBe(true);
+  await page.locator("[data-chapter-drag]").first().press("Alt+ArrowDown");
+  await expect(page.locator("[data-chapter-row]").first()).toHaveAttribute("data-chapter-row", "alice-2");
+  expect(await tilesOpen()).toBe(false);
+  await page.locator("#undo").click();
+  await expect(page.locator("[data-chapter-row]").first()).toHaveAttribute("data-chapter-row", "alice-1");
+  await page.locator("#back-library").click();
+  await page.locator('[data-open-book="oz"]').click();
+  await expect(page.locator("#studio-world canvas")).toBeVisible();
+  expect(await tilesOpen()).toBe(false);
+  await page.locator(".world-tiles summary").click();
+  await expect.poll(tilesOpen).toBe(true);
+  await page.locator("#back-library").click();
+  pass("Editor panels stay folded through reloads, redraws and other books");
+
   expect(errors).toEqual([]);
 } finally {
   await browser.close();

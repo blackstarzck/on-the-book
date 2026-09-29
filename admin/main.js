@@ -31,7 +31,7 @@ let library,
 let disposeModelThumbnails=null;
 let workspace=null, inEditor=false, baseline=null, savedLibrary=null, leaveDialog=null, undoStack=[], redoStack=[];
 // Shelf filters and the editor's model search live here so redraws keep them; the address mirrors them (admin/route.js).
-let shelfQuery="", shelfStatus="", assetQuery="", shelfReturn={q:"",status:""}, applying=false, urlTimer=null, routeModal=null, backPending=null;
+let shelfQuery="", shelfStatus="", assetQuery="", readerChapterId=null, shelfReturn={q:"",status:""}, applying=false, urlTimer=null, routeModal=null, backPending=null;
 const app = document.querySelector("#app");
 const clientUrl = import.meta.env.VITE_CLIENT_URL || "/client/";
 const hasUnsavedChanges = () => savedLibrary && JSON.stringify(library) !== JSON.stringify(savedLibrary);
@@ -156,7 +156,7 @@ function holdActions(dialog) {
 // ---- The address (admin/route.js): the path names the page, the query what is open on it. ----
 function currentRoute() {
   const route = tab === "books" && inEditor && book() && chapter()
-    ? { view: "editor", bookId, chapterId, objectId: placementId || undefined, q: assetQuery || undefined }
+    ? { view: "editor", bookId, chapterId: readerChapterId || chapterId, objectId: placementId || undefined, reader: readerChapterId ? true : undefined, q: assetQuery || undefined }
     : tab === "books" ? { view: "books", q: shelfQuery || undefined, status: shelfStatus || undefined }
     : tab === "models" ? { view: "models", q: query || undefined } : { view: tab };
   if (routeModal) Object.assign(route, { modal: routeModal.modal, modalId: routeModal.modalId });
@@ -245,9 +245,11 @@ function applyRoute(route) {
   else placementId = null;
   if (route.view === "books") { shelfQuery = route.q ?? ""; shelfStatus = route.status ?? ""; }
   if (route.view === "models") query = route.q ?? "";
+  readerChapterId = null;
   applying = true;
   try {
     render();
+    if (route.reader) workspace?.openReader();
     if (route.modal) openRouteDialog(route);
   } finally { applying = false; }
   syncUrl();
@@ -277,7 +279,7 @@ function draw() {
   if(tab==='books' && inEditor && book() && chapter()) {
     world?.dispose();
     workspace=mountWorkspace(app,{book:book(),chapter:chapter(),models:library.models,selectedId:placementId,assetQuery,hooks:{
-      select:id=>{placementId=id;syncUrl();},change:mark,back:()=>requestLeaveEditor(),editBook:()=>editBook(),editChapter,addChapter,search:q=>{assetQuery=q;syncUrlSoon();},
+      select:id=>{placementId=id;syncUrl();},change:mark,back:()=>requestLeaveEditor(),editBook:()=>editBook(),editChapter,addChapter,search:q=>{assetQuery=q;syncUrlSoon();},reader:id=>{readerChapterId=id;syncUrl();},
       reorderChapters:ids=>{const chapters=book().chapters;if(ids.length!==chapters.length||new Set(ids).size!==chapters.length||ids.some(id=>!chapters.some(c=>c.id===id)))return;book().chapters=ids.map(id=>chapters.find(c=>c.id===id));mark();render();},
       preview:()=>previewClient(),
       addModel:()=>editModel(),editModel,save:()=>save(false),publish:()=>save(true),
