@@ -112,6 +112,44 @@ test("bookDetail escapes text and survives a chapter without placements", () => 
   assert.match(html, /장면 01 \/ 01/);
 });
 
+test("bookDetail puts the author and book intros between the journey and the source", () => {
+  const book = { ...alice, authorIntro: "첫 문단\n같은 문단의 둘째 줄\n\n  둘째 문단  ", bookIntro: "<b>책</b> 소개" };
+  const html = bookDetail({ book, library });
+  assert.match(html, /<section class="detail-section detail-intro" id="detail-author" aria-labelledby="detail-author-title"><div class="section-heading"><h2 id="detail-author-title">저자 소개<\/h2><\/div><p class="detail-intro-name">루이스 캐럴<\/p><div class="detail-prose"><p>첫 문단\n같은 문단의 둘째 줄<\/p><p>둘째 문단<\/p><\/div><\/section>/);
+  assert.match(html, /<section class="detail-section detail-intro" id="detail-book-intro" aria-labelledby="detail-book-intro-title"><div class="section-heading"><h2 id="detail-book-intro-title">책 소개<\/h2><\/div><div class="detail-prose"><p>&lt;b&gt;책&lt;\/b&gt; 소개<\/p><\/div><\/section>/);
+  const at = needle => html.indexOf(needle);
+  assert.ok(at('id="detail-journey"') < at('id="detail-author"'));
+  assert.ok(at('id="detail-author"') < at('id="detail-book-intro"'));
+  assert.ok(at('id="detail-book-intro"') < at('class="detail-source"'));
+});
+
+test("bookDetail leaves out an empty or missing intro and a missing author name", () => {
+  // Stored data is not re-parsed, so a book saved before the fields existed has neither of them.
+  const stored = structuredClone(alice);
+  delete stored.authorIntro;
+  delete stored.bookIntro;
+  assert.doesNotMatch(bookDetail({ book: stored, library }), /detail-intro/);
+  assert.doesNotMatch(bookDetail({ book: { ...alice, authorIntro: " \n\n ", bookIntro: "" }, library }), /detail-intro/);
+  const nameless = bookDetail({ book: { ...alice, author: "", authorIntro: "소개" }, library });
+  assert.match(nameless, /id="detail-author"/);
+  assert.doesNotMatch(nameless, /detail-intro-name/);
+  assert.doesNotMatch(nameless, /id="detail-book-intro"/);
+});
+
+test("the book schema keeps the intros, fills them in for older data and caps their length", () => {
+  assert.equal(alice.authorIntro, "");
+  assert.equal(alice.bookIntro, "");
+  const withIntro = (field, length) => {
+    const next = structuredClone(seed);
+    next.books[0][field] = "가".repeat(length);
+    return librarySchema.safeParse(next);
+  };
+  for (const field of ["authorIntro", "bookIntro"]) {
+    assert.equal(withIntro(field, 5000).data?.books[0][field].length, 5000);
+    assert.equal(withIntro(field, 5001).success, false);
+  }
+});
+
 test("scenePanel shows the scene, the first paragraph only and the placements with the main one first", () => {
   const html = scenePanel({ book: alice, chapter: alice.chapters[1], library });
   assert.match(html, /^<span class="scene-image image-placeholder" data-theme="night" role="img" aria-label="장면 이미지 준비 중"><span class="scene-number">02<\/span><\/span><span class="eyebrow">장면 02 \/ 06<\/span><h2 id="panel-scene-title">작아지는 문, 커지는 세계<\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 /);

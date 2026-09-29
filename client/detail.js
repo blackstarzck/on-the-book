@@ -1,5 +1,5 @@
-// Markup for the book detail page: the scrolling left column (hero, journey, source), the sticky scene
-// panel, the phone bar and the phone sheet. No CSS or image imports here: `node --test` loads this file;
+// Markup for the book detail page: the scrolling left column (hero, journey, author and book intros, source),
+// the sticky scene panel, the phone bar and the phone sheet. No CSS or image imports here: `node --test` loads this file;
 // main.js imports detail.css.
 import { esc, icon } from "../shared/ui.js";
 import { edition, bookCover } from "./book-meta.js";
@@ -40,6 +40,17 @@ const savedBadge = '<span class="journey-badge">마지막에 머문 장면</span
 const sourceNote = book =>
   `<section class="detail-source" aria-labelledby="detail-source-title"><h2 id="detail-source-title">원작 정보</h2><p class="source-note">${esc(book.rights)}<br><a href="${esc(book.source)}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a></p></section>`;
 
+// Blank lines split paragraphs. Stored data is not re-parsed, so a field added later may be missing.
+const paragraphsOf = text => String(text ?? "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+
+// A studio-written section under the journey (저자 소개, 책 소개). An empty field leaves the section out.
+const introSection = (id, title, text, name = "") => {
+  const paragraphs = paragraphsOf(text);
+  return paragraphs.length
+    ? `<section class="detail-section detail-intro" id="${id}" aria-labelledby="${id}-title"><div class="section-heading"><h2 id="${id}-title">${title}</h2></div>${name ? `<p class="detail-intro-name">${esc(name)}</p>` : ""}<div class="detail-prose">${paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}</div></section>`
+    : "";
+};
+
 // The single 3D entry button: it always names the scene it enters.
 const enterButton = (book, chapter) =>
   `<button class="primary-button detail-enter" data-enter="${esc(book.id)}" data-enter-chapter="${esc(chapter.id)}">이 장면부터 걷기 ${icon("arrow-up-right")}</button>`;
@@ -49,7 +60,7 @@ export function scenePanel({ book, chapter, library, progress = {}, preview = fa
   const index = indexOf(book, chapter);
   const previous = book.chapters[index - 1], next = book.chapters[index + 1];
   const saved = savedChapter(book, progress);
-  const paragraphs = chapter.body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const paragraphs = paragraphsOf(chapter.body);
   const main = mainPlacement(chapter);
   const figures = main ? [main, ...chapter.placements.filter(p => p !== main)] : [];
   const colorOf = placement => library.models.find(m => m.id === placement.modelId)?.color || "var(--accent)";
@@ -85,6 +96,8 @@ export function bookDetail({ book, library, progress = {}, preview = false, chap
     <div class="detail-main">
       <section class="detail-hero" aria-labelledby="detail-title"><span class="detail-cover">${bookCover(book)}</span><div class="detail-copy"><span class="eyebrow">${esc(edition(book).category)} · ${book.chapters.length}개의 장면 · ${book.year}</span><h1 id="detail-title" tabindex="-1">${esc(book.title)}</h1><p class="detail-meta">${esc(book.englishTitle)} · ${esc(book.author)}</p><p class="detail-description">${esc(book.description)}</p></div></section>
       <section class="detail-section" id="detail-journey" aria-labelledby="detail-journey-title"><div class="section-heading"><div><h2 id="detail-journey-title">이 책의 여정</h2><p><span class="journey-hint journey-hint--wide">장면을 고르면 오른쪽에서 그 장면을 먼저 볼 수 있어요.</span><span class="journey-hint journey-hint--narrow">장면을 고르면 그 장면을 먼저 볼 수 있어요.</span></p></div></div><ol class="journey-list">${rows}</ol></section>
+      ${introSection("detail-author", "저자 소개", book.authorIntro, book.author)}
+      ${introSection("detail-book-intro", "책 소개", book.bookIntro)}
       ${sourceNote(book)}
     </div>
     <aside class="scene-panel" aria-labelledby="panel-scene-title">${scenePanel({ book, chapter, library, progress, preview })}</aside>

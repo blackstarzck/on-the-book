@@ -36,6 +36,10 @@ try {
   await page.locator('#book-cover-file').setInputFiles(await png(400, 570, '#6b8f71'));
   await expect(page.locator('#book-cover-status')).toContainText('업로드 완료');
   await expect(page.locator('#book-cover-preview')).toBeVisible();
+  const authorIntro = '옥스퍼드의 수학 강사였어요.\n아이들에게 이야기를 들려주곤 했어요.\n\n본명은 찰스 럿위지 도지슨이에요.';
+  const bookIntro = '흰 토끼를 따라 굴에 떨어진 앨리스의 이야기예요.';
+  await page.getByLabel('저자 소개', { exact: true }).fill(authorIntro);
+  await page.getByLabel('책 소개', { exact: true }).fill(bookIntro);
   await category.fill('all');
   await page.locator('#book-form button[type="submit"]').click();
   await expect(page.locator('#book-form')).toBeVisible();
@@ -52,9 +56,10 @@ try {
   expect(alice.category).toBe('고전');
   expect(alice.cover).toMatch(/^\/uploads\/.+\.png$/);
   expect(alice.chapters[0].thumbnail).toMatch(/^\/uploads\/.+\.png$/);
+  expect([alice.authorIntro, alice.bookIntro]).toEqual([authorIntro, bookIntro]);
   await page.locator('#back-library').click();
   await expect(page.locator('.book-shelf')).toBeVisible();
-  pass('Cover, category (reserved names refused) and chapter thumbnail are edited and saved');
+  pass('Cover, category (reserved names refused), intros and chapter thumbnail are edited and saved');
 
   await page.locator('[data-book-drag="alice"]').focus();
   await page.keyboard.press('Alt+ArrowRight');
@@ -132,6 +137,19 @@ try {
   await expect(reader.locator('.scene-image.has-image img')).toHaveCount(1);
   await expect(reader.locator('.catalog-filters [data-category="고전"]')).toBeVisible();
   pass('Publishing brings the order, cover, thumbnail, category and slides to readers');
+
+  const detail = await context.newPage();
+  detail.on('pageerror', error => errors.push(error.message));
+  await detail.goto(`${server.url}/client/?book=alice`);
+  await expect(detail.locator('#detail-author h2')).toHaveText('저자 소개');
+  await expect(detail.locator('#detail-author .detail-intro-name')).toHaveText('루이스 캐럴');
+  await expect(detail.locator('#detail-author .detail-prose p')).toHaveCount(2);
+  // innerText follows the rendering, so the kept line break proves `white-space: pre-line`.
+  expect(await detail.locator('#detail-author .detail-prose p').first().evaluate(p => p.innerText)).toBe('옥스퍼드의 수학 강사였어요.\n아이들에게 이야기를 들려주곤 했어요.');
+  await expect(detail.locator('#detail-book-intro .detail-prose p')).toHaveText([bookIntro]);
+  expect(await detail.locator('#detail-journey, .detail-intro, .detail-source').evaluateAll(sections => sections.map(s => s.id || s.className))).toEqual(['detail-journey', 'detail-author', 'detail-book-intro', 'detail-source']);
+  await detail.close();
+  pass('The published intros follow the journey on the book detail, author first');
 
   await page.locator('[data-slide]').nth(1).locator('[data-slide-remove]').click();
   await page.locator('#confirm-action').click();

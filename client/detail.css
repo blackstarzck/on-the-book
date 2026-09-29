@@ -13,6 +13,11 @@
 .detail-description { max-width: 560px; margin: 0; font-size: 17px; line-height: 1.7; color: #3f4a44; word-break: keep-all; }
 .detail-section { padding-top: 36px; margin-top: 34px; border-top: 1px solid #edf0ec; }
 .detail-section .section-heading { margin-bottom: 16px; }
+/* 저자 소개·책 소개: studio prose. A single line break inside a paragraph is kept (pre-line). */
+.detail-intro-name { margin: 0 0 10px; font-size: 17px; font-weight: 650; letter-spacing: -.025em; color: #26312b; }
+.detail-prose { max-width: 680px; }
+.detail-prose p { margin: 0 0 14px; font-size: 16px; line-height: 1.8; color: #3f4a44; white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
+.detail-prose p:last-child { margin-bottom: 0; }
 .journey-hint--narrow { display: none; }
 .journey-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #e7ebe7; }
 .journey-row { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px 10px; border-bottom: 1px solid #e7ebe7; border-left: 3px solid transparent; }
@@ -100,6 +105,8 @@
   .detail-cta { margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
   .detail-section { padding-top: 30px; margin-top: 28px; }
   .detail-section .section-heading h2 { font-size: 21px; }
+  .detail-intro-name { font-size: 16px; }
+  .detail-prose p { font-size: 15px; line-height: 1.75; }
   .journey-row { gap: 12px; min-height: 58px; }
   .journey-model { display: none; }
 }

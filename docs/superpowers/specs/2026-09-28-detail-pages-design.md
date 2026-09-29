@@ -7,6 +7,7 @@
 - 처음에는 작품 상세(`?book=`)와 장면 상세(`?book=&scene=`) 두 페이지(두 뎁스)로 설계·구현했다(PR #3, 커밋 c60f7b6 까지). 같은 날 사용자가 밀리의서재 도서 상세처럼 **한 페이지 두 열**로 합치기로 결정했다. 왼쪽 열은 스크롤되는 작품 정보와 장면 목록, 오른쪽은 스크롤을 따라다니는 장면 패널이다.
 - 이 문서는 그 결정 이후의 최종 설계다. 두 뎁스 구현에서 바뀌는 점은 18절에 모았고, 구현 계획은 그 차이만 다룬다.
 - 그보다 앞서 정한 것(카드가 링크가 되는 홈 변경, 주소 규칙의 골격, `book-meta.js`·`detail.js` 분리, 표지·썸네일 표시)은 그대로 유효하다.
+- 2026-09-29 사용자 요청으로 두 가지를 더했다. 장면 패널과 시트의 스크롤바를 숨겼고(5절), '이 책의 여정' 다음에 저자 소개·책 소개 섹션과 이를 입력하는 관리자 칸을 넣었다(19절).
 
 ## 1. 배경과 목표
 
@@ -25,13 +26,13 @@
 ## 2. 범위와 비범위
 
 범위
-- 작품 상세 한 화면(`?book=`, `?book=&scene=`). 두 열 뼈대, 왼쪽 열(히어로·여정·원작 정보), 오른쪽 장면 패널, 850px 이하의 장면 시트와 하단 고정 CTA.
+- 작품 상세 한 화면(`?book=`, `?book=&scene=`). 두 열 뼈대, 왼쪽 열(히어로·여정·저자 소개·책 소개·원작 정보), 오른쪽 장면 패널, 850px 이하의 장면 시트와 하단 고정 CTA.
 - 홈 카드 연결(도서 카드, 장면 카드, 추천 히어로 카드, "읽던 이야기" 카드). 직행 경로는 남기지 않는다.
 - 주소 해석, 브라우저 히스토리, 커튼 전환, 초점 이동, 책장 위치 복원, 장면 선택의 주소 반영.
 - 검사(`tests/detail.test.js`, `tests/catalog.mjs`, `tests/mobile-entry.mjs`, `tests/home-admin.mjs` 의 상세 부분, `tests/capture.mjs`), README, `docs/ADMIN-GUIDE.md`, `client/index.html` 설명 문구, 전환 스펙 10절.
 
 비범위
-- 서버, `shared/schema.js`, 관리자 화면(15절의 도움말 문구 한 줄 제외), `client/vercel.json`, `server/index.js` 변경. 상세 페이지가 쓰는 정보는 모두 `/api/library`(초안 미리보기는 `/api/studio`) 응답에 이미 있다.
+- 서버, `client/vercel.json`, `server/index.js` 변경. `shared/schema.js` 와 관리자 화면은 19절의 소개 필드 두 개와 15절의 도움말 문구 한 줄만 바꾼다. 상세 페이지가 쓰는 정보는 모두 `/api/library`(초안 미리보기는 `/api/studio`) 응답에 들어 있다.
 - 라이브 3D 미리보기(`World` 의 `hero` 모드). 카드마다 캔버스를 띄우면 진입이 느려지고 CTA 의 "본격 진입" 의미가 약해진다.
 - 3D 월드 안의 "작품 소개" 모달과 "이야기의 지도" 모달의 내용·동작 변경. 모달은 탐험을 끊지 않기 위해 그대로 둔다.
 - 새 저장 데이터. 기존 `otb-reader` 의 `{ [bookId]: { chapter } }` 만 읽는다. 패널의 선택은 주소(`&scene=`)에만 반영하고 저장하지 않는다.
@@ -94,6 +95,8 @@ main.detail-page.store-content#main-content[data-view="book"]
   div.detail-main                 왼쪽 열. 페이지와 함께 스크롤
     section.detail-hero           표지·분류·제목·저자·소개
     section.detail-section#detail-journey   이 책의 여정(장면 목록)
+    section.detail-section.detail-intro#detail-author       저자 소개(비어 있으면 없음, 19절)
+    section.detail-section.detail-intro#detail-book-intro   책 소개(비어 있으면 없음, 19절)
     section.detail-source         원작 정보
   aside.scene-panel[aria-labelledby="panel-scene-title"]   오른쪽 열. sticky
     (7절의 패널 내용)
@@ -104,7 +107,7 @@ main.detail-page.store-content#main-content[data-view="book"]
 - 1101px 이상: `grid-template-columns: minmax(0, 1fr) 400px`, 열 간격 48px. 851~1100px: 오른쪽 열 340px, 간격 32px. 850px 이하: 한 열. `.store-content` 로 홈과 같은 1280px 폭과 좌우 여백을 쓴다.
 - 오른쪽 `aside.scene-panel` 은 `position: sticky; top: 24px; align-self: start; max-height: calc(100dvh - 48px); overflow-y: auto` 다. 패널이 화면보다 길면 패널 안에서만 스크롤되고, 스크롤바는 보이지 않게 숨긴다(`scrollbar-width: none`, 사파리용 `::-webkit-scrollbar`). 흰 배경, 1px 경계선(`#e7ebe7`), 모서리 14px, 안쪽 여백 20px.
 - 850px 이하에서는 `aside.scene-panel` 을 `display: none` 으로 숨긴다. 같은 내용은 여정 행을 눌렀을 때 장면 시트(7절)로 보인다. 하단 고정 바 `.detail-cta` 는 851px 이상에서 `display: none` 이다. 그래서 어떤 폭에서도 보이는 CTA 는 하나이고, 숨긴 쪽은 접근성 트리에서도 빠진다.
-- 등장 순서: `transitions.js` 의 `reveal()` 에서 `.detail-page` 그룹은 `[".site-header", ".detail-hero", "#detail-journey, .detail-source", ".scene-panel, .detail-cta", ".site-footer"]` 다.
+- 등장 순서: `transitions.js` 의 `reveal()` 에서 `.detail-page` 그룹은 `[".site-header", ".detail-hero", "#detail-journey, .detail-intro, .detail-source", ".scene-panel, .detail-cta", ".site-footer"]` 다.
 - 전환 후 초점은 `h1#detail-title`(책 제목, `tabindex="-1"`). `transitionPage()` 의 기본 초점 대상 순서 `#library-title` → `#detail-title` → `#world canvas, #fallback-read` 는 기존과 같다.
 
 ## 6. 왼쪽 열
@@ -122,6 +125,9 @@ main.detail-page.store-content#main-content[data-view="book"]
 - 선택된 행은 `aria-current="true"` 이고 연한 배경(`#f0f4ef`)과 왼쪽 3px 강조선(`--accent`)을 갖는다. 나머지는 `aria-current="false"`.
 - 행은 진짜 링크다. 수정키 클릭·가운데 클릭은 브라우저에 맡겨 `?book=&scene=` 을 새 탭으로 열 수 있고, 일반 클릭은 `preventDefault()` 뒤 장면 선택(4절)이다.
 - 대표 모델은 `chapter.mainPlacementId` 가 가리키는 배치의 `title`, 없으면 첫 배치, 배치가 없으면 생략. 테마 칩 색은 meadow `#cad7aa`, night `#929aaf`, tea `#d7c9b6`, rose `#d8c6b7`, gold `#dcca98`(3D 월드 바닥색).
+
+저자 소개·책 소개 `.detail-section.detail-intro`
+- 여정 다음, 원작 정보 앞에 저자 소개, 책 소개 순서로 놓는다. 비어 있으면 섹션을 뺀다. 자세한 규칙은 19절.
 
 원작 정보 `.detail-source`
 - `h2` "원작 정보", `p.source-note` 에 `book.rights`, 줄 바꿈, `<a href="{book.source}" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗</a>`.
@@ -172,18 +178,21 @@ client/
   detail.css       두 열 격자, sticky 패널, 선택 행, 장면 시트, 하단 바                            (수정)
   transitions.js   .detail-page 등장 그룹                                                        (수정)
   landing.js, landing.css, book-meta.js, index.html                                              (변경 없음)
+shared/
+  schema.js        bookSchema 의 authorIntro·bookIntro(19절)                                     (수정)
 tests/
-  detail.test.js   bookDetail·scenePanel·sceneBar 단위 검사                                       (수정)
+  detail.test.js   bookDetail·scenePanel·sceneBar 단위 검사, 소개 섹션과 스키마(19절)              (수정)
   catalog.mjs      카드 → 상세 → 패널 → CTA → 월드, 장면 선택, 주소, 시트                          (수정)
   mobile-entry.mjs 표지 탭 → 상세 → 하단 바 탭 → 월드                                             (수정)
-  home-admin.mjs, capture.mjs                                                                    (선택자 확인)
+  home-admin.mjs   소개 칸 입력 → 저장 → 공개 → 작품 상세의 섹션 순서(19절)                        (수정)
+  capture.mjs                                                                                    (선택자 확인)
 docs/
   screenshots/detail-book-desktop.png(기본 장면), detail-book-mobile.png(하단 바),
               detail-scene-desktop.png(?scene=alice-2 선택), detail-scene-mobile.png(장면 시트 열림) (갱신)
   preview/detail.png                                                                             (갱신)
   ADMIN-GUIDE.md, README.md, superpowers/specs/2026-09-11-react-next-migration-design.md          (수정)
 admin/
-  main.js          장면 썸네일 도움말 문구 한 줄                                                    (수정)
+  main.js          장면 썸네일 도움말 문구 한 줄, 책 정보의 저자 소개·책 소개 칸(19절)               (수정)
 ```
 
 반응형 분기점은 `landing.css` 와 같은 1100, 850, 600, 370px 이다.
@@ -304,4 +313,36 @@ admin/
 | 휴대폰: 한 열 페이지 + 하단 고정 CTA | 한 열 + 장면 시트 + 하단 고정 바(장면 이름 포함) |
 | `.detail-page[data-view="scene"]` 선택자를 쓰는 검사 | `data-view="book"` 과 패널·시트 선택자로 교체 |
 
-바뀌지 않는 것: 홈 카드 링크와 `landing.js`, `book-meta.js`, `detailUrl()`, `resolveView()` 의 우선순위 골격, 커튼 전환 체계, 표지·썸네일 표시 규칙, 서버·스키마·관리자.
+바뀌지 않는 것: 홈 카드 링크와 `landing.js`, `book-meta.js`, `detailUrl()`, `resolveView()` 의 우선순위 골격, 커튼 전환 체계, 표지·썸네일 표시 규칙, 서버·스키마·관리자. 스키마와 관리자는 그 뒤 19절에서 소개 필드 두 개가 늘었다.
+
+## 19. 저자 소개·책 소개(2026-09-29 추가)
+
+사용자 요청으로 '이 책의 여정'을 한 섹션으로 두고, 그다음 섹션에 저자 소개와 책 소개를 넣는다. 두 글은 관리자에서 입력한다.
+
+데이터
+- `bookSchema` 에 `authorIntro`(저자 소개)와 `bookIntro`(책 소개)를 더한다. 둘 다 `z.string().max(5000).default("")` 라서 예전 데이터와 시드도 그대로 통과한다.
+- 저장된 공개본은 다시 파싱하지 않으므로(`server/publication.js`) 두 필드가 없는 책이 올 수 있다. 화면은 없는 값을 빈 글로 다룬다.
+- 서버 코드는 바꾸지 않는다. `PUT /api/studio` 가 스키마로 파싱해 두 필드를 보존하고, 공개본은 책 객체를 통째로 싣는다.
+
+작품 상세
+- 왼쪽 열 순서는 히어로 → 이 책의 여정 → 저자 소개 → 책 소개 → 원작 정보다. 사용자가 말한 순서대로 저자 소개가 먼저다.
+- 마크업: `<section class="detail-section detail-intro" id="detail-author" aria-labelledby="detail-author-title">` 안에 `div.section-heading > h2#detail-author-title` "저자 소개", 저자 이름이 있으면 `p.detail-intro-name`, 그리고 `div.detail-prose` 의 문단 `p` 들. 책 소개는 `id="detail-book-intro"`, 제목 "책 소개"이고 이름 줄이 없다.
+- 빈 줄로 문단을 나눈다(장면 본문과 같은 `paragraphsOf()`). 문단 안의 한 줄 바꿈은 `white-space: pre-line` 으로 화면에 남긴다. 비었거나 공백뿐인 필드는 섹션을 통째로 뺀다. 저자 이름이 비어 있으면 이름 줄만 뺀다.
+- 글은 모두 `esc()` 로 이스케이프한다. HTML 은 쓸 수 없다.
+- 모양: 섹션 제목은 여정과 같은 `.section-heading`. 본문 16px, 줄 간격 1.8(600px 이하 15px, 1.75), 색 `#3f4a44`, 최대 폭 680px. 이름 줄 17px, 굵기 650(600px 이하 16px).
+- 등장 효과에서 `.detail-intro` 는 여정·원작 정보와 같은 단계다(5절).
+
+관리자
+- 책 정보 창의 '소개 문장' 아래에 '저자 소개'(5줄)와 '책 소개'(6줄) `textarea` 를 둔다. 둘 다 `maxlength="5000"` 이고 새 책은 빈 값으로 시작한다.
+- 도움말: "소개 문장은 작품 상세 맨 위에 보이는 짧은 글이고, 저자 소개와 책 소개는 ‘이 책의 여정’ 아래에 차례로 보여요. 빈 줄로 문단을 나누고, 비워 둔 칸의 섹션은 나오지 않아요."
+- 두 칸은 공개 조건이 아니다. 공개에 필요한 것은 기존대로 저자와 권리 정보다.
+
+검사
+- `tests/detail.test.js`: 섹션 마크업과 순서(여정 < 저자 소개 < 책 소개 < 원작 정보), 문단 나눔과 줄 바꿈 보존, 이스케이프, 비었거나 없는 필드의 섹션 생략, 이름 없는 저자 소개, 스키마 기본값과 5000자 제한.
+- `tests/home-admin.mjs`: 책 정보 창에서 두 칸을 채워 저장하면 초안에 남는다. 공개 뒤 `?book=alice` 에서 `#detail-author`·`#detail-book-intro` 가 여정 다음, 원작 정보 앞에 있고, 문단 안 줄 바꿈이 화면에 남는다(`innerText`).
+
+문서
+- README 의 작품 상세 문장, `docs/ADMIN-GUIDE.md` 의 도서 정보 문장, `docs/PRD.md` A-01 에 두 칸을 더한다.
+
+저장소 전환과의 관계
+- Supabase 저장소 브랜치(`claude/supabase-storage`)의 `server/rows.js` 는 책 필드를 표의 열 단위로 옮긴다. 그 브랜치와 합칠 때 `books` 표에 두 열(`author_intro`, `book_intro`)을 더하는 이전 SQL 과 `rows.js` 대응표 두 줄이 필요하다. 빠뜨리면 저장할 때 두 필드가 조용히 사라진다.
