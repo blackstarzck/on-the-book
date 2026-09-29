@@ -22,7 +22,8 @@ let library,
   ambient,
   saveTimer,
   disposeView;
-const catalogState = { query: "", category: "all", sort: "default", scroll: 0, selected: null };
+// `sceneBook` is the book picked in the scene previews (null: the first book on the shelf).
+const catalogState = { query: "", category: "all", sort: "default", scroll: 0, selected: null, sceneBook: null };
 const draftPreview = new URLSearchParams(location.search).get("preview") === "draft";
 // The draft preview holds unpublished books too; its bookshelf shows what publishing would show.
 const shelf = () => draftPreview ? { ...library, books: library.books.filter((b) => b.published) } : library;
