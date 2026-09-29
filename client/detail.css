@@ -42,9 +42,6 @@
 .theme-chip[data-theme="tea"], .scene-image[data-theme="tea"] { background: #d7c9b6; }
 .theme-chip[data-theme="rose"], .scene-image[data-theme="rose"] { background: #d8c6b7; }
 .theme-chip[data-theme="gold"], .scene-image[data-theme="gold"] { background: #dcca98; }
-.detail-source { padding-top: 34px; margin-top: 34px; }
-.detail-source h2 { margin: 0 0 10px; font-size: 15px; color: #4f5f56; }
-.detail-source .source-note { padding: 0; border: 0; font-size: 12px !important; line-height: 1.8; color: #7f8982; }
 /* The scene panel is fixed at the screen's height, 24px clear above and below, and does not move while the page
    scrolls. A taller panel scrolls inside, with no visible scrollbar. Its right edge meets the .store-content box
    (1280px column, 40px gutters above 850px). z-index 4 lifts it over the header row (3); toasts and the curtain
@@ -72,13 +69,12 @@
 .figure-copy strong { font-size: 14px; font-weight: 650; }
 .figure-copy .journey-badge { align-self: flex-start; }
 .figure-story { font-size: 12px; line-height: 1.65; color: #6b776f; }
-.panel-section .reading-text { margin: 0; font-size: 14px; }
-.detail-note { margin: 10px 0 0; font-size: 12px; }
-.neighbor-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #edf0ec; font-size: 13px; }
-.neighbor-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #3f5a49; }
-.neighbor-link:hover { color: var(--accent); text-decoration: none; }
+/* Previous and next: two buttons of the same width right under the CTA. A missing side stays as a dimmed slot. */
+.neighbor-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.neighbor-link { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 12px; border: 1px solid #dfe5de; border-radius: 5px; background: #fff; color: #3f5a49; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.neighbor-link:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.neighbor-link.is-disabled { border-color: #edf0ec; background: #f7f9f6; color: #b2bbb4; }
 .neighbor-link svg { width: 15px; height: 15px; }
-.neighbor-nav > :last-child { text-align: right; }
 .detail-enter { gap: 14px; padding: 14px 20px; font-size: 14px; font-weight: 600; }
 .detail-enter svg { width: 17px; height: 17px; }
 /* The phone bar exists in the markup at every width but only shows in the one-column layout. */
@@ -101,7 +97,6 @@
   .detail-cta { display: flex; align-items: center; justify-content: space-between; gap: 12px; order: 99; position: sticky; bottom: 0; z-index: 5; margin: 0 -24px; padding: 10px 24px calc(10px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid var(--line); }
   .detail-cta-scene { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #4f5f56; }
   .detail-cta .primary-button { flex: none; }
-  .detail-source { padding-bottom: 8px; }
 }
 @media (max-width: 600px) {
   .detail-hero { grid-template-columns: 112px minmax(0, 1fr); gap: 18px; align-items: start; }

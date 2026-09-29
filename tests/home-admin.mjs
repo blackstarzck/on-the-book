@@ -147,7 +147,10 @@ try {
   // innerText follows the rendering, so the kept line break proves `white-space: pre-line`.
   expect(await detail.locator('#detail-author .detail-prose p').first().evaluate(p => p.innerText)).toBe('옥스퍼드의 수학 강사였어요.\n아이들에게 이야기를 들려주곤 했어요.');
   await expect(detail.locator('#detail-book-intro .detail-prose p')).toHaveText([bookIntro]);
-  expect(await detail.locator('#detail-journey, .detail-intro, .detail-source').evaluateAll(sections => sections.map(s => s.id || s.className))).toEqual(['detail-journey', 'detail-author', 'detail-book-intro', 'detail-source']);
+  expect(await detail.locator('#detail-journey, .detail-intro').evaluateAll(sections => sections.map(s => s.id))).toEqual(['detail-journey', 'detail-author', 'detail-book-intro']);
+  // 책 소개 closes the left column: the book detail no longer shows the 원작 정보 section.
+  await expect(detail.locator('.detail-main > :last-child')).toHaveId('detail-book-intro');
+  await expect(detail.locator('.detail-source')).toHaveCount(0);
   await expect(detail.locator('.detail-intro-empty')).toHaveCount(0);
   // Oz was published with both intros left empty.
   await detail.goto(`${server.url}/client/?book=oz`);

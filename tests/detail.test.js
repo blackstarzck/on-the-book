@@ -67,8 +67,8 @@ test("bookDetail opens the panel on the first scene when nothing is saved", () =
   assert.equal(count(html, 'data-enter-chapter="alice-1"'), 2);
   assert.match(html, /<div class="detail-cta"><small class="detail-cta-scene">01 · 흰 토끼를 따라서<\/small><button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-1">이 장면부터 걷기 /);
   assert.match(html, /<p class="reader-sr-only" id="scene-status" role="status"><\/p>/);
-  assert.match(html, /<h2 id="detail-source-title">원작 정보<\/h2>/);
-  assert.match(html, /href="https:\/\/www\.gutenberg\.org\/ebooks\/11" target="_blank" rel="noopener noreferrer">원작 정보 보기 ↗/);
+  // The left column ends with the intros; the source and rights stay in the 3D world's 작품 소개 window.
+  assert.doesNotMatch(html, /detail-source|원작 정보|gutenberg/);
   assert.doesNotMatch(html, /마지막에 머문 장면/);
 });
 
@@ -112,7 +112,7 @@ test("bookDetail escapes text and survives a chapter without placements", () => 
   assert.match(html, /장면 01 \/ 01/);
 });
 
-test("bookDetail puts the author and book intros between the journey and the source", () => {
+test("bookDetail puts the author and book intros after the journey, closing the left column", () => {
   const book = { ...alice, authorIntro: "첫 문단\n같은 문단의 둘째 줄\n\n  둘째 문단  ", bookIntro: "<b>책</b> 소개" };
   const html = bookDetail({ book, library });
   assert.match(html, /<section class="detail-section detail-intro" id="detail-author" aria-labelledby="detail-author-title"><div class="section-heading"><h2 id="detail-author-title">저자 소개<\/h2><\/div><p class="detail-intro-name">루이스 캐럴<\/p><div class="detail-prose"><p>첫 문단\n같은 문단의 둘째 줄<\/p><p>둘째 문단<\/p><\/div><\/section>/);
@@ -120,7 +120,7 @@ test("bookDetail puts the author and book intros between the journey and the sou
   const at = needle => html.indexOf(needle);
   assert.ok(at('id="detail-journey"') < at('id="detail-author"'));
   assert.ok(at('id="detail-author"') < at('id="detail-book-intro"'));
-  assert.ok(at('id="detail-book-intro"') < at('class="detail-source"'));
+  assert.match(html, /<p>&lt;b&gt;책&lt;\/b&gt; 소개<\/p><\/div><\/section>\s*<\/div>\s*<aside class="scene-panel"/);
   assert.doesNotMatch(html, /detail-intro-empty|준비 중이에요/);
 });
 
@@ -155,19 +155,20 @@ test("the book schema keeps the intros, fills them in for older data and caps th
   }
 });
 
-test("scenePanel shows the scene, the first paragraph only and the placements with the main one first", () => {
+test("scenePanel shows the scene, the neighbour buttons under the CTA and the placements with the main one first", () => {
   const html = scenePanel({ book: alice, chapter: alice.chapters[1], library });
   assert.match(html, /^<span class="scene-image image-placeholder" data-theme="night" role="img" aria-label="장면 이미지 준비 중"><span class="scene-number">02<\/span><\/span><span class="eyebrow">장면 02 \/ 06<\/span><h2 id="panel-scene-title">작아지는 문, 커지는 세계<\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 /);
+  // Previous and next come straight after the CTA; the visible words stay the start of each accessible name.
+  assert.match(html, /이 장면부터 걷기 <i data-lucide="arrow-up-right" aria-hidden="true"><\/i><\/button><nav class="neighbor-nav" aria-label="이어지는 장면"><a class="neighbor-link" href="\?book=alice&amp;scene=alice-1" data-scene="alice-1" aria-label="이전 장면: 01 흰 토끼를 따라서"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 이전 장면<\/a><a class="neighbor-link" href="\?book=alice&amp;scene=alice-3" data-scene="alice-3" aria-label="다음 장면: 03 버섯 숲의 수수께끼">다음 장면 <i data-lucide="arrow-right" aria-hidden="true"><\/i><\/a><\/nav><section class="panel-section" id="panel-figures"/);
+  assert.equal(count(html, 'class="neighbor-link"'), 2);
   assert.match(html, /<h3 id="panel-figures-title">이 장면에서 만나는 것들<\/h3><p class="panel-hint">가까이 다가가면 움직여요\.<\/p>/);
   assert.equal(count(html, 'class="figure-chip"'), 3);
   assert.match(html, /<strong>정원으로 가는 열쇠<\/strong><span class="journey-badge">장면의 중심<\/span><span class="figure-story">아주 작은 문 너머에 햇살 가득한 정원이 기다립니다\.<\/span>/);
   assert.equal(count(html, '<span class="journey-badge">장면의 중심</span>'), 1);
   assert.match(html, /class="figure-chip" style="background:#d4aa56"/);
-  assert.match(html, /<h3 id="panel-preview-title">미리 읽기<\/h3><div class="reading-text"><p>굴 아래에는 문이 가득한 긴 복도가 있었습니다\./);
-  assert.doesNotMatch(html, /작은 병과 케이크를 만난 앨리스/);
-  assert.match(html, /<p class="muted detail-note">이어지는 글은 3D 안에서 장면의 중심 모델에 다가가면 바닥 글귀로 읽을 수 있어요\.<\/p>/);
-  assert.equal(count(html, 'class="neighbor-link"'), 2);
-  assert.match(html, /<nav class="neighbor-nav" aria-label="이어지는 장면"><a class="neighbor-link" href="\?book=alice&amp;scene=alice-1" data-scene="alice-1"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 01 흰 토끼를 따라서<\/a><a class="neighbor-link" href="\?book=alice&amp;scene=alice-3" data-scene="alice-3">03 버섯 숲의 수수께끼 <i data-lucide="arrow-right" aria-hidden="true"><\/i><\/a><\/nav>$/);
+  // The panel ends with the placements: no preview reading, no story text, no floor-reading note.
+  assert.match(html, /<\/ul><\/section>$/);
+  assert.doesNotMatch(html, /미리 읽기|reading-text|detail-note|바닥 글귀|panel-preview|굴 아래에는/);
   assert.doesNotMatch(html, /<main|detail-crumbs|neighbor-all|data-scene-book|마지막에 머문 장면|<img/);
 });
 
@@ -178,7 +179,6 @@ test("scenePanel marks the saved scene and keeps its ids unique with a prefix", 
   const sheet = scenePanel({ book: alice, chapter: alice.chapters[1], library, prefix: "sheet" });
   assert.match(sheet, /<h2 id="sheet-scene-title">/);
   assert.match(sheet, /id="sheet-figures" aria-labelledby="sheet-figures-title"/);
-  assert.match(sheet, /id="sheet-preview" aria-labelledby="sheet-preview-title"/);
   assert.doesNotMatch(sheet, /id="panel-|aria-labelledby="panel-/);
 });
 
@@ -194,29 +194,23 @@ test("scenePanel shows the studio thumbnail over the theme tint when one is regi
   assert.doesNotMatch(spiky, /aria-label="a"<b>/);
 });
 
-test("scenePanel drops the missing neighbour and the floor-reading note when the floor is off", () => {
+test("scenePanel keeps a dimmed slot for a missing neighbour so both buttons stay the same width", () => {
   const first = scenePanel({ book: alice, chapter: alice.chapters[0], library });
   assert.equal(count(first, 'class="neighbor-link"'), 1);
-  assert.match(first, /<nav class="neighbor-nav" aria-label="이어지는 장면"><span><\/span><a class="neighbor-link" href="\?book=alice&amp;scene=alice-2" data-scene="alice-2">02 작아지는 문, 커지는 세계/);
+  assert.match(first, /<nav class="neighbor-nav" aria-label="이어지는 장면"><span class="neighbor-link is-disabled" aria-hidden="true"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 이전 장면<\/span><a class="neighbor-link" href="\?book=alice&amp;scene=alice-2" data-scene="alice-2" aria-label="다음 장면: 02 작아지는 문, 커지는 세계">다음 장면 /);
   assert.match(first, /장면 01 \/ 06/);
   const last = scenePanel({ book: alice, chapter: alice.chapters[5], library });
   assert.equal(count(last, 'class="neighbor-link"'), 1);
-  assert.match(last, /data-scene="alice-5">.*<\/a><span><\/span><\/nav>$/);
-  const silent = scenePanel({ book: alice, chapter: { ...alice.chapters[1], floorEnabled: false }, library });
-  assert.match(silent, /굴 아래에는 문이 가득한/);
-  assert.doesNotMatch(silent, /바닥 글귀로 읽을 수 있어요/);
+  assert.match(last, /data-scene="alice-5" aria-label="이전 장면: 05 장미 정원의 여왕"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 이전 장면<\/a><span class="neighbor-link is-disabled" aria-hidden="true">다음 장면 <i data-lucide="arrow-right" aria-hidden="true"><\/i><\/span><\/nav>/);
 });
 
 test("scenePanel omits the sections that have nothing to show and escapes the placement colour", () => {
   const bare = { ...alice.chapters[2], body: "", placements: [], mainPlacementId: null };
   const html = scenePanel({ book: alice, chapter: bare, library });
-  assert.doesNotMatch(html, /id="panel-preview"|id="panel-figures"/);
+  assert.doesNotMatch(html, /id="panel-figures"/);
   assert.match(html, /class="neighbor-nav"/);
   assert.match(html, /data-scene="alice-2"/);
   assert.match(html, /data-scene="alice-4"/);
-  const single = scenePanel({ book: alice, chapter: { ...alice.chapters[2], body: "한 문단만 있어요." }, library });
-  assert.match(single, /<div class="reading-text"><p>한 문단만 있어요\.<\/p><\/div>/);
-  assert.doesNotMatch(single, /바닥 글귀로 읽을 수 있어요/);
   const unknownModel = scenePanel({ book: alice, chapter: { ...alice.chapters[2], placements: [{ ...alice.chapters[2].placements[0], modelId: "missing\">" }] }, library });
   assert.match(unknownModel, /style="background:var\(--accent\)"/);
   assert.doesNotMatch(unknownModel, /missing">/);

@@ -198,11 +198,21 @@ try {
   await expect(page.locator('#detail-title')).toBeFocused();
   await expect(page.locator('.journey-row[aria-current="true"]')).toHaveAttribute('data-scene', 'alice-3');
   await expect(page.locator('.scene-panel #panel-scene-title')).toHaveText('버섯 숲의 수수께끼');
-  await expect(page.locator('.scene-panel #panel-preview .reading-text p')).toHaveCount(1);
+  // The panel shows no story text; previous and next sit right under the CTA as two buttons of the same width.
+  await expect(page.locator('.scene-panel .reading-text, .scene-panel .detail-note, #panel-preview')).toHaveCount(0);
   await expect(page.locator('.scene-panel .figure-list li')).toHaveCount(3);
   await expect(page.locator('.scene-panel .figure-list li').first()).toContainText('장면의 중심');
-  await expect(page.locator('.scene-panel .neighbor-link').first()).toContainText('02');
-  await expect(page.locator('.scene-panel .neighbor-link').last()).toContainText('04');
+  await expect(page.locator('.scene-panel .neighbor-link').first()).toHaveAttribute('data-scene', 'alice-2');
+  await expect(page.locator('.scene-panel .neighbor-link').last()).toHaveAttribute('data-scene', 'alice-4');
+  await expect(page.locator('.scene-panel .neighbor-link')).toHaveText(['이전 장면', '다음 장면']);
+  const buttons = await page.locator('.scene-panel').evaluate(panel => {
+    const cta = panel.querySelector('.detail-enter').getBoundingClientRect();
+    const [previous, next] = [...panel.querySelectorAll('.neighbor-nav > .neighbor-link')].map(link => link.getBoundingClientRect());
+    return { gap: Math.round(previous.top - cta.bottom), row: Math.round(next.top - previous.top), widths: Math.round(previous.width - next.width), span: Math.round(next.right - previous.left - cta.width) };
+  });
+  expect(buttons.gap).toBeGreaterThanOrEqual(0);
+  expect(buttons.gap).toBeLessThanOrEqual(20);
+  expect(buttons).toMatchObject({ row: 0, widths: 0, span: 0 });
   await expect(page.locator('.detail-page img')).toHaveCount(0);
   await page.locator('.scene-panel .detail-enter').click();
   await expect(page.locator('#map-button')).toContainText('03');
