@@ -1,4 +1,5 @@
 import { shelfHTML, bindShelfOrder, mountWorkspace, thumbnails } from "./workspace.js";
+import { hasObject, parseRoute, resolveRoute, routeHref } from "./route.js";
 
 import { reactionSize } from "../shared/experience.js";
 import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
@@ -29,13 +30,17 @@ let library,
   query = "";
 let disposeModelThumbnails=null;
 let workspace=null, inEditor=false, baseline=null, savedLibrary=null, leaveDialog=null, undoStack=[], redoStack=[];
+// Shelf filters and the editor's model search live here so redraws keep them; the address mirrors them (admin/route.js).
+let shelfQuery="", shelfStatus="", assetQuery="", readerChapterId=null, shelfReturn={q:"",status:"",scroll:0}, applying=false, urlTimer=null, routeModal=null, backPending=null, scrollTimer=null;
+// The window's scroll lives in the history entry: the browser's own restoring runs before the studio has loaded.
+history.scrollRestoration="manual";
 const app = document.querySelector("#app");
 const clientUrl = import.meta.env.VITE_CLIENT_URL || "/client/";
 const hasUnsavedChanges = () => savedLibrary && JSON.stringify(library) !== JSON.stringify(savedLibrary);
 function requestLeaveEditor(destination=null) {
-  if (leaveDialog) return;
+  if (leaveDialog?.open) return;
   if (busy) return toast('저장이 끝난 뒤 다시 이동해 주세요.');
-  const leave = destination || (() => { inEditor=false; placementId=null; render(); });
+  const leave = destination || (() => navigate(() => { inEditor=false; placementId=null; shelfQuery=shelfReturn.q; shelfStatus=shelfReturn.status; }, shelfReturn.scroll));
   if (!hasUnsavedChanges()) { dirty=false; leave(); return; }
   const dialog=modal(`<h2 id="leave-title">편집을 마치고 나갈까요?</h2><p id="leave-description">저장하지 않은 변경사항이 있습니다. 저장하지 않고 나가면 마지막 저장 이후의 관리자 변경사항이 사라집니다.</p><p class="leave-error" role="alert"></p><div class="leave-actions"><button type="button" class="outline-button" data-leave="cancel">계속 편집</button><button type="button" class="outline-button" data-leave="discard">저장하지 않고 나가기</button><button type="button" class="primary-button" data-leave="save">저장 후 나가기</button></div>`);
   leaveDialog=dialog;
@@ -43,7 +48,7 @@ function requestLeaveEditor(destination=null) {
   dialog.setAttribute('aria-labelledby','leave-title');
   dialog.setAttribute('aria-describedby','leave-description');
   let pending=false;
-  dialog.addEventListener('close',()=>{leaveDialog=null;});
+  dialog.addEventListener('close',()=>{if(leaveDialog===dialog)leaveDialog=null;});
   dialog.addEventListener('cancel',e=>{if(pending)e.preventDefault();});
   dialog.addEventListener('click',e=>{if(pending&&e.target===dialog)e.stopImmediatePropagation();},true);
   dialog.querySelector('[data-leave="cancel"]').onclick=()=>dialog.close();
@@ -150,17 +155,150 @@ function holdActions(dialog) {
   const buttons = [...dialog.querySelectorAll(".modal-actions button")].map((b) => [b, b.disabled]);
   return (busy) => buttons.forEach(([b, disabled]) => (b.disabled = busy || disabled));
 }
+// ---- The address (admin/route.js): the path names the page, the query what is open on it. ----
+function currentRoute() {
+  // The reader may show another chapter than the editor's; the selection belongs to the editor's chapter.
+  const shown = readerChapterId || chapterId;
+  const route = tab === "books" && inEditor && book() && chapter()
+    ? { view: "editor", bookId, chapterId: shown, objectId: shown === chapterId && hasObject(chapter(), placementId) ? placementId : undefined, reader: readerChapterId ? true : undefined, q: assetQuery || undefined }
+    : tab === "books" ? { view: "books", q: shelfQuery || undefined, status: shelfStatus || undefined }
+    : tab === "models" ? { view: "models", q: query || undefined } : { view: tab };
+  if (routeModal) Object.assign(route, { modal: routeModal.modal, modalId: routeModal.modalId });
+  return route;
+}
+// Every history write waits for a dialog-closing history.back() to land, so it never hits the entry being left.
+function writeHistory(write) {
+  if (backPending) backPending.done.then(() => writeHistory(write));
+  else write();
+}
+// Steps back over a closed dialog's own entry, then writes `href` (the page's place when the dialog closed)
+// into the entry it lands on. Without a popstate within a second (a preview iframe's own entries can swallow
+// the step), `href` goes into the current entry instead.
+function stepBack(href) {
+  let resolve;
+  const done = new Promise((r) => { resolve = r; });
+  backPending = { done, resolve, href, timer: setTimeout(() => settleBack(true), 1000) };
+  history.back();
+}
+function settleBack(timedOut) {
+  const pending = backPending;
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  backPending = null;
+  // Release the queued writes even if the browser refuses this one.
+  try { history.replaceState(timedOut ? { scroll: history.state?.scroll ?? 0 } : history.state, "", pending.href); }
+  finally { pending.resolve(); }
+}
+// Writes the current place into this history entry's address.
+function syncUrl() {
+  clearTimeout(urlTimer); urlTimer = null;
+  if (applying) return;
+  const href = routeHref(currentRoute());
+  writeHistory(() => { if (href !== location.pathname + location.search) history.replaceState(history.state, "", href); });
+}
+function saveScroll() {
+  clearTimeout(scrollTimer); scrollTimer = null;
+  if (!backPending) history.replaceState({ ...history.state, scroll: scrollY }, "");
+}
+function restoreScroll(top = history.state?.scroll ?? 0) { window.scrollTo({ top, behavior: "instant" }); }
+// Typing writes the address once it pauses: Safari limits how often replaceState may run.
+function syncUrlSoon() { clearTimeout(urlTimer); urlTimer = setTimeout(syncUrl, 250); }
+// Closes every open dialog without touching history: the page they belong to is going away.
+function closeDialogs() {
+  routeModal = null;
+  document.querySelectorAll("dialog[open]").forEach((d) => d.close());
+}
+// A page move: the entry being left gets its latest address, then a new entry is pushed and drawn.
+function navigate(change, scroll = 0) {
+  if (urlTimer) syncUrl();
+  saveScroll();
+  change();
+  closeDialogs();
+  const href = routeHref(currentRoute());
+  writeHistory(() => history.pushState({ scroll }, "", href));
+  render();
+  restoreScroll(scroll);
+}
+// Ties a dialog to the address. Opened from the page it pushes its own entry; opened while an address is
+// being shown, that entry already exists. Closing steps back over a pushed entry, or drops the dialog from the address.
+function routeDialog(dialog, modal, modalId, push = !applying) {
+  const entry = { modal, modalId };
+  if (push && urlTimer) syncUrl();
+  if (push) saveScroll();
+  routeModal = entry;
+  const href = routeHref(currentRoute()), scroll = scrollY;
+  if (push) writeHistory(() => { if (routeModal === entry) history.pushState({ scroll, modalEntry: true }, "", href); });
+  dialog.addEventListener("close", () => {
+    if (routeModal !== entry) return;
+    routeModal = null;
+    const page = routeHref(currentRoute());
+    // Decided once earlier writes have landed, so the check reads the dialog's own entry.
+    writeHistory(() => { if (history.state?.modalEntry) stepBack(page); else history.replaceState(history.state, "", page); });
+  });
+}
+// Opens the dialog an address names.
+function openRouteDialog(route) {
+  const model = library.models.find((m) => m.id === route.modalId);
+  if (route.modal === "new-book") editBook(true);
+  else if (route.modal === "book") editBook();
+  else if (route.modal === "chapter") editChapter(route.modalId);
+  else if (route.modal === "new-model") editModel();
+  else if (route.modal === "model") editModel(model);
+  else if (route.modal === "model-preview") previewModel(model);
+  else if (route.modal === "home-preview") previewHome(hasUnsavedChanges());
+}
+// Shows the place an address names, on load and when the browser moves to another page.
+function applyRoute(route) {
+  closeDialogs();
+  const entering = route.view === "editor" && !(inEditor && bookId === route.bookId);
+  tab = route.view === "editor" ? "books" : route.view;
+  inEditor = route.view === "editor";
+  if (entering) { undoStack = []; redoStack = []; baseline = structuredClone(library); }
+  if (inEditor) { bookId = route.bookId; chapterId = route.chapterId; placementId = route.objectId ?? null; assetQuery = route.q ?? ""; }
+  else placementId = null;
+  if (route.view === "books") { shelfQuery = route.q ?? ""; shelfStatus = route.status ?? ""; }
+  if (route.view === "models") query = route.q ?? "";
+  readerChapterId = null;
+  applying = true;
+  try {
+    render();
+    if (route.reader) workspace?.openReader();
+    if (route.modal) openRouteDialog(route);
+  } finally { applying = false; }
+  syncUrl();
+  restoreScroll();
+}
+// Back or forward within one page: only the dialog differs, so the page (and the editor's 3D view) stays.
+function syncDialog(route) {
+  // Same dialog: still tidy the address, which may name a dialog whose target is gone.
+  if (routeModal?.modal === route.modal && routeModal?.modalId === route.modalId) return syncUrl();
+  closeDialogs();
+  if (route.modal) {
+    applying = true;
+    try { openRouteDialog(route); } finally { applying = false; }
+  }
+  syncUrl();
+}
+function openAddress() {
+  const { route, notice } = resolveRoute(parseRoute(location.pathname, location.search), library);
+  applyRoute(route);
+  if (notice) toast(notice);
+}
 function render() {
+  draw();
+  if (!urlTimer) syncUrl();
+}
+function draw() {
   disposeModelThumbnails?.(); disposeModelThumbnails=null;
-  if(workspace){workspace.dispose();workspace=null;world=null;}
+  if(workspace){workspace.dispose();workspace=null;world=null;readerChapterId=null;}
   if(tab==='books' && inEditor && book() && chapter()) {
     world?.dispose();
-    workspace=mountWorkspace(app,{book:book(),chapter:chapter(),models:library.models,selectedId:placementId,hooks:{
-      select:id=>placementId=id,change:mark,back:()=>requestLeaveEditor(),editBook:()=>editBook(),editChapter,addChapter,
+    workspace=mountWorkspace(app,{book:book(),chapter:chapter(),models:library.models,selectedId:placementId,assetQuery,hooks:{
+      select:id=>{placementId=id;syncUrl();},change:mark,back:()=>requestLeaveEditor(),editBook:()=>editBook(),editChapter,addChapter,search:q=>{assetQuery=q;syncUrlSoon();},reader:id=>{readerChapterId=id;syncUrl();},
       reorderChapters:ids=>{const chapters=book().chapters;if(ids.length!==chapters.length||new Set(ids).size!==chapters.length||ids.some(id=>!chapters.some(c=>c.id===id)))return;book().chapters=ids.map(id=>chapters.find(c=>c.id===id));mark();render();},
       preview:()=>previewClient(),
       addModel:()=>editModel(),editModel,save:()=>save(false),publish:()=>save(true),
-      chapter:id=>{chapterId=id;placementId=null;},undo:()=>historyMove('undo'),redo:()=>historyMove('redo'),canUndo:undoStack.length,canRedo:redoStack.length
+      chapter:id=>{chapterId=id;placementId=null;syncUrl();},undo:()=>historyMove('undo'),redo:()=>historyMove('redo'),canUndo:undoStack.length,canRedo:redoStack.length
     }});world=workspace.world;document.querySelector('#save-state').textContent=dirty?'저장하지 않은 변경사항':'변경사항 저장됨';return;
   }
   world?.dispose();
@@ -175,10 +313,13 @@ function render() {
     )}</nav><div class="sidebar-note">${icon("sparkles")}<p>한 장면의 작은 움직임이<br>이야기에 생명을 불어넣어요.</p></div><a class="visit-client" href="${esc(clientUrl)}" target="_blank">사용자 화면 열기 ${icon("arrow-up-right")}</a><div class="studio-user"><span>O</span><div><strong>On the Book</strong><small>${protectedMode ? "관리자 로그인됨" : "내 컴퓨터 작업 공간"}</small></div>${protectedMode ? `<button id="logout" class="icon-button" aria-label="로그아웃">${icon("log-out")}</button>` : ""}</div></aside><div class="studio-main"><header class="studio-header"><div><span>워크스페이스</span>${icon("chevron-right")}<strong>${tabs.find(([id]) => id === tab)[2]}</strong></div><div><span id="save-state">${dirty ? "저장하지 않은 변경사항" : "변경사항 저장됨"}</span><button id="save" class="outline-button" ${busy ? "disabled" : ""}>${icon("save")} 임시 저장</button><button id="publish" class="primary-button" ${busy ? "disabled" : ""}>${icon("eye")} 사용자 화면에 공개</button></div></header><main class="studio-content">${tab === "books" ? shelfHTML(library.books) : tab === "home" ? homeView() : tab === "models" ? modelsView() : settingsView()}</main></div></div>`;
   icons();
   for (const b of document.querySelectorAll("[data-tab]"))
-    b.onclick = () => {
-      tab = b.dataset.tab;
-      render();
-    };
+    b.onclick = () => { if (b.dataset.tab !== tab) navigate(() => { tab = b.dataset.tab; }); };
+  // The logo moves within the studio like the 도서 보관함 tab; modified clicks keep the browser's own handling.
+  document.querySelector(".studio-sidebar .brand").onclick = (e) => {
+    if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    if (tab !== "books") navigate(() => { tab = "books"; });
+  };
   document.querySelector("#save").onclick = () => save(false);
   document.querySelector("#publish").onclick = () => save(true);
   document.querySelector("#logout")?.addEventListener("click", () => requestLeaveEditor(async () => {
@@ -188,9 +329,10 @@ function render() {
   if (tab === "books") {
     document.querySelector('#new-book').onclick=()=>editBook(true);
     // The editor's undo covers only what happens inside it, not home or shelf changes made before.
-    document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);render();});
-    const filter=()=>{const query=document.querySelector('#book-search').value.toLowerCase(),state=document.querySelector('#book-filter').value;let count=0;document.querySelectorAll('[data-open-book]').forEach(button=>{const row=button.closest('.book-tile-row');row.hidden=!button.dataset.title.includes(query)||(state!=='all'&&button.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
-    document.querySelector('#book-search').oninput=filter;document.querySelector('#book-filter').onchange=filter;filter();
+    document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY};navigate(()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;assetQuery="";inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);});});
+    const filter=()=>{const query=shelfQuery.toLowerCase(),state=shelfStatus||'all';let count=0;document.querySelectorAll('[data-open-book]').forEach(button=>{const row=button.closest('.book-tile-row');row.hidden=!button.dataset.title.includes(query)||(state!=='all'&&button.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
+    const search=document.querySelector('#book-search'),status=document.querySelector('#book-filter');search.value=shelfQuery;status.value=shelfStatus||'all';
+    search.oninput=()=>{shelfQuery=search.value;filter();syncUrlSoon();};status.onchange=()=>{shelfStatus=status.value==='all'?'':status.value;filter();syncUrl();};filter();
     bindShelfOrder(app,(ids,moved)=>{
       if(ids.length!==library.books.length||ids.some(id=>!library.books.some(b=>b.id===id)))return;
       library.books=ids.map(id=>library.books.find(b=>b.id===id));mark();render();
@@ -338,6 +480,7 @@ function editBook(isNew = false) {
   const d = modal(
     `<span class="eyebrow">BOOK DETAILS</span><h2>${isNew ? "새 책 만들기" : "책 정보"}</h2><form id="book-form">${imageField("book-cover", "표지 이미지 (PNG)", "cover", original.cover,`${original.cover ? "표지가 등록되어 있습니다." : "표지를 올리지 않으면 빈 표지로 보입니다."} 세로 2:2.85 비율을 권장해요(예: 800×1140).`)}${field("책 제목", "title", original.title, "text", 'required maxlength="200"')}${field("영문 제목", "englishTitle", original.englishTitle, "text", 'required maxlength="200"')}<div class="field-row">${field("작가", "author", original.author, "text", 'maxlength="200"')}${field("원작 출간 연도", "year", original.year, "number", 'required min="1" max="2026"')}</div>${field("분류", "category", bookCategory(original), "text", 'required maxlength="8" list="book-categories" pattern="^(?!(all|reading)$).*" title="8자 이하로 입력해 주세요. all·reading은 쓸 수 없습니다."')}<datalist id="book-categories">${categories.map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist><p class="field-hint">사용자 화면의 빠른 메뉴와 분류 필터에 쓰입니다. 같은 이름을 쓰면 한 분류로 묶여요.</p><label class="field">소개 문장<textarea name="description" rows="2" maxlength="1000">${esc(original.description)}</textarea></label>${field("원작 출처 주소", "source", original.source, "url", 'required pattern="https?://.*"')}<label class="field">권리 및 번역·각색 정보<textarea name="rights" rows="3" maxlength="1000">${esc(original.rights)}</textarea></label><label class="checkbox-field"><input type="checkbox" name="published" ${original.published ? "checked" : ""}> 사용자 화면 공개 대상에 포함</label><div class="modal-actions">${!isNew ? '<button id="delete-book" type="button" class="text-button danger">책 삭제</button>' : ""}<button class="primary-button" type="submit">${isNew ? "책 만들기" : "변경 적용"}</button></div></form>`,
   );
+  routeDialog(d, isNew ? "new-book" : "book");
   bindImageField(d, "book-cover", "cover", { busy: holdActions(d) });
   d.querySelector("form").onsubmit = (e) => {
     e.preventDefault();
@@ -347,11 +490,13 @@ function editBook(isNew = false) {
       published: f.has("published"),
       category: String(f.get("category")).trim(),
     });
-    if (isNew) {library.books.push(original);inEditor=true;}
+    if (isNew) {library.books.push(original);shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY};}
     bookId = original.id;
     chapterId = original.chapters[0].id;
     placementId = original.chapters[0].placements[0]?.id;
     mark();
+    // A new book's editor takes over the dialog's history entry, so Back from it returns to the shelf.
+    if (isNew) { routeModal = null; inEditor = true; assetQuery = ""; writeHistory(() => history.replaceState({ scroll: 0 }, "")); }
     d.close();
     render();
   };
@@ -398,6 +543,7 @@ function editChapter(id) {
   const d = modal(
     `<span class="eyebrow">CHAPTER ${index + 1}</span><h2>장면과 이야기</h2><form id="chapter-form">${field("챕터 제목", "title", c.title, "text", 'required maxlength="200"')}${field("짧은 소개", "subtitle", c.subtitle, "text", 'maxlength="250"')}${imageField("chapter-thumbnail", "장면 썸네일 (PNG)", "thumbnail", c.thumbnail,"사용자 화면의 장면 목록에 16:10 비율로 보여요(예: 1280×800). 없으면 빈 자리로 둡니다.")}${select("장면 분위기", "theme", themes, c.theme)}${field("공간 가로 크기", "width", c.width || 64, "number", 'min="40" max="120" required')}${field("공간 세로 크기", "depth", c.depth || 56, "number", 'min="40" max="100" required')}<p class="field-hint">이 공간이 챕터 순서대로 연결됩니다. 모델은 공간 안 어디든 배치할 수 있고, 이동 조건은 없습니다.</p><a href="${esc(clientUrl)}?book=${book().id}&chapter=${c.id}" target="_blank" rel="noopener">공개된 탐험 화면 보기 ↗</a><div class="field-section">바닥 안내와 독서 화면</div><p class="field-hint">바닥 이미지는 왼쪽 목록에서 월드에 배치하고, 선택해 위치와 방향을 수정합니다.</p><label class="checkbox-field"><input type="checkbox" name="floorEnabled" ${c.floorEnabled !== false ? "checked" : ""}> 모델 접근 시 글 섹션과 카메라 연출</label><label class="field">오른쪽에 보여 줄 글귀<textarea name="floorText" rows="4" maxlength="15000" placeholder="비우면 아래 이야기 본문 전체를 사용합니다.">${esc(c.floorText || "")}</textarea></label>${field("글귀 카메라 여백 배율", "floorZoom", c.floorZoom ?? 1.1, "number", 'min="1" max="1.8" step="0.1"')}${field("애니메이션·글 노출 접근 배율", "reactionMultiplier", c.reactionMultiplier ?? 2, "number", 'min="1" max="4" step="0.1"')}${field("페이지당 최대 글자 수", "floorPageSize", c.floorPageSize ?? 112, "number", 'min="40" max="400" step="1"')}<label class="checkbox-field"><input name="floorStagger" type="checkbox" ${c.floorStagger !== false ? "checked" : ""}> 챕터명과 본문 순차 등장</label><p class="field-hint">글귀는 화면 오른쪽의 반투명 창에, 캐릭터와 모델은 왼쪽에 표시됩니다. 긴 글은 여러 장으로 나뉩니다. 여백 배율이 클수록 카메라가 멀어지며, 화면 크기에 맞춰 글귀가 보이도록 조절됩니다.</p><label class="field">이야기 본문<textarea name="body" rows="9" maxlength="15000">${esc(c.body)}</textarea></label><div class="modal-actions"><button type="button" id="chapter-up" class="outline-button" ${index === 0 ? "disabled" : ""}>앞으로 옮기기</button><button type="button" id="chapter-down" class="outline-button" ${index === book().chapters.length - 1 ? "disabled" : ""}>뒤로 옮기기</button><button type="button" id="delete-chapter" class="text-button danger" ${book().chapters.length === 1 ? "disabled" : ""}>삭제</button><button class="primary-button">변경 적용</button></div></form>`,
   );
+  routeDialog(d, "chapter", c.id);
   const apply = () => {
     const values = Object.fromEntries(new FormData(d.querySelector("form")));
     values.width = Number(values.width); values.depth = Number(values.depth);
@@ -495,6 +641,7 @@ function bindModels() {
   search.oninput = (e) => {
     query = e.target.value;
     const pos = e.target.selectionStart;
+    syncUrlSoon();
     render();
     const input = document.querySelector("#model-search");
     input.focus();
@@ -511,6 +658,7 @@ function previewModel(m) {
   const d = modal(
     `<span class="eyebrow">MODEL PREVIEW</span><h2>${esc(m.name)}</h2><div id="single-preview" class="single-preview"></div><p class="muted">드래그로 회전 · 휠로 확대</p><p class="source-note">${esc(m.credit)}</p>`,
   );
+  routeDialog(d, "model-preview", m.id);
   const p = {
     id: "preview",
     modelId: m.id,
@@ -547,6 +695,7 @@ function editModel(existing) {
   const d = modal(
     `<span class="eyebrow">MODEL LIBRARY</span><h2>${existing ? "모델 정보 수정" : "새 모델 등록"}</h2><form id="model-form">${field("모델 이름", "name", draft.name, "text", 'required maxlength="200"')}${select("모델 종류", "kind", { glb: "GLB 파일" }, draft.kind)}<label class="upload-field" id="upload-area">${icon("upload")}<strong>3D 모델 파일 선택</strong><span>GLB 2.0 · 최대 25MB · 텍스처 포함 · 움직이지 않는 모델도 올릴 수 있어요</span><input type="file" name="file" accept=".glb" aria-label="3D 모델 파일 선택"><span id="upload-status">${draft.url ? "등록된 파일이 있어요. 새 파일을 선택하면 교체돼요." : "파일을 선택해 주세요."}</span></label><label class="upload-field">${icon("upload")}<strong>모델 썸네일 (필수)</strong><span>실제 모델을 보여 주는 PNG · 최대 5MB · 가로·세로 4096 이하</span><input type="file" name="thumbnail" accept="image/png,.png" aria-label="모델 썸네일"><img id="thumbnail-preview" class="thumbnail-preview" alt="선택한 모델 썸네일" ${draft.thumbnail ? `src="${esc(draft.thumbnail)}"` : "hidden"}><span id="thumbnail-status">${draft.thumbnail ? "등록된 썸네일이 있어요. 새 이미지로 교체할 수 있어요." : "모델을 대표할 이미지를 선택해 주세요."}</span></label>${field("기본 모델 색상", "color", draft.color, "color")}<label class="field">제작자 및 사용 권한<textarea name="credit" rows="3" maxlength="500" required>${esc(draft.credit)}</textarea></label><p class="field-hint">모델의 제작자와 사용 허가를 기록해 주세요. 업로드한 모델은 파일 자체의 색상을 사용해요.</p><div class="modal-actions">${existing ? '<button type="button" id="delete-model" class="text-button danger">모델 삭제</button>' : ""}<button id="model-submit" class="primary-button">${existing ? "변경 적용" : "보관함에 등록"}</button></div></form>`,
   );
+  routeDialog(d, existing ? "model" : "new-model", existing?.id);
   const form = d.querySelector("form");
   const update = () => {
     d.querySelector("#upload-area").hidden = form.elements.kind.value !== "glb";
@@ -700,7 +849,10 @@ function bindHome() {
     mark();
     render();
   };
-  app.querySelector("#preview-home").onclick = () => openPreview("", "공개 전 홈 화면 체험", "임시 저장한 홈 화면을 확인합니다. 공개 대상 책만 보이며, 공개 중인 화면에는 영향을 주지 않습니다.");
+  app.querySelector("#preview-home").onclick = () => previewHome();
+}
+function previewHome(saveFirst = true) {
+  return openPreview("", "공개 전 홈 화면 체험", "임시 저장한 홈 화면을 확인합니다. 공개 대상 책만 보이며, 공개 중인 화면에는 영향을 주지 않습니다.", saveFirst);
 }
 function settingsView() {
   return `<div class="page-title"><div><span class="eyebrow">READY TO OPEN THE BOOK</span><h1>공개 및 안내</h1><p>장면을 충분히 살펴본 후 독자를 초대해 주세요.</p></div></div><div class="settings-grid"><section class="settings-card"><h2>저장과 공개</h2><p><b>임시 저장</b>은 관리자 작업을 보관합니다. 사용자에게 보여 주려면 <b>사용자 화면에 공개</b>를 눌러 주세요.</p><p>책 정보에서 ‘공개 대상’을 해제하고 다시 공개하면 해당 책을 책장에서 숨길 수 있어요.</p><a class="outline-button" href="${esc(clientUrl)}" target="_blank">공개된 화면 확인 ${icon("arrow-up-right")}</a></section><section class="settings-card"><h2>작업 데이터 백업</h2><p>책, 챕터, 배치 설정을 한 파일로 내려받습니다. 업로드한 3D 원본 파일은 서버의 데이터 폴더에 별도로 보관됩니다.</p><button id="export" class="outline-button">${icon("save")} 설정 내려받기</button></section><section class="settings-card"><h2>이야기와 모델의 출처</h2><p>기본 이야기는 영어 고전을 바탕으로 직접 작성한 한국어 축약·각색입니다. 기존 번역문과 캐릭터 자산을 가져오지 않았습니다.</p><p>새 책과 모델을 등록할 때에는 이용할 원문·번역·3D 파일 각각의 사용 권한을 기록해 주세요.</p></section><section class="settings-card"><h2>내 컴퓨터에서 실행 중</h2><p>현재 서버는 이 컴퓨터에서만 연결되도록 설정되어 있습니다. ${protectedMode ? "관리자 비밀번호 보호가 켜져 있습니다." : "로컬 작업에서는 로그인 없이 관리할 수 있습니다."}</p><p>외부 서비스로 운영할 때 필요한 배포·로그인·백업 설정은 프로젝트 안내문에 정리했습니다.</p></section></div>`;
@@ -771,6 +923,27 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "";
   }
 });
+window.addEventListener("popstate", () => {
+  if (backPending) return settleBack(false); // our own step back over a closed dialog's entry
+  if (!library) return; // the login and loading screens read the address themselves once the studio loads
+  const { route, notice } = resolveRoute(parseRoute(location.pathname, location.search), library);
+  const current = currentRoute();
+  if (current.view === "editor" && !(route.view === "editor" && route.bookId === current.bookId) && (leaveDialog?.open || busy || hasUnsavedChanges())) {
+    // Keep the editor's address while the leave dialog decides; leaving then steps back to where the browser was going.
+    history.pushState({}, "", routeHref(current));
+    if (!leaveDialog?.open) requestLeaveEditor(() => history.back());
+    return;
+  }
+  const page = (r) => routeHref({ ...r, modal: undefined, modalId: undefined });
+  // A discarded new book leaves inEditor set with no book, so currentRoute() already reads "books";
+  // without this check a full leave of the editor would look like a same-page dialog change.
+  const stale = inEditor && current.view !== "editor";
+  if (!stale && page(route) === page(current)) syncDialog(route);
+  else applyRoute(route);
+  if (notice) toast(notice);
+});
+window.addEventListener("scroll", () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(saveScroll, 150); }, { passive: true });
+window.addEventListener("pagehide", () => { if (urlTimer) syncUrl(); saveScroll(); });
 async function load() {
   try {
     const result = await api("/api/studio");
@@ -782,10 +955,7 @@ async function load() {
     version = result.version;
     publishedAt = result.publishedAt;
     protectedMode = result.protected;
-    bookId = library.books[0]?.id;
-    chapterId = book()?.chapters[0]?.id;
-    placementId = chapter()?.placements[0]?.id;
-    render();
+    openAddress();
   } catch (e) {
     if (e.status === 401) {
       app.innerHTML = `<main class="login-screen"><a class="brand" href="${esc(clientUrl)}">${logo}</a><h1>이야기를 만드는 공간</h1><p>관리자 비밀번호로 스튜디오를 열어 주세요.</p><form id="login-form">${field("관리자 비밀번호", "password", "", "password", 'required autocomplete="current-password"')}<p id="login-error" role="alert"></p><button class="primary-button full">스튜디오 들어가기 ${icon("arrow-right")}</button></form></main>`;
@@ -816,14 +986,25 @@ async function previewClient(modelId = '') {
   if (!chapter()) return;
   await openPreview('&book=' + encodeURIComponent(bookId) + '&chapter=' + encodeURIComponent(chapterId) + (modelId ? '&model=' + encodeURIComponent(modelId) : ''), '공개 전 독자 화면 체험', '임시 저장한 내용을 체험합니다. 공개 중인 책에는 영향을 주지 않습니다.');
 }
-// Saves the draft first, then shows the reader in a frame at desktop or phone width.
-async function openPreview(query, heading, note) {
-  if (!await save(false)) return;
+// Saves the draft first, then shows the reader in a frame at desktop or phone width. Reopened from its
+// address, the home preview saves only when something is unsaved.
+async function openPreview(query, heading, note, saveFirst = true) {
+  const push = !applying;
+  // Reopened from its address, the home preview holds the address while the draft saves; Back meanwhile cancels it.
+  const held = !query && !push ? (routeModal = { modal: "home-preview" }) : null;
+  if (saveFirst && !await save(false)) { if (held && routeModal === held) { routeModal = null; syncUrl(); } return; }
+  if (held && routeModal !== held) return;
+  if (!query && tab !== "home") return;
   const d = modal(`<h2>${esc(heading)}</h2><p>${esc(note)}</p><div class="preview-size-controls"><button id="preview-desktop" class="outline-button">넓은 화면</button><button id="preview-mobile" class="outline-button">모바일 화면</button></div><iframe title="공개 전 독자 화면" src="/client/?preview=draft${query}"></iframe>`);
   d.classList.add('client-preview-dialog');
   d.querySelector('#preview-mobile').onclick = () => d.classList.add('mobile-preview');
   d.querySelector('#preview-desktop').onclick = () => d.classList.remove('mobile-preview');
+  // Frames share the window's history: the preview moves by replacing its entry, so Back closes the dialog.
+  const frame = d.querySelector('iframe');
+  // Another origin's frame cannot be patched; the one-second step-back fallback covers it.
+  frame.addEventListener('load', () => { try { const h = frame.contentWindow.history; h.pushState = h.replaceState.bind(h); } catch {} });
   d.addEventListener('close', () => { d.querySelector('iframe')?.remove(); }, {once:true});
+  if (!query) routeDialog(d, "home-preview", undefined, push);
 }
 
 

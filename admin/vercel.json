@@ -11,6 +11,10 @@
     { "source": "/uploads/:path*", "destination": "/api/index?route=/uploads/:path*" },
     { "source": "/", "destination": "/admin/index.html" },
     { "source": "/admin/", "destination": "/admin/index.html" },
+    { "source": "/admin/:section(home|models|settings)", "destination": "/admin/index.html" },
+    { "source": "/admin/:section(home|models|settings)/", "destination": "/admin/index.html" },
+    { "source": "/admin/books/:bookId", "destination": "/admin/index.html" },
+    { "source": "/admin/books/:bookId/", "destination": "/admin/index.html" },
     { "source": "/client/", "destination": "/client/index.html" }
   ]
 }

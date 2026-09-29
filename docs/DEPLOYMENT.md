@@ -14,6 +14,8 @@
 
 두 프로젝트 모두 Root Directory 바깥의 소스 포함을 켭니다. 사용자 빌드에는 관리자 화면이 포함되지 않습니다. 관리자 빌드의 `/client/`는 로그인 쿠키를 유지하는 임시 저장 미리보기입니다. 공개 화면 이동은 `VITE_CLIENT_URL`을 사용합니다. 사용자 프로젝트는 `/about`, `/about/`, `/client/about/`을 소개 페이지로 연결하며, 관리자 빌드에는 소개 페이지가 포함되지 않습니다.
 
+관리자 프로젝트는 `admin/vercel.json`의 rewrite로 `/admin/home`, `/admin/models`, `/admin/settings`, `/admin/books/<책 id>`와, 끝에 `/`가 붙은 같은 주소도 관리자 화면에 연결합니다. 이 주소에서 새로고침해도 같은 화면이 열립니다. 주소 규칙은 [관리자 안내](ADMIN-GUIDE.md#주소와-새로고침)를 참고하세요.
+
 ## 환경변수
 
 | 프로젝트 | 변수 | 미리보기(Preview) | 운영(Production) |
@@ -77,7 +79,7 @@ PR과 `main` 이외 브랜치의 푸시는 GitHub 연동으로 미리보기에 �
 
    관리자용 폴더에서는 `on-the-book-admin`으로 같은 명령을 실행합니다.
 
-3. 배포가 끝나면 확인합니다. 사용자 화면의 `/`, `/about`, `/api/library`는 200, 관리자 화면의 `/admin/`은 200, 로그인하지 않은 `/api/studio`는 401, 관리자 화면의 `/about`은 404여야 합니다.
+3. 배포가 끝나면 확인합니다. 사용자 화면의 `/`, `/about`, `/api/library`는 200, 관리자 화면의 `/admin/`, `/admin/models`, `/admin/books/<아무 책 id>`는 200, `/admin/zzz`는 404, 로그인하지 않은 `/api/studio`는 401, 관리자 화면의 `/about`은 404여야 합니다.
 
 git 저장소 폴더에서 바로 `vercel deploy --prod`를 실행하면, 배포에 붙는 커밋 작성자가 Vercel 계정과 다를 때 배포가 빌드를 시작하지 않고 멈출 수 있습니다. 2026-09-23에 이렇게 멈춘 배포는 CLI에서 상태가 `UNKNOWN`, 화면은 "Deployment is building"으로 남았고, git 정보 없이 내보낸 폴더에서는 바로 빌드됐습니다. 멈춘 배포는 운영에 연결되지 않으므로 `vercel remove <배포 주소> --yes`로 지웁니다.
 
