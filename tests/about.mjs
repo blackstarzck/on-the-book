@@ -1,15 +1,35 @@
 import { chromium, expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { createClient } from "@supabase/supabase-js";
 import { startServer } from "./helpers.js";
 
 // Browser checks for the /about page ported from the sample-02 brand page.
 // ABOUT_BASE_URL runs them against a server that is already running, such as `npm run dev`.
 const base = process.env.ABOUT_BASE_URL?.replace(/\/$/, "");
-const server = base ? { url: base, stop: async () => {} } : await startServer(4331);
+
+// The journey model lives in the shared Supabase project. The test server gets a read-only copy in its
+// throwaway data folder, so no model file lands in the project and the test never writes to the database.
+async function copyJourney(dir) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY)
+    throw Error("The about checks copy the journey from Supabase: run `npm run test:about` with .env, or set ABOUT_BASE_URL.");
+  const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+  const { data: row, error } = await db.from("site_assets").select("data").eq("key", "about-journey").single();
+  if (error) throw error;
+  await mkdir(path.join(dir, "site"), { recursive: true });
+  await mkdir(path.join(dir, "uploads"), { recursive: true });
+  await writeFile(path.join(dir, "site", "about-journey.json"), JSON.stringify(row.data));
+  for (const url of [row.data.model, ...Object.values(row.data.photos)]) {
+    const name = path.basename(url);
+    const { data, error: downloadError } = await db.storage.from("uploads").download(name);
+    if (downloadError) throw downloadError;
+    await writeFile(path.join(dir, "uploads", name), Buffer.from(await data.arrayBuffer()));
+  }
+}
+const server = base ? { url: base, stop: async () => {} } : await startServer(4331, undefined, copyJourney);
 const browser = await chromium.launch({
   headless: true,
   channel: "msedge",

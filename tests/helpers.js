@@ -2,12 +2,16 @@ import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-export async function startServer(port, password) {
+// prepare(dir) may fill the throwaway data folder before the server reads it.
+export async function startServer(port, password, prepare) {
   const dir = await mkdtemp(path.join(tmpdir(), "on-the-book-test-"));
+  await prepare?.(dir);
+  // Test servers keep their data in the temporary folder and must never reach the shared Supabase project.
+  const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("SUPABASE_")));
   const child = spawn(process.execPath, ["server/index.js", "--production"], {
     cwd: process.cwd(),
     env: {
-      ...process.env,
+      ...env,
       DATA_DIR: dir,
       PORT: String(port),
       ADMIN_PASSWORD: password || "",
@@ -46,7 +50,8 @@ export async function startServer(port, password) {
   child.kill();
   throw Error(logs || "Test server did not start");
 }
-export function sampleGLB(rigged = true) {
+// rigged adds a skin that the Float clip moves; animated false leaves a still model with no clips.
+export function sampleGLB(rigged = true, animated = true) {
   const floats = new Float32Array([
     -1, 0, 0, 1, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 1, 0,
   ]);
@@ -105,6 +110,7 @@ export function sampleGLB(rigged = true) {
     json.meshes[0].primitives[0].attributes.JOINTS_0=3;json.meshes[0].primitives[0].attributes.WEIGHTS_0=4;
     json.animations[0].channels[0].target.node=1;json.buffers[0].byteLength=bin.length;
   }
+  if (!animated) delete json.animations;
   let text = Buffer.from(JSON.stringify(json));
   const padding = (4 - (text.length % 4)) % 4;
   text = Buffer.concat([text, Buffer.alloc(padding, 32)]);
