@@ -357,6 +357,17 @@ try {
     });
     const fixed = { pinned: 0, measured: true, top: 0, bottom: 0, width: panelWidth, right: 0, gap, line: '1px', card: '0px 0px 0px' };
     expect(await placement()).toEqual(fixed);
+    // Room above and below: the cover and the scene image share a top edge 72px under the pinned top, and the page
+    // ends 120px after the last section.
+    expect(await long.evaluate(() => {
+      const top = document.querySelector('.detail-top').getBoundingClientRect().bottom;
+      const main = document.querySelector('.detail-main').getBoundingClientRect();
+      return {
+        cover: Math.round(document.querySelector('.detail-hero').getBoundingClientRect().top - top),
+        image: Math.round(document.querySelector('.scene-panel .scene-image').getBoundingClientRect().top - top),
+        end: Math.round(document.documentElement.scrollHeight - (main.bottom + scrollY)),
+      };
+    })).toEqual({ cover: 72, image: 72, end: 120 });
     await long.evaluate(() => window.scrollTo(0, 400));
     await expect.poll(() => long.evaluate(() => Math.round(scrollY))).toBe(400);
     expect(await placement()).toEqual(fixed);
@@ -509,6 +520,19 @@ try {
     });
     expect(bar.left).toBe(0);
     expect(bar.right).toBe(bar.width);
+    // Room at both ends: 44px under the top, and at the end of the page 64px between the last section and the bar,
+    // which then rests on the bottom edge instead of lifting.
+    const room = await mobile.evaluate(async () => {
+      await Promise.all(document.querySelector('.detail-hero').getAnimations().map(animation => animation.finished));
+      const cover = document.querySelector('.detail-hero').getBoundingClientRect().top - document.querySelector('.detail-top').getBoundingClientRect().bottom;
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const last = document.querySelector('.detail-main > :last-child').getBoundingClientRect(), bar = document.querySelector('.detail-cta').getBoundingClientRect();
+      const result = { cover: Math.round(cover), gap: Math.round(bar.top - last.bottom), floor: Math.round(innerHeight - bar.bottom) };
+      window.scrollTo(0, 0);
+      return result;
+    });
+    expect(room).toEqual({ cover: 44, gap: 64, floor: 0 });
     // A journey row opens the scene sheet with the same panel content and moves the bar to that scene.
     const ozChapters = original.books.find(b => b.id === 'oz').chapters;
     await mobile.locator('.journey-row[data-scene="oz-2"]').tap();

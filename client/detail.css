@@ -1,10 +1,14 @@
 /* The book detail: a scrolling left column and a scene panel fixed at the screen's height. Phones get a scene sheet
    and a pinned bar. Type, gutters (.store-content) and section headings come from the bookshelf.
    The second track stays empty on purpose: the fixed panel sits over it, so the left column keeps its width. */
-.detail-page { display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 48px; align-items: start; }
+.detail-page { --detail-space-top: 72px; display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 48px; align-items: start; }
+/* Room above and below: the left column starts --detail-space-top under the pinned top, the same offset as the scene
+   panel's first line, so the cover and the scene image share a top edge; the page ends 120px after the last section.
+   Two classes outrank landing.css's .store-content padding at every width. */
+.detail-page.store-content { padding-top: var(--detail-space-top); padding-bottom: 120px; }
 .detail-page h1, .detail-page h2, .detail-page h3 { font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
 .detail-main { min-width: 0; }
-.detail-hero { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 28px; align-items: center; margin-top: 12px; }
+.detail-hero { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 28px; align-items: center; }
 /* An uploaded cover fills its .catalog-cover slot through landing.css's `.catalog-cover img` rule. */
 .detail-cover { display: block; width: 160px; }
 .detail-copy { min-width: 0; }
@@ -49,7 +53,7 @@
    apart from the left column. Its right edge meets the .store-content box (1280px column, 40px gutters above
    850px), so its content lines up with the header's icons. --detail-top is the pinned top's height, measured by
    main.js; 138px is the default 50px ribbon plus the 88px header. Toasts and the curtain stay above it. */
-.scene-panel { position: fixed; top: var(--detail-top, 138px); bottom: 0; right: max(40px, calc((100% - 1280px) / 2 + 40px)); z-index: 4; width: 400px; overflow-y: auto; scrollbar-width: none; padding: 24px 0 24px 32px; border-left: 1px solid #e7ebe7; background: #fff; }
+.scene-panel { position: fixed; top: var(--detail-top, 138px); bottom: 0; right: max(40px, calc((100% - 1280px) / 2 + 40px)); z-index: 4; width: 400px; overflow-y: auto; scrollbar-width: none; padding: var(--detail-space-top) 0 48px 32px; border-left: 1px solid #e7ebe7; background: #fff; }
 /* Safari before 18.2 ignores scrollbar-width. The phone sheet below hides its scrollbar the same way. */
 .scene-panel::-webkit-scrollbar, .scene-sheet::-webkit-scrollbar { display: none; }
 /* Panel and sheet share their inner layout. The image slot is always 16:10; a thumbnail fills it (landing.css:
@@ -94,7 +98,10 @@
 }
 @media (max-width: 850px) {
   .detail-top { position: static; }
-  .detail-page { display: flex; flex-direction: column; align-items: stretch; }
+  .detail-page { --detail-space-top: 44px; display: flex; flex-direction: column; align-items: stretch; }
+  /* The last section keeps 64px above the pinned bar, and the bar closes the page, so it never lifts at the end. */
+  .detail-page.store-content { padding-bottom: 0; }
+  .detail-main { padding-bottom: 64px; }
   .scene-panel { display: none; }
   .journey-hint--wide { display: none; }
   .journey-hint--narrow { display: inline; }
