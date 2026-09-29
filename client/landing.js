@@ -212,10 +212,11 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
     });
     if (state.sort === "title") books.sort((a, b) => a.title.localeCompare(b.title, "ko"));
     if (state.sort === "year") books.sort((a, b) => b.year - a.year);
-    const discovery = !query && state.category === "all";
+    // A genre only narrows the section's cards; a search or the reading list shows its books without the rest of the home.
+    const discovery = !query && state.category !== "reading";
     document.querySelectorAll(".discovery-content").forEach(el => el.hidden = !discovery);
     page.querySelectorAll("[data-category]").forEach(el => el.setAttribute("aria-pressed", String(el.dataset.category === state.category)));
-    page.querySelector("#catalog-title").innerHTML = `${query ? "검색 결과" : state.category === "reading" ? "이어 읽는 이야기" : discovery ? "지금 만나볼 이야기" : "전체 도서"} <span>${books.length}</span>`;
+    page.querySelector("#catalog-title").innerHTML = `${query ? "검색 결과" : state.category === "reading" ? "이어 읽는 이야기" : "지금 만나볼 이야기"} <span>${books.length}</span>`;
     page.querySelector("#catalog-intro").textContent = state.category === "reading" ? "마지막으로 머문 장면에서 다시 시작하세요." : "책을 고르면, 그 안의 세계가 열립니다.";
     page.querySelector("#catalog-status").textContent = `${query ? `“${state.query.trim()}” · ` : ""}${books.length}권`;
     const spaces = discovery && books.length > 0 && books.length < 6 ? Array.from({ length: 6 - books.length }, () => '<div class="catalog-slot" aria-label="새로운 도서를 위한 빈 자리"><span class="empty-cover image-placeholder"></span><span>새로운 이야기 준비 중</span></div>').join("") : "";
@@ -305,8 +306,11 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
     if (!button) return;
     if (button.dataset.sceneTab) showSceneBook(button.dataset.sceneTab);
     if (button.dataset.category) { state.category = button.dataset.category; update(); }
-    if (button.dataset.quickView) showCatalog(button.dataset.quickView);
-    if (button.dataset.quickCategory) showCatalog(button.dataset.quickCategory);
+    // Like 장면 둘러보기, the quick menu's lists land on their section, which may start below the fold.
+    if (button.dataset.quickView || button.dataset.quickCategory) {
+      showCatalog(button.dataset.quickView || button.dataset.quickCategory);
+      page.querySelector(".catalog").scrollIntoView({ behavior: motion(), block: "start" });
+    }
     if (button.dataset.featureDirection) showHero(Number(button.dataset.featureDirection));
     if (button.hasAttribute("data-feature-autoplay")) {
       heroPaused = !heroPaused;

@@ -98,9 +98,22 @@ try {
   await expect(page.getByText('찾는 이야기가 없어요')).toBeVisible();
   await page.getByRole('button', { name: '전체 도서 보기', exact: true }).click();
   await expect(page.locator('.catalog-card')).toHaveCount(2);
+  // A genre chip filters only the section's cards: the section keeps its title and its six places, and the rest of the
+  // home stays on screen.
   await page.getByRole('button', { name: '모험', exact: true }).click();
   await expect(page.locator('.book-title')).toHaveText('오즈의 마법사');
+  await expect(page.getByRole('button', { name: '모험', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#catalog-title')).toHaveText('지금 만나볼 이야기 1');
+  await expect(page.locator('.catalog-slot')).toHaveCount(5);
+  for (const section of ['.reading-ribbon', '.featured-section', '.quick-menu', '.scene-section', '.experience-banner']) await expect(page.locator(section)).toBeVisible();
+  // The quick menu's genres pick the same chip.
+  await page.getByRole('button', { name: '판타지 도서 보기', exact: true }).click();
+  await expect(page.getByRole('button', { name: '판타지', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.book-title')).toHaveText('이상한 나라의 앨리스');
+  await expect(page.locator('#catalog-title')).toBeFocused();
+  for (const section of ['.reading-ribbon', '.featured-section', '.quick-menu', '.scene-section', '.experience-banner']) await expect(page.locator(section)).toBeVisible();
   await page.getByRole('button', { name: '전체', exact: true }).click();
+  await expect(page.locator('.catalog-card')).toHaveCount(2);
   await page.getByLabel('도서 정렬').selectOption('year');
   await expect(page.locator('.book-title').first()).toHaveText('오즈의 마법사');
   await page.getByRole('button', { name: '읽던 작품 이어 보기', exact: true }).click();
@@ -585,6 +598,13 @@ try {
     expect(mobileType.title).toBeGreaterThanOrEqual(16);
     expect(mobileType.scene).toBeGreaterThanOrEqual(15);
     await mobile.screenshot({ path: `test-results/catalog/mobile-${width}.png`, fullPage: true });
+    // The whole home stays under a genre, so the quick menu's genre lands on the book section, which may start below the fold.
+    await mobile.getByRole('button', { name: '모험 도서 보기', exact: true }).tap();
+    await expect(mobile.locator('.catalog-card')).toHaveCount(1);
+    await expect(mobile.locator('#catalog-title')).toBeInViewport();
+    await expect(mobile.locator('.scene-section')).toBeVisible();
+    await mobile.getByRole('button', { name: '전체', exact: true }).tap();
+    await expect(mobile.locator('.catalog-card')).toHaveCount(2);
     await mobile.locator('[data-book="oz"]').tap();
     await expect(mobile.locator('.detail-page[data-view="book"]')).toBeVisible();
     await expect(mobile.locator('.reader-curtain')).toHaveCount(0);
