@@ -60,28 +60,58 @@ PNG 5MB, GLB 25MB 제한을 유지합니다. Vercel에서는 브라우저가 Sup
 
 PR과 `main` 이외 브랜치의 푸시는 GitHub 연동으로 미리보기에 배포됩니다. `main` 푸시가 운영 배포를 자동으로 만들지 않도록 각 `vercel.json`에서 `main` 자동 배포를 꺼 두었으므로, 운영은 필요할 때 Vercel CLI로 직접 배포합니다. 첫 운영 배포는 2026-09-23에 `main`의 `9a8f5c1`로 했습니다.
 
-운영 배포 순서입니다. 사용자 화면을 먼저 배포하고 관리자 화면을 배포합니다.
+운영 배포 순서입니다. 사용자 화면을 먼저 배포하고 관리자 화면을 배포합니다. 각 화면은 운영 주소를 붙이지 않은 배포를 먼저 만들어 그 배포 주소에서 확인한 뒤, 운영 주소로 옮깁니다. 확인에서 문제가 보이면 옮기지 않으므로 운영은 그대로입니다.
 
-1. 빈 폴더 두 개에 `main`을 git 정보 없이 내보냅니다. 저장소 폴더에서 Git Bash 같은 bash 셸로 실행합니다(Windows PowerShell 5.1의 파이프는 tar 데이터를 깨뜨립니다).
+1. 원격 `main`을 받아서 빈 폴더 두 개에 git 정보 없이 내보냅니다. 로컬 `main`은 뒤처져 있을 수 있고, 다른 작업 폴더에 체크아웃되어 있으면 갱신할 수도 없으므로 받은 `origin/main`을 내보냅니다. 저장소 폴더에서 Git Bash 같은 bash 셸로 실행합니다(Windows PowerShell 5.1의 파이프는 tar 데이터를 깨뜨립니다).
 
    ```bash
-   git archive --format=tar main | tar -x -C <사용자용-빈-폴더>
-   git archive --format=tar main | tar -x -C <관리자용-빈-폴더>
+   git fetch origin
+   git log --oneline -1 origin/main
+   git archive --format=tar origin/main | tar -x -C <사용자용-빈-폴더>
+   git archive --format=tar origin/main | tar -x -C <관리자용-빈-폴더>
    ```
 
-2. 각 폴더에서 프로젝트를 연결하고 운영으로 배포합니다. `vercel link`가 만든 `.env.local`에는 개발 환경변수가 들어 있으므로 배포 전에 지웁니다.
+   `git log`가 보여 주는 커밋이 배포하려는 머지 커밋인지 확인합니다.
+
+2. 되돌릴 때를 대비해 지금 운영에 연결된 배포를 적어 둡니다. 출력의 `id`(`dpl_`로 시작)를 사용자 화면과 관리자 화면 각각 기록합니다.
+
+   ```bash
+   vercel inspect on-the-book-client.vercel.app --scope bucheongosok-gmailcoms-projects
+   vercel inspect on-the-book-admin.vercel.app --scope bucheongosok-gmailcoms-projects
+   ```
+
+3. 사용자용 폴더에서 프로젝트를 연결하고, 운영 주소를 붙이지 않은 운영 배포를 만듭니다. `vercel link`가 만든 `.env.local`에는 개발 환경변수가 들어 있으므로 배포 전에 지웁니다. `--skip-domain`을 붙이면 운영 환경변수로 빌드하되 운영 주소는 옮기지 않습니다. 명령이 끝나면 `Production: https://…vercel.app` 형태로 배포 주소를 알려 줍니다.
 
    ```bash
    vercel link --yes --project on-the-book-client --scope bucheongosok-gmailcoms-projects
    rm .env.local
-   vercel deploy --prod --archive=tgz
+   vercel deploy --prod --skip-domain --archive=tgz
    ```
 
-   관리자용 폴더에서는 `on-the-book-admin`으로 같은 명령을 실행합니다.
+4. 배포 주소에서 확인합니다. 사용자 화면은 `/`, `/about`, `/api/library`가 200이어야 합니다. 이번에 바뀐 화면이 있으면 그 화면도 배포 주소에서 열어 봅니다.
 
-3. 배포가 끝나면 확인합니다. 사용자 화면의 `/`, `/about`, `/api/library`는 200, 관리자 화면의 `/admin/`, `/admin/models`, `/admin/books/<아무 책 id>`는 200, `/admin/zzz`는 404, 로그인하지 않은 `/api/studio`는 401, 관리자 화면의 `/about`은 404여야 합니다.
+5. 확인이 끝나면 그 배포를 운영 주소로 옮기고, 운영 주소에서 같은 확인을 한 번 더 합니다.
+
+   ```bash
+   vercel promote <배포 주소> --yes --scope bucheongosok-gmailcoms-projects
+   ```
+
+6. 관리자용 폴더에서 `on-the-book-admin`으로 3~5단계를 반복합니다. 관리자 화면은 `/admin/`, `/admin/models`, `/admin/books/<아무 책 id>`가 200, `/admin/zzz`가 404, 로그인하지 않은 `/api/studio`가 401, `/about`이 404여야 합니다.
 
 git 저장소 폴더에서 바로 `vercel deploy --prod`를 실행하면, 배포에 붙는 커밋 작성자가 Vercel 계정과 다를 때 배포가 빌드를 시작하지 않고 멈출 수 있습니다. 2026-09-23에 이렇게 멈춘 배포는 CLI에서 상태가 `UNKNOWN`, 화면은 "Deployment is building"으로 남았고, git 정보 없이 내보낸 폴더에서는 바로 빌드됐습니다. 멈춘 배포는 운영에 연결되지 않으므로 `vercel remove <배포 주소> --yes`로 지웁니다.
+
+### 되돌리기
+
+운영에 문제가 생기면 2단계에서 적어 둔 이전 배포로 운영 주소를 다시 옮깁니다. 이미 빌드된 배포에 운영 주소만 다시 붙이는 일이라 빌드 없이 바로 끝납니다. 사용자 화면과 관리자 화면은 따로 옮기므로, 문제가 있는 쪽만 되돌려도 됩니다.
+
+```bash
+vercel promote <이전 사용자 화면 배포 id> --yes --scope bucheongosok-gmailcoms-projects
+vercel promote <이전 관리자 화면 배포 id> --yes --scope bucheongosok-gmailcoms-projects
+```
+
+5단계와 같은 명령입니다. Vercel CLI의 `vercel rollback <배포 id>`도 이전 배포로 되돌리는 명령입니다. 되돌린 뒤에는 `vercel inspect <운영 주소>`로 운영 주소의 `id`가 적어 둔 배포인지 확인합니다. 2026-09-30 기준으로 이 저장소에서 실제로 되돌린 적은 아직 없으므로, 처음 되돌릴 때는 이 확인을 꼭 합니다.
+
+DB는 되돌리지 않습니다. 로컬·미리보기·운영이 한 DB를 쓰므로 데이터는 되돌린 뒤에도 그대로입니다. DB는 관리자가 저장할 때마다 저장 형식 번호(`SCHEMA_VERSION`)를 더 큰 값으로만 기록하고, 그보다 낮은 번호의 서버가 보내는 저장은 거부합니다. 그래서 번호를 올린 배포 뒤에 관리자에서 저장했다면, 그 이전 배포로 되돌린 관리자 화면은 저장할 수 없습니다. 사용자 화면은 계속 열립니다. 이럴 때는 되돌리기보다 코드를 고쳐 새로 배포합니다.
 
 ## 확인
 
