@@ -2,7 +2,7 @@ import { chromium, expect } from '@playwright/test';
 import { startServer, sampleGLB } from './helpers.js';
 
 // A still GLB, such as a Blender scene with no skeleton and no motions, is registered and placed in the studio.
-const server = await startServer(4351);
+const server = await startServer();
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 const errors = [];

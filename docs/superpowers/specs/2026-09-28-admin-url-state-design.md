@@ -242,7 +242,7 @@ Vercel 은 정적 파일을 rewrite 보다 먼저 제공하고(vercel.json 문�
 
 ### 7.2 브라우저 검사 `tests/admin-routes.mjs`
 
-다른 검사처럼 완성본 서버(`startServer`)와 설치된 Microsoft Edge 로 실행한다. 포트 4353, 비밀번호 모드(처음 4351 이었으나 main 의 `tests/still-model.mjs` 가 그 포트를 써서 2026-09-29 병합 때 옮겼다). `npm run build` 뒤에 실행한다. 확인할 것:
+다른 검사처럼 완성본 서버(`startServer`)와 설치된 Microsoft Edge 로 실행한다. 비밀번호 모드. 서버 포트는 운영체제가 고른다(2026-09-30 부터. 그 전에는 4353 고정이었고, 처음 고른 4351 이 main 의 `tests/still-model.mjs` 와 겹쳐 2026-09-29 병합 때 옮긴 적이 있다). `npm run build` 뒤에 실행한다. 확인할 것:
 1. 깊은 주소(`/admin/models?modal=model&id=…`)로 들어가 로그인하면 그 창이 열린다.
 2. 네 탭: 누르면 경로가 바뀌고, 새로고침·직접 주소로 같은 탭이 열린다. 뒤로·앞으로 가기로 탭이 오간다.
 3. 도서 보관함 검색어·상태 필터와 모델 보관함 검색어가 주소에 들어가고, 새로고침 뒤 입력칸과 걸러진 목록이 그대로다.

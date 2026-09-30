@@ -2,53 +2,79 @@ import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-// prepare(dir) may fill the throwaway data folder before the server reads it.
-export async function startServer(port, password, prepare) {
+// A test server is usually up within a second or two. A busy machine (other sessions building and testing at the
+// same time) has needed more than the old 8 seconds, and a server that dies is reported at once, so the wait is long.
+const startTimeout = 60_000;
+// Starts the production server on a throwaway data folder and on a port the system picks (PORT=0), then waits until
+// it answers. The server reports the port it bound over an IPC channel (server/index.js), so a test only ever talks
+// to its own server, and runs in other sessions, worktrees or test files never share one.
+// `password` turns on the studio login; `prepare(dir)` may fill the data folder before the server reads it.
+// Older callers passed a fixed port first, startServer(4336, password, prepare); that form still works and the port
+// is ignored.
+export async function startServer(options = {}, legacyPassword, legacyPrepare) {
+  const { password = "", prepare } =
+    typeof options === "number" ? { password: legacyPassword, prepare: legacyPrepare } : options;
   const dir = await mkdtemp(path.join(tmpdir(), "on-the-book-test-"));
-  await prepare?.(dir);
-  // Test servers keep their data in the temporary folder and must never reach the shared Supabase project.
-  const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("SUPABASE_")));
-  const child = spawn(process.execPath, ["server/index.js", "--production"], {
-    cwd: process.cwd(),
-    env: {
-      ...env,
-      DATA_DIR: dir,
-      PORT: String(port),
-      ADMIN_PASSWORD: password || "",
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-  });
+  let child;
   let logs = "";
-  child.stdout.on("data", (d) => (logs += d));
-  child.stderr.on("data", (d) => (logs += d));
-  const url = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 80; i++) {
-    try {
-      const res = await fetch(url + "/api/library");
-      if (res.ok)
-        return {
-          url,
-          dir,
-          child,
-          async stop() {
-            child.kill();
-            await new Promise((resolve) =>
-              child.exitCode !== null ? resolve() : child.once("exit", resolve),
-            );
-            if (
-              path.dirname(path.resolve(dir)) !== path.resolve(tmpdir()) ||
-              !path.basename(dir).startsWith("on-the-book-test-")
-            )
-              throw Error("Unsafe test cleanup path");
-            await rm(dir, { recursive: true, force: true });
-          },
-        };
-    } catch {}
-    await new Promise((r) => setTimeout(r, 100));
+  const running = () => child && child.exitCode === null && child.signalCode === null;
+  const failure = (reason) => Error(`${logs}\nTest server ${reason}`.trim());
+  async function stop() {
+    if (running()) {
+      const exited = new Promise((resolve) => child.once("exit", resolve));
+      child.kill();
+      await exited;
+    }
+    if (
+      path.dirname(path.resolve(dir)) !== path.resolve(tmpdir()) ||
+      !path.basename(dir).startsWith("on-the-book-test-")
+    )
+      throw Error("Unsafe test cleanup path");
+    await rm(dir, { recursive: true, force: true });
   }
-  child.kill();
-  throw Error(logs || "Test server did not start");
+  try {
+    await prepare?.(dir);
+    // Test servers keep their data in the temporary folder and must never reach the shared Supabase project.
+    const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("SUPABASE_")));
+    child = spawn(process.execPath, ["server/index.js", "--production"], {
+      cwd: process.cwd(),
+      env: { ...env, DATA_DIR: dir, PORT: "0", ADMIN_PASSWORD: password || "" },
+      stdio: ["ignore", "pipe", "pipe", "ipc"],
+      windowsHide: true,
+    });
+    child.stdout.on("data", (d) => (logs += d));
+    child.stderr.on("data", (d) => (logs += d));
+    const deadline = Date.now() + startTimeout;
+    const port = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(failure(`did not start within ${startTimeout / 1000} seconds`)), startTimeout);
+      const fail = (reason) => {
+        clearTimeout(timer);
+        reject(failure(reason));
+      };
+      child.on("message", (message) => {
+        if (!Number.isInteger(message?.listening)) return;
+        clearTimeout(timer);
+        resolve(message.listening);
+      });
+      child.on("error", (error) => fail(`could not start: ${error.message}`));
+      child.once("close", (code, signal) => fail(`stopped (${signal || code}) before it listened`));
+    });
+    const url = `http://127.0.0.1:${port}`;
+    // It is listening now; on a busy machine the first answer can still take a moment.
+    for (;;) {
+      if (!running()) throw failure("stopped before it answered");
+      try {
+        const res = await fetch(url + "/api/library");
+        await res.arrayBuffer();
+        if (res.ok) return { url, dir, child, stop };
+      } catch {}
+      if (Date.now() > deadline) throw failure(`did not answer within ${startTimeout / 1000} seconds`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  } catch (error) {
+    await stop();
+    throw error;
+  }
 }
 // rigged adds a skin that the Float clip moves; animated false leaves a still model with no clips.
 export function sampleGLB(rigged = true, animated = true) {

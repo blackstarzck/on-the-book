@@ -1,6 +1,6 @@
 import {chromium,expect} from '@playwright/test';
 import {startServer,sampleGLB} from './helpers.js';
-const server=await startServer(4294);const browser=await chromium.launch({channel:'msedge',headless:true});
+const server=await startServer();const browser=await chromium.launch({channel:'msedge',headless:true});
 const context=await browser.newContext({viewport:{width:1600,height:1000}});context.setDefaultTimeout(20000);const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
 await context.route('**/assets/admin-*.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace(/return\{world:(\w+),dispose\(\)/,'return window.__editorWorld=$1,{world:$1,dispose()').replace(/(\w+)\.setActive\(!0\)/,'$1.setActive(!0),(window.__testReader=$1)');await route.fulfill({response,body});});
 try{

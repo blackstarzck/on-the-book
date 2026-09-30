@@ -13,7 +13,7 @@ test("the about page is built with the reader but not with the studio", () => {
 });
 
 test("the local /about address opens the client about page", async () => {
-  const server = await startServer(4332);
+  const server = await startServer();
   try {
     for (const address of ["/about", "/about/"]) {
       const response = await fetch(server.url + address, { redirect: "manual" });

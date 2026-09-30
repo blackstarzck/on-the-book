@@ -1,6 +1,6 @@
 import {chromium,expect} from '@playwright/test';
 import {startServer} from './helpers.js';
-const server=await startServer(4297), browser=await chromium.launch({channel:'msedge',headless:true});
+const server=await startServer(), browser=await chromium.launch({channel:'msedge',headless:true});
 const page=await browser.newPage({viewport:{width:1600,height:1000}}), errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 const open=async()=>{await page.locator('[data-open-book="alice"]').click();await expect(page.locator('#studio-world canvas')).toBeVisible();};

@@ -324,12 +324,20 @@ app.use((err, req, res, next) =>
           : "요청을 처리할 수 없습니다.",
     }),
 );
+// PORT=0 lets the system pick a free port, so the log names the port actually bound.
 const port = Number(process.env.PORT || 4173);
-if (!cloud) app.listen(port, "127.0.0.1", () =>
-  console.log(
-    `On the Book: http://127.0.0.1:${port}/client/ | Studio: http://127.0.0.1:${port}/admin/`,
-  ),
-);
+if (!cloud) {
+  const server = app.listen(port, "127.0.0.1", () => {
+    const bound = server.address().port;
+    console.log(`On the Book: http://127.0.0.1:${bound}/client/ | Studio: http://127.0.0.1:${bound}/admin/`);
+    // A test that starts this server over an IPC channel (tests/helpers.js) learns the port from this message, so it
+    // only ever reaches its own server. The server also stops when that test process goes away, leaving no orphan.
+    if (process.send) {
+      process.send({ listening: bound });
+      process.once("disconnect", () => process.exit(0));
+    }
+  });
+}
 export default app;
 
 

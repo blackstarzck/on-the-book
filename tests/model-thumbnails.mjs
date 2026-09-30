@@ -1,7 +1,7 @@
 import { chromium, expect } from '@playwright/test';
 import { startServer, sampleGLB } from './helpers.js';
 
-const server=await startServer(4297);
+const server=await startServer();
 const browser=await chromium.launch({channel:'msedge',headless:true});
 const page=await browser.newPage({viewport:{width:1600,height:1000}});
 const errors=[];

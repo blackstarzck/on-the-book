@@ -160,7 +160,7 @@ input: {
 
 ### 9.1 브라우저 검사 `tests/about.mjs`
 
-기존 `tests/*.mjs` 와 같이 `startServer(4331)`(완성본 모드, 임시 `DATA_DIR`), Edge 채널 헤드리스, `--enable-webgl --ignore-gpu-blocklist` 를 쓴다. `npm run test:about` 으로 빌드 후 실행한다. 모든 검사에서 `pageerror` 가 없어야 하고, 테스트 서버로 보낸 요청에 4xx·5xx 응답이 없어야 한다. 외부 글꼴 서비스 요청은 판정에서 제외한다. 환경변수 `ABOUT_BASE_URL` 을 주면 서버를 띄우지 않고 이미 실행 중인 서버(예: `npm run dev`)를 상대로 같은 검사를 실행한다.
+기존 `tests/*.mjs` 와 같이 `startServer()`(완성본 모드, 운영체제가 고른 빈 포트, 임시 `DATA_DIR`), Edge 채널 헤드리스, `--enable-webgl --ignore-gpu-blocklist` 를 쓴다. `npm run test:about` 으로 빌드 후 실행한다. 모든 검사에서 `pageerror` 가 없어야 하고, 테스트 서버로 보낸 요청에 4xx·5xx 응답이 없어야 한다. 외부 글꼴 서비스 요청은 판정에서 제외한다. 환경변수 `ABOUT_BASE_URL` 을 주면 서버를 띄우지 않고 이미 실행 중인 서버(예: `npm run dev`)를 상대로 같은 검사를 실행한다.
 
 1. 주소: `/about` 요청이 `/client/about/` 에 도착하고 제목이 "On the Book — 책 속을 걷다" 다.
 2. 히어로: `.hero[data-book-world="ready"]`. 책 영역을 가로로 끌면 `.hero` 의 `data-rotation` 이 바뀐다.
@@ -179,7 +179,7 @@ input: {
 `tests/about.test.js` 한 파일에 둔다. 저장소의 `collision.test.js`·`collision.mjs` 처럼 단위 검사와 브라우저 검사를 이름으로 짝짓는다. `tests/server.test.js` 에 넣지 않는 이유는 1단계 계획이 그 파일의 모든 케이스를 새 API 테스트로 옮기기 때문이다.
 
 - `vite.config.js` 의 설정 함수를 mode 별로 호출해 입력이 7절 표와 일치하는지 확인한다.
-- 완성본 서버(4332 포트)에서 `/about`, `/about/` 이 302 와 `Location: /client/about/` 을 돌려준다.
+- 완성본 서버에서 `/about`, `/about/` 이 302 와 `Location: /client/about/` 을 돌려준다.
 
 ### 9.3 회귀
 

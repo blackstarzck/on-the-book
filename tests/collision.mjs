@@ -1,6 +1,6 @@
 import {chromium,expect} from '@playwright/test';
 import {startServer} from './helpers.js';
-const server=await startServer(4285),browser=await chromium.launch({channel:'msedge',headless:true});
+const server=await startServer(),browser=await chromium.launch({channel:'msedge',headless:true});
 try {
  const context=await browser.newContext();await context.route('**/assets/client-*.js',async r=>{const response=await r.fetch();await r.fulfill({response,body:(await response.text()).replace(/([\w$]+)\.setActive\(([\w$]+)\)/,(m,n)=>m+',window.__w='+n)});});
  const p=await context.newPage();await p.goto(server.url+'/client/?book=alice&chapter=alice-1');await p.waitForFunction(()=>window.__w?.sun);

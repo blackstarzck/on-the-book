@@ -29,7 +29,7 @@ async function copyJourney(dir) {
     await writeFile(path.join(dir, "uploads", name), Buffer.from(await data.arrayBuffer()));
   }
 }
-const server = base ? { url: base, stop: async () => {} } : await startServer(4331, undefined, copyJourney);
+const server = base ? { url: base, stop: async () => {} } : await startServer({ prepare: copyJourney });
 const browser = await chromium.launch({
   headless: true,
   channel: "msedge",

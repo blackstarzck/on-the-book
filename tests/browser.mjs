@@ -1,7 +1,7 @@
 import { chromium, expect } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { startServer, sampleGLB } from "./helpers.js";
-const server = await startServer(4276);
+const server = await startServer();
 const browser = await chromium.launch({
   headless: true,
   channel: "msedge",

@@ -1,6 +1,6 @@
 import { chromium,expect } from '@playwright/test';
 import { startServer } from './helpers.js';
-const server=await startServer(4292);
+const server=await startServer();
 const browser=await chromium.launch({channel:'msedge',headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:960}});
 context.setDefaultTimeout(20000);
