@@ -35,7 +35,8 @@ try{
  await expect(page.locator('.inplace-reader .floor-reading-controls')).toBeHidden();
  const start=await page.evaluate(()=>window.__testReader.player.position.x);await page.keyboard.down('ArrowRight');await page.waitForTimeout(300);await page.keyboard.up('ArrowRight');expect(await page.evaluate(()=>window.__testReader.player.position.x)).toBeGreaterThan(start);
  await page.locator('#exit-reader').click();await expect(page.locator('.inplace-reader')).toHaveCount(0);expect(await page.evaluate(()=>window.__editorWorld.camera.position.toArray())).toEqual(pose);
- await page.locator('#back-library').click();
+ // The undo above left an unsaved change, so leaving the editor asks first; the saved order is already checked.
+ await page.locator('#back-library').click();await expect(page.locator('.leave-editor-dialog')).toBeVisible();await page.getByRole('button',{name:'저장하지 않고 나가기',exact:true}).click();
  await page.locator('#new-book').click();await page.getByLabel('책 제목',{exact:true}).fill('격자 월드 테스트');await page.getByRole('button',{name:'책 만들기',exact:true}).click();
  await expect(page.locator('.world-workspace')).toBeVisible();await expect(page.locator('#studio-world canvas')).toBeVisible();await expect(page.locator('.world-empty')).toBeVisible();
  expect(await page.locator('#studio-world').boundingBox()).toMatchObject({x:0,y:0,width:1600,height:1000});
@@ -91,7 +92,7 @@ try{
  await page.locator('[data-chapter-edit]').first().click();await page.getByLabel('오른쪽에 보여 줄 글귀',{exact:true}).fill('새로운 챕터의 내용');await page.getByRole('button',{name:'변경 적용',exact:true}).click();
  await page.locator('#edit-book').click();await page.getByLabel('작가',{exact:true}).fill('테스트 저자');await page.getByLabel('권리 및 번역·각색 정보').fill('직접 작성한 테스트');await page.getByLabel('사용자 화면 공개 대상에 포함').check();await page.getByRole('button',{name:'변경 적용',exact:true}).click();
  await page.locator('#publish').click();await expect(page.locator('#save-state')).toHaveText('공개 완료');const live=await(await context.request.get(server.url+'/api/library')).json();expect(live.books.find(b=>b.id===book.id).chapters[0].placements[0].y).toBe(6);
- await page.goto(server.url+'/admin/');await page.getByRole('button',{name:/격자 월드 테스트/}).click();await expect(page.locator('[data-select-model]')).toHaveCount(2);
+ await page.goto(server.url+'/admin/');await page.locator('[data-open-book]').filter({hasText:'격자 월드 테스트'}).click();await expect(page.locator('[data-select-model]')).toHaveCount(2);
  await page.locator('.world-chapter-tabs #add-chapter').click();await expect(page.locator('#chapter-form')).toBeVisible();await expect(page.locator('[data-chapter-row]')).toHaveCount(2);await page.getByRole('button',{name:'닫기',exact:true}).click();await page.locator('#undo').click();await expect(page.locator('[data-chapter-row]')).toHaveCount(1);
  const still=await context.request.post(server.url+'/api/models/upload',{headers:{'X-On-The-Book':'studio'},multipart:{model:{name:'still.glb',mimeType:'model/gltf-binary',buffer:sampleGLB(false,false)}}});expect(still.status()).toBe(201);expect(await still.json()).toMatchObject({rigged:false,clips:[]});
  await page.setViewportSize({width:1000,height:760});await expect(page.locator('#save')).toBeVisible();
