@@ -36,7 +36,7 @@ function featured(slides) {
   const heading = (text) => `<h1 class="reader-sr-only" id="library-title" tabindex="-1">${text}</h1>`;
   if (!slides.length) return heading("책장");
   const controls = slides.length > 1
-    ? `<button class="feature-arrow feature-prev" data-feature-direction="-1" aria-label="이전 추천 작품">${icon("arrow-left")}</button><button class="feature-arrow feature-next" data-feature-direction="1" aria-label="다음 추천 작품">${icon("arrow-right")}</button><div class="feature-controls"><button data-feature-autoplay aria-label="히어로 자동 재생 중지"><span aria-hidden="true">Ⅱ</span></button><span class="feature-progress" role="status" aria-live="polite"><b>1</b> / ${slides.length}</span><span class="feature-swipe-hint">SWIPE</span></div>`
+    ? `<button class="feature-arrow feature-prev" data-feature-direction="-1" aria-label="이전 추천 작품">${icon("arrow-left")}</button><button class="feature-arrow feature-next" data-feature-direction="1" aria-label="다음 추천 작품">${icon("arrow-right")}</button><div class="feature-controls"><button data-feature-autoplay aria-label="히어로 자동 재생 중지"><span aria-hidden="true">II</span></button><span class="feature-progress" role="status" aria-live="polite"><b>1</b> / ${slides.length}</span><span class="feature-swipe-hint">SWIPE</span></div>`
     : "";
   return `<section class="featured-section discovery-content" aria-label="추천 작품">${heading("추천 작품")}<div class="feature-carousel" data-feature-carousel><div class="feature-grid" role="region" aria-roledescription="carousel" aria-label="추천 작품 슬라이드" tabindex="0">${slides.map(feature).join("")}</div>${controls}</div></section>`;
 }
@@ -298,7 +298,8 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
     if (button.dataset.featureDirection) showHero(Number(button.dataset.featureDirection));
     if (button.hasAttribute("data-feature-autoplay")) {
       heroPaused = !heroPaused;
-      button.querySelector("span").textContent = heroPaused ? "▶" : "Ⅱ";
+      // Two plain capitals: Freesentation draws the numeral Ⅱ (U+2161) with slab serifs, which no longer reads as pause.
+      button.querySelector("span").textContent = heroPaused ? "▶" : "II";
       button.setAttribute("aria-label", heroPaused ? "히어로 자동 재생 시작" : "히어로 자동 재생 중지");
       startHeroTimer();
     }

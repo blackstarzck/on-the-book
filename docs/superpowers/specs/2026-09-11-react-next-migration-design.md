@@ -88,7 +88,7 @@ scripts/sync-public.mjs      packages/ui/public 을 각 앱 public 으로 복사
 | 3D | three 0.180(유지), @react-three/fiber 9.7, @react-three/drei 10.7 | |
 | UI 라이브러리 | antd 6.6 + @ant-design/nextjs-registry 1.3 | `Tour`, `ConfigProvider` 만 사용. 관리자 앱 전용 |
 | 아이콘 | lucide-react | 현재 `lucide` 대체 |
-| 폰트 | next/font/google: DM Sans, Noto Sans KR, Noto Serif KR | 현재 CSS `@import` 대체 |
+| 폰트 | next/font/google: DM Sans, Noto Sans KR, Noto Serif KR | 현재 CSS `@import` 대체. 2026-09-30 부터 글꼴은 Freesentation 하나다(`shared/typography.css`의 `@font-face`, 본문 14px·최소 13px). 전환 때는 그 파일을 따른다 |
 | 검증 | zod 4(유지) | |
 | 저장 | Supabase(on-the-project) 표·저장소, `@supabase/supabase-js` | 2026-09-28 Vercel Blob 에서 전환 |
 | 테스트 | Vitest 5, @playwright/test 1.63 | Microsoft Edge 채널 유지 |
@@ -260,7 +260,7 @@ persist 는 `progress` 만 저장하고 `draftPreview` 일 때는 저장하지 �
 ## 12. 스타일과 자산
 
 - `shared/style.css`, `admin/style.css`, `admin/workspace.css`, `client/transitions.css` 를 `packages/ui/styles/` 로 옮겨 각 앱 루트 레이아웃에서 전역 CSS 로 가져온다. 사용자 앱은 소개 페이지와 섞이지 않도록 루트 레이아웃 대신 독자 화면 route group 레이아웃(`app/(reader)/layout.tsx`)에서 가져온다(10절). 클래스 이름은 유지한다. CSS Modules 로 바꾸지 않는다.
-- Google Fonts `@import` 는 제거하고 `next/font/google` 로 대체한다. 연결 실패 시 시스템 글꼴 폴백은 폰트 스택으로 유지한다.
+- Google Fonts `@import` 는 제거하고 `next/font/google` 로 대체한다. 연결 실패 시 시스템 글꼴 폴백은 폰트 스택으로 유지한다. (2026-09-30: Google Fonts `@import` 는 이미 없고, 글꼴은 `shared/typography.css` 의 Freesentation 이다.)
 - antd 는 Tour 관련 스타일만 런타임에 주입된다. antd reset CSS 는 불러오지 않는다.
 
 ## 13. 오류 처리

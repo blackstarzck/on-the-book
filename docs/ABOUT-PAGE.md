@@ -31,8 +31,9 @@
 | 시안 전용 파비콘 | 사용자 화면과 같은 `/brand/*` 아이콘 |
 | 장면 카드 4장·점토 길 대체 이미지 PNG | WebP(품질 90, 크기 동일, 대체 이미지는 투명 유지) |
 | 자체 정적 서버와 빌드 스크립트 | client Vite 빌드의 `about` 입력, Express·Vercel 주소 연결 |
+| 글꼴 Manrope·Noto Sans KR, 5~12px 작은 글씨 | 사이트 공통 글꼴 Freesentation(`shared/typography.css`), 가장 작은 글씨 13px (2026-09-30) |
 
-화면 구성, 문구, 글꼴(Manrope, Noto Sans KR), 색, 로고, 움직임은 바꾸지 않았습니다.
+화면 구성, 문구, 색, 로고, 움직임은 바꾸지 않았습니다.
 
 ## 에셋
 

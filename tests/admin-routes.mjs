@@ -324,10 +324,10 @@ try {
     body.library.home = { hero: [] };
     await route.fulfill({ response, json: body });
   });
-  // The Korean web font (shared/style.css) is fetched from Google Fonts and swaps in a little after first
-  // paint, growing the tile text a few pixels; blocked here so the tile layout (and the scroll target
+  // The web font (Freesentation, shared/typography.css) is fetched from jsDelivr and swaps in a little after
+  // first paint, changing the tile text by a few pixels; blocked here so the tile layout (and the scroll target
   // computed from it) stays put instead of racing the studio's own scroll save and restore.
-  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  await page.route(/cdn\.jsdelivr\.net\/gh\/Freesentation\//, (route) => route.abort());
   await page.goto(at("/admin/"));
   await expect(page.locator(".book-tile")).toHaveCount(18);
   const middle = await page.evaluate(() => { const top = Math.floor((document.documentElement.scrollHeight - innerHeight) / 2); scrollTo(0, top); return top; });
@@ -347,7 +347,7 @@ try {
   await page.locator('[data-tab="home"]').click();
   expect(await page.evaluate(() => scrollY)).toBe(0);
   await page.unroute("**/api/studio");
-  await page.unroute(/fonts\.(googleapis|gstatic)\.com/);
+  await page.unroute(/cdn\.jsdelivr\.net\/gh\/Freesentation\//);
   pass("The shelf returns to its scroll after a reload, back and the 도서 보관함 button, and a new page starts at the top");
 
   await page.goto(at("/admin/books/alice", { chapter: "alice-1", object: "a1-clock" }));
