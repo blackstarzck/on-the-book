@@ -80,12 +80,14 @@ test("bookDetail opens on the saved scene and marks it in the journey and the pa
   assert.equal(count(html, 'aria-current="true"'), 1);
   // The saved scene carries a flag right after its title, in the journey row and in the panel; the flag's title
   // names it for the mouse and for screen readers. There is no text badge any more.
-  const flag = '<span class="saved-flag" role="img" title="마지막에 머문 장면"><i data-lucide="flag" aria-hidden="true"></i></span>';
+  const flag = '<span class="saved-flag" role="img" aria-label="마지막에 머문 장면"><i data-lucide="flag" aria-hidden="true"></i></span>';
   assert.equal(count(html, flag), 2);
   assert.equal(count(html, "마지막에 머문 장면"), 2);
   assert.ok(html.includes(`<strong>작아지는 문, 커지는 세계${flag}</strong>`));
   assert.ok(html.includes(`<h2 id="panel-scene-title">작아지는 문, 커지는 세계${flag}</h2>`));
   assert.doesNotMatch(html, /journey-badge/);
+  // The label feeds the page's own tooltip; a `title` would add the browser's tooltip on top of it.
+  assert.doesNotMatch(html, /class="saved-flag"[^>]*title=/);
   assert.equal(count(html, 'data-enter-chapter="alice-2"'), 2);
   assert.match(html, /href="\?book=alice&amp;scene=alice-2&amp;preview=draft" data-scene="alice-2"/);
   const gone = bookDetail({ book: alice, progress: { alice: { chapter: "gone" } } });
@@ -178,7 +180,7 @@ test("scenePanel shows the scene and ends with the neighbour buttons under the C
 
 test("scenePanel marks the saved scene and keeps its ids unique with a prefix", () => {
   const saved = scenePanel({ book: alice, chapter: alice.chapters[1], progress: { alice: { chapter: "alice-2" } } });
-  assert.match(saved, /<h2 id="panel-scene-title">작아지는 문, 커지는 세계<span class="saved-flag" role="img" title="마지막에 머문 장면"><i data-lucide="flag" aria-hidden="true"><\/i><\/span><\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button /);
+  assert.match(saved, /<h2 id="panel-scene-title">작아지는 문, 커지는 세계<span class="saved-flag" role="img" aria-label="마지막에 머문 장면"><i data-lucide="flag" aria-hidden="true"><\/i><\/span><\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button /);
   assert.equal(count(saved, "마지막에 머문 장면"), 1);
   const sheet = scenePanel({ book: alice, chapter: alice.chapters[1], prefix: "sheet" });
   assert.match(sheet, /<h2 id="sheet-scene-title">/);
