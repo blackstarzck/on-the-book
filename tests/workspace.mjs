@@ -8,6 +8,8 @@ try{
  await page.locator('[data-open-book="alice"]').click();
  const originalChapters=await page.locator('[data-chapter-row]').evaluateAll(rows=>rows.map(r=>r.dataset.chapterRow));
  await page.evaluate(()=>{window.__originalCanvas=document.querySelector('#studio-world canvas');window.__originalCamera=window.__editorWorld.camera;});
+ // A frame stamped before the previous one must not run the models' motion backwards.
+ expect(await page.evaluate(()=>{const w=window.__editorWorld,o=w.objects[0],phase=o.phase;w.frame(w.last-1700);return o.phase-phase;})).toBe(0);
  await page.locator('[data-chapter]').nth(1).click();
  await page.waitForFunction(()=>document.querySelector('.world-workspace').dataset.travelling==='false');
  expect(await page.evaluate(()=>document.querySelector('#studio-world canvas')===window.__originalCanvas&&window.__editorWorld.camera===window.__originalCamera)).toBe(true);

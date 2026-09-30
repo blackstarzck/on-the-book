@@ -718,7 +718,9 @@ export class World {
   }
   frame(t) {
     if (this.dead) return;
-    const dt = Math.min((t - this.last) / 1000, 0.05);
+    // A frame's timestamp is when the frame began, which can precede `last` (set when the world was built); a negative
+    // step would run every motion backwards.
+    const dt = Math.max(0, Math.min((t - this.last) / 1000, 0.05));
     this.last = t;
     const seconds = t / 1000;
     if (
