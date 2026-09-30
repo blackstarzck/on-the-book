@@ -41,15 +41,20 @@
 /* The saved scene's flag ends its title, in the journey row and in the scene panel. It is filled orange so it stands
    out on the green page (3:1 or more on white and on the selected row), and it follows the title's size: 16px in a
    row, 22px in the panel. */
-.saved-flag { position: relative; display: inline-block; margin-left: .3em; line-height: 0; vertical-align: -.12em; color: #e8590c; }
+.saved-flag { --tip-edge: -10px; position: relative; display: inline-block; margin-left: .3em; line-height: 0; vertical-align: -.12em; color: #e8590c; }
 .saved-flag svg { display: block; width: 1em; height: 1em; fill: currentColor; }
 /* The flag's tooltip: its label in a dark bubble above the flag. It shows after a short pause while the pointer is on
    the flag or on the bubble (so it stays readable under magnification) and while the flag's journey row has keyboard
-   focus. The bubble ends just past the flag and opens leftwards over the title, so it never runs past the scene
-   panel's right edge. Touch screens have no hover, so on phones the flag stands alone. */
+   focus. The bubble starts --tip-edge before the flag and opens to the right of its arrow. Where the journey row, the
+   scene panel or the sheet has no room on that side, main.js sets --tip-left so it opens leftwards over the title
+   instead, and slides back inside at the very edge, because the panel and the sheet are scrolling boxes that would
+   clip it. Touch screens have no hover, so on phones the flag stands alone. */
 .saved-flag::before, .saved-flag::after { position: absolute; z-index: 2; opacity: 0; visibility: hidden; transform: translateY(3px); transition: opacity .12s ease, transform .12s ease, visibility 0s linear .12s; }
-.saved-flag::after { content: attr(aria-label); bottom: calc(100% + 6px); right: -10px; padding: 7px 10px; border-radius: 6px; background: #26352d; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: 0; white-space: nowrap; }
-.saved-flag::before { content: ""; bottom: 100%; left: 50%; margin-left: -6px; border: 6px solid transparent; border-bottom-width: 0; border-top-color: #26352d; }
+.saved-flag::after { content: attr(aria-label); bottom: calc(100% + 6px); left: var(--tip-left, var(--tip-edge)); padding: 7px 10px; border-radius: 6px; background: #26352d; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: 0; white-space: nowrap; }
+/* The arrow: a 12px-wide, 6px-deep point under the bubble. It is a clipped block whose top 3px sit under the bubble, so
+   rounding at odd zoom levels cannot open a light seam between them; a border triangle did, since border widths are
+   rounded down to whole device pixels. */
+.saved-flag::before { content: ""; bottom: 100%; left: 50%; width: 12px; height: 9px; margin-left: -6px; background: #26352d; clip-path: polygon(0 0, 100% 0, 100% 3px, 50% 100%, 0 3px); }
 .saved-flag:hover::before, .saved-flag:hover::after, .journey-row:focus-visible .saved-flag::before, .journey-row:focus-visible .saved-flag::after { opacity: 1; visibility: visible; transform: none; transition-delay: .1s, .1s, 0s; }
 /* Escape puts the bubble away until the pointer leaves the flag or focus leaves its row (main.js). These selectors are
    as specific as the ones above, and later, so they win. */
@@ -74,8 +79,7 @@
    `.scene-image img` covers the slot and `.scene-image.has-image .scene-number` becomes a light pill). */
 .scene-panel .scene-image, .scene-sheet .scene-image { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 10px; }
 .scene-panel .scene-number, .scene-sheet .scene-number { font-size: 13px; color: #3a4a40; }
-.scene-panel .eyebrow, .scene-sheet .eyebrow { margin: 16px 0 8px; font-size: 14px; letter-spacing: .08em; color: #75867a; }
-.scene-panel h2, .scene-sheet h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
+.scene-panel h2, .scene-sheet h2 { margin: 18px 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
 .scene-panel .detail-meta, .scene-sheet .detail-meta { margin: 0 0 10px; font-size: 14px; color: #6b7567; }
 .scene-panel .detail-enter, .scene-sheet .detail-enter { width: 100%; margin: 6px 0 4px; justify-content: space-between; }
 /* Previous and next: two buttons of the same width right under the CTA. A missing side stays as a dimmed slot. */

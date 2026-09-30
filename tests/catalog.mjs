@@ -207,14 +207,31 @@ try {
     return `${bubble.content} ${bubble.opacity} ${bubble.visibility}`;
   }, selector);
   const shown = '"마지막에 머문 장면" 1 visible', hidden = '"마지막에 머문 장면" 0 hidden';
+  // Which way the bubble opens from its arrow, and whether it stays inside its journey row or the panel.
+  const side = selector => page.evaluate(sel => {
+    const flag = document.querySelector(sel), bubble = getComputedStyle(flag, '::after'), f = flag.getBoundingClientRect();
+    const box = flag.closest('.journey-row, .scene-panel').getBoundingClientRect();
+    const left = f.left + parseFloat(bubble.left), right = left + parseFloat(bubble.width) + parseFloat(bubble.paddingLeft) + parseFloat(bubble.paddingRight);
+    return `${right > f.right + 40 ? 'right' : left < f.left - 40 ? 'left' : 'over'} ${left >= box.left - .5 && right <= box.right + .5 ? 'inside' : 'outside'}`;
+  }, selector);
   expect(await tip(rowFlag)).toBe(hidden);
   await page.locator(rowFlag).hover();
   await expect.poll(() => tip(rowFlag)).toBe(shown);
+  expect(await side(rowFlag)).toBe('right inside');
   await page.keyboard.press('Escape');
   await expect.poll(() => tip(rowFlag)).toBe(hidden);
   await page.locator(panelFlag).hover();
   await expect.poll(() => tip(panelFlag)).toBe(shown);
+  expect(await side(panelFlag)).toBe('right inside');
   await page.mouse.move(0, 400);
+  await expect.poll(() => tip(panelFlag)).toBe(hidden);
+  // A title that ends at the panel's right edge leaves no room on that side, so the bubble opens leftwards instead.
+  await page.evaluate(() => { document.querySelector('#panel-scene-title').style.textAlign = 'right'; });
+  await page.locator(panelFlag).hover();
+  await expect.poll(() => tip(panelFlag)).toBe(shown);
+  expect(await side(panelFlag)).toBe('left inside');
+  await page.mouse.move(0, 400);
+  await page.evaluate(() => { document.querySelector('#panel-scene-title').style.textAlign = ''; });
   await expect.poll(() => tip(panelFlag)).toBe(hidden);
   await page.locator('.journey-row[data-scene="alice-1"]').focus();
   await page.keyboard.press('Tab');

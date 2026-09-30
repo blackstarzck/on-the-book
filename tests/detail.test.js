@@ -117,7 +117,7 @@ test("bookDetail escapes text and survives a chapter without placements", () => 
   assert.doesNotMatch(html, /<b>앨리스/);
   assert.doesNotMatch(html, /journey-model|panel-figures/);
   assert.equal(count(html, 'class="journey-row"'), 1);
-  assert.match(html, /장면 01 \/ 01/);
+  assert.match(html, /<h2 id="panel-scene-title">흰 토끼를 따라서<\/h2>/);
 });
 
 test("bookDetail puts the author and book intros after the journey, closing the left column", () => {
@@ -167,7 +167,7 @@ test("the book schema keeps the intros, fills them in for older data and caps th
 
 test("scenePanel shows the scene and ends with the neighbour buttons under the CTA", () => {
   const html = scenePanel({ book: alice, chapter: alice.chapters[1] });
-  assert.match(html, /^<span class="scene-image image-placeholder" data-theme="night" role="img" aria-label="장면 이미지 준비 중"><span class="scene-number">02<\/span><\/span><span class="eyebrow">장면 02 \/ 06<\/span><h2 id="panel-scene-title">작아지는 문, 커지는 세계<\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 /);
+  assert.match(html, /^<span class="scene-image image-placeholder" data-theme="night" role="img" aria-label="장면 이미지 준비 중"><span class="scene-number">02<\/span><\/span><h2 id="panel-scene-title">작아지는 문, 커지는 세계<\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 /);
   // Previous and next come straight after the CTA and close the panel; the visible words stay the start of each
   // accessible name.
   assert.match(html, /이 장면부터 걷기 <i data-lucide="arrow-up-right" aria-hidden="true"><\/i><\/button><nav class="neighbor-nav" aria-label="이어지는 장면"><a class="neighbor-link" href="\?book=alice&amp;scene=alice-1" data-scene="alice-1" aria-label="이전 장면: 01 흰 토끼를 따라서"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 이전 장면<\/a><a class="neighbor-link" href="\?book=alice&amp;scene=alice-3" data-scene="alice-3" aria-label="다음 장면: 03 버섯 숲의 수수께끼">다음 장면 <i data-lucide="arrow-right" aria-hidden="true"><\/i><\/a><\/nav>$/);
@@ -203,7 +203,8 @@ test("scenePanel keeps a dimmed slot for a missing neighbour so both buttons sta
   const first = scenePanel({ book: alice, chapter: alice.chapters[0] });
   assert.equal(count(first, 'class="neighbor-link"'), 1);
   assert.match(first, /<nav class="neighbor-nav" aria-label="이어지는 장면"><span class="neighbor-link is-disabled" aria-hidden="true"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 이전 장면<\/span><a class="neighbor-link" href="\?book=alice&amp;scene=alice-2" data-scene="alice-2" aria-label="다음 장면: 02 작아지는 문, 커지는 세계">다음 장면 /);
-  assert.match(first, /장면 01 \/ 06/);
+  // The panel has no "장면 01 / 06" counter any more; the image's number and the journey list show the position.
+  assert.doesNotMatch(first, /장면 \d\d \/ \d\d|class="eyebrow"/);
   const last = scenePanel({ book: alice, chapter: alice.chapters[5] });
   assert.equal(count(last, 'class="neighbor-link"'), 1);
   assert.match(last, /data-scene="alice-5" aria-label="이전 장면: 05 장미 정원의 여왕"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 이전 장면<\/a><span class="neighbor-link is-disabled" aria-hidden="true">다음 장면 <i data-lucide="arrow-right" aria-hidden="true"><\/i><\/span><\/nav>/);
