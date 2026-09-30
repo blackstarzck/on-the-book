@@ -25,6 +25,8 @@ try {
   await expect(page.locator('.catalog-card .book-title, .catalog-card .book-author')).toHaveCount(4);
   await expect(page.locator('.quick-menu img')).toHaveCount(6);
   await expect(page.locator('.quick-menu svg')).toHaveCount(0);
+  // No divider above or below the bookshelf section: whitespace alone sets it apart.
+  expect(await page.evaluate(() => [getComputedStyle(document.querySelector('.quick-menu')).borderBottomStyle, getComputedStyle(document.querySelector('.scene-section')).borderTopStyle])).toEqual(['none', 'none']);
   await expect(page.locator('.discovery-nav, [data-nav]')).toHaveCount(0);
   await expect(page.locator('.reading-ribbon')).toBeVisible();
   const ribbonBox = await page.locator('.reading-ribbon').boundingBox();
