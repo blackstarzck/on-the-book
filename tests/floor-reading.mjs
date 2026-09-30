@@ -13,7 +13,10 @@ await context.route("**/assets/client-*.js", async route => {
 const page = await context.newPage(), errors = [];
 page.on("pageerror", e => errors.push(e.message));
 await mkdir("docs/floor-evidence", { recursive: true });
+// The traveller walks only once it has landed, so every walk first waits for the landing to end.
+const landed = () => page.waitForFunction(() => window.__testWorld?.sun && window.__testWorld.arrivalTime === null);
 const approach = async () => {
+  await landed();
   await page.evaluate(() => window.__testWorld.moveTo(-9, 1));
   await page.waitForFunction(() => window.__testWorld.readingBlend > .99);
   await page.waitForTimeout(600);
@@ -34,7 +37,11 @@ try {
   console.log('PASS removed caption and chapter-selection jump lands on ground');
   const normalDistance = await page.evaluate(() => window.__testWorld.camera.position.distanceTo(window.__testWorld.cameraFocus));
   await approach();
-  expect(await page.evaluate(() => window.__testWorld.camera.position.distanceTo(window.__testWorld.cameraFocus))).toBeGreaterThan(normalDistance * 1.3);
+  // Reading pulls the camera back a little and frames the model and the traveller left of the text. The pull is the
+  // chapter's 글귀 카메라 여백 배율 (1.1 unless the studio sets it), so the 1.3x of the first version of this check no
+  // longer applies; the studio's own value is checked further down.
+  const readingDistance = await page.evaluate(() => window.__testWorld.camera.position.distanceTo(window.__testWorld.cameraFocus));
+  expect(readingDistance).toBeGreaterThan(normalDistance * 1.02);
   await expect(page.locator(".floor-reading-controls")).toBeVisible();
   await expect(page.locator("#floor-accessible")).toContainText("강둑");
   await page.screenshot({ path: "docs/floor-evidence/02-desktop-reading.png" });
@@ -72,30 +79,37 @@ try {
   expect(await page.locator('#floor-accessible').evaluate(el => el.scrollTop)).toBe(0);
   console.log('PASS enlarged overflowing text scrolls independently with pagination visible');
   const admin = await context.newPage(); await admin.goto(server.url + "/admin/"); await admin.locator('[data-open-book="alice"]').click();
-  await admin.locator("#edit-story").click();
+  await admin.locator("[data-chapter-edit]").first().click();
   await admin.getByLabel("오른쪽에 보여 줄 글귀", {exact:true}).fill("앨리스는 토끼를 바라보았습니다. 작은 호기심에서 이야기가 시작되었습니다.");
 
   await admin.getByLabel("글귀 카메라 여백 배율").fill("1.3");
   await admin.getByRole("button", {name:"변경 적용",exact:true}).click();
   await admin.locator("#preview-client").click();
+  await expect(admin.locator(".inplace-reader .floor-reading-controls")).toBeVisible();
   await admin.screenshot({ path: "docs/floor-evidence/04-admin-preview.png", fullPage:true });
-  await admin.locator(".client-preview-dialog .close-modal").click();
+  await admin.locator("#exit-reader").click();
   await admin.locator("#save").click(); await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
   let live = await (await context.request.get(server.url + "/api/library")).json();
   expect(live.books[0].chapters[0].floorText || "").toBe("");
-  await admin.goto(server.url + "/admin/"); await admin.locator('[data-open-book="alice"]').click(); await admin.locator("#edit-story").click();
+  await admin.goto(server.url + "/admin/"); await admin.locator('[data-open-book="alice"]').click(); await admin.locator("[data-chapter-edit]").first().click();
   await expect(admin.getByLabel("글귀 카메라 여백 배율")).toHaveValue("1.3");
   await admin.keyboard.press("Escape");
   await admin.locator("#publish").click(); await expect(admin.locator("#save-state")).toHaveText("공개 완료");
-  await page.reload(); await page.waitForFunction(() => window.__testWorld?.sun); await approach();
+  // Reloads wait for the document only; the world is awaited next, and the full load event also waits for CDN web
+  // fonts, which on a busy machine has held a reload past the timeout.
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.reload({ waitUntil: "domcontentloaded" }); await page.waitForFunction(() => window.__testWorld?.sun); await approach();
   await expect(page.locator("#floor-accessible")).toContainText("작은 호기심");
+  // The published 1.3 margin pulls the reading camera clearly further back than the default 1.1 did.
+  const marginDistance = await page.evaluate(() => window.__testWorld.camera.position.distanceTo(window.__testWorld.cameraFocus));
+  expect(marginDistance).toBeGreaterThan(readingDistance * 1.05);
   console.log("PASS administrator text, art and camera settings persist and publish");
-  await admin.locator("#edit-story").click();
+  await admin.locator("[data-chapter-edit]").first().click();
   await admin.getByLabel("모델 접근 시 글 섹션과 카메라 연출").uncheck();
 
   await admin.getByRole("button", {name:"변경 적용",exact:true}).click();
   await admin.locator("#publish").click(); await expect(admin.locator("#save-state")).toHaveText("공개 완료");
-  await page.reload(); await page.waitForFunction(() => window.__testWorld?.sun);
+  await page.reload({ waitUntil: "domcontentloaded" }); await landed();
   await page.evaluate(() => window.__testWorld.moveTo(-9, 1));
   await page.waitForFunction(() => window.__testWorld.objects[0].near);
   expect(await page.evaluate(() => window.__testWorld.readingBlend)).toBe(0);
