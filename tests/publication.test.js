@@ -51,9 +51,11 @@ test("the allowlist matches the previous one for covers, floor images and models
   assert.deepEqual(publicAssetNames(db), names(upload("1", "glb"), upload("2"), upload("5"), upload("6"), upload("7")));
 });
 
-test("chapter thumbnails and hero images are public only for published books", () => {
+test("main thumbnails, chapter thumbnails and hero images are public only for published books", () => {
   const live = library();
   const [alice, oz] = live.books;
+  alice.thumbnail = upload("e");
+  oz.thumbnail = upload("f");
   alice.chapters[1].thumbnail = upload("9");
   oz.chapters[0].thumbnail = upload("a");
   alice.description = `본문에 적힌 주소 ${upload("b")} 는 공개하지 않는다`;
@@ -64,14 +66,15 @@ test("chapter thumbnails and hero images are public only for published books", (
   const db = { live: librarySchema.parse(live) };
   assert.deepEqual(publicLibrary(db).home.hero.map((s) => s.id), ["slide-alice"]);
   const allowed = publicAssetNames(db);
-  for (const url of [upload("9"), upload("d")]) assert(allowed.has(path.basename(url)), url);
-  for (const url of [upload("a"), upload("b"), upload("c"), upload("8"), upload("3", "glb"), upload("4")]) assert(!allowed.has(path.basename(url)), url);
+  for (const url of [upload("e"), upload("9"), upload("d")]) assert(allowed.has(path.basename(url)), url);
+  for (const url of [upload("f"), upload("a"), upload("b"), upload("c"), upload("8"), upload("3", "glb"), upload("4")]) assert(!allowed.has(path.basename(url)), url);
 });
 
 test("saved images are collected from books and hero slides, not models", () => {
   const live = library();
+  live.books[0].thumbnail = upload("e");
   live.books[0].chapters[1].thumbnail = upload("9");
   live.home = { hero: [{ id: "slide-oz", bookId: "oz", image: upload("c") }] };
-  assert.deepEqual(imageUrls(live), new Set([upload("5"), upload("6"), upload("7"), upload("8"), upload("9"), upload("c")]));
+  assert.deepEqual(imageUrls(live), new Set([upload("5"), upload("e"), upload("6"), upload("7"), upload("8"), upload("9"), upload("c")]));
   assert.deepEqual(imageUrls({ books: [] }), new Set());
 });

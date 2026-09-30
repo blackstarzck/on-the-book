@@ -95,3 +95,17 @@ test("author and book intros survive the trip, and rows from before their column
   const parsed = librarySchema.parse(back).books[0];
   assert.deepEqual([parsed.authorIntro, parsed.bookIntro], ["", ""]);
 });
+
+test("a book's main thumbnail survives the trip, and rows from before its column read back without one", () => {
+  const original = library();
+  original.books[0].thumbnail = "/uploads/5b1f2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d.png";
+  const rows = toRows(original);
+  assert.equal(rows.books[0].thumbnail, original.books[0].thumbnail);
+  assert.equal(rows.books[1].thumbnail, "");
+  assert.deepEqual(librarySchema.parse(fromRows(rows)), original);
+  // A row saved before 20260930090000_book_thumbnails.sql, or by an older studio, holds null there.
+  for (const row of rows.books) row.thumbnail = null;
+  const back = fromRows(rows);
+  assert.equal("thumbnail" in back.books[0], false);
+  assert.equal(librarySchema.parse(back).books[0].thumbnail, "");
+});

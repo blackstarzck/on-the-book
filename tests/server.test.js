@@ -155,12 +155,13 @@ const uploadPng = async () => {
   assert.equal(uploaded.status, 201);
   return (await uploaded.json()).url;
 };
-test("readers get hero slides and chapter thumbnails of published books only", async () => {
+test("readers get hero slides, main thumbnails and chapter thumbnails of published books only", async () => {
   const image = await uploadPng();
   const state = await (await request("/api/studio")).json();
   const [shown, hidden] = state.library.books;
   shown.published = true;
   hidden.published = false;
+  shown.thumbnail = image;
   shown.chapters[0].thumbnail = image;
   state.library.home = { hero: [
     { id: "hero-hidden", bookId: hidden.id, image },
@@ -170,14 +171,19 @@ test("readers get hero slides and chapter thumbnails of published books only", a
   assert.equal(saved.status, 200, await saved.text());
   const live = await (await request("/api/library")).json();
   assert.deepEqual(live.home.hero.map((s) => [s.id, s.kicker, s.focus]), [["hero-shown", "새로 공개", "center"]]);
+  assert.deepEqual(live.books.map((b) => b.id), [shown.id]);
+  assert.equal(live.books[0].thumbnail, image);
   assert.equal(live.books[0].chapters[0].thumbnail, image);
 });
 test("an image that was never uploaded cannot be saved", async () => {
-  const state = await (await request("/api/studio")).json();
-  state.library.books[0].chapters[1].thumbnail = "/uploads/00000000-0000-0000-0000-000000000000.png";
-  const res = await request("/api/studio", "PUT", { library: state.library, version: state.version });
-  assert.equal(res.status, 400);
-  assert.equal((await res.json()).error, "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요.");
+  const missing = "/uploads/00000000-0000-0000-0000-000000000000.png";
+  for (const place of [(library) => { library.books[0].chapters[1].thumbnail = missing; }, (library) => { library.books[0].thumbnail = missing; }]) {
+    const state = await (await request("/api/studio")).json();
+    place(state.library);
+    const res = await request("/api/studio", "PUT", { library: state.library, version: state.version });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).error, "등록한 이미지 파일을 찾을 수 없습니다. 다시 올려 주세요.");
+  }
 });
 test("configured administrator password protects reads/writes and session logout", async () => {
   const s = await startServer({ password: "test-only-password" });

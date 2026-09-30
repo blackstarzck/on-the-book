@@ -3,6 +3,8 @@ import { hasObject, parseRoute, resolveRoute, routeHref } from "./route.js";
 
 import { reactionSize } from "../shared/experience.js";
 import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
+import { heroFocus, imageSlots } from "../shared/image-slots.js";
+import { iconFor } from "../client/category-icons.js";
 import { World } from "../shared/world.js";
 import {
   api,
@@ -20,6 +22,8 @@ let library,
   version,
   publishedAt,
   protectedMode = false,
+  // Whether this studio saves to the store the public reader reads (Supabase), as a local studio with .env does too.
+  sharedStore = false,
   tab = "books",
   bookId,
   chapterId,
@@ -131,14 +135,25 @@ async function uploadImage(file) {
   fd.append("image", file);
   return (await api("/api/floor/upload", { method: "POST", body: fd })).url;
 }
+// The picture once per place readers see it (shared/image-slots.js), cut as the reader cuts it: the same frame shape,
+// the same kept point (a hero slide's `focus`) and the overlay laid on it there (the book `title`, the hero's scrim).
+const cropFrames = (key, slots, value, { focus = "center", title = "" }) =>
+  `<figure class="crop-frames" id="${key}-frames" ${value ? "" : "hidden"}><figcaption>사용자 화면에서 보이는 모습</figcaption><div class="crop-frame-list">${slots.map((slot) => `<div class="crop-frame" data-slot="${slot.id}"><span class="crop-box${slot.title ? " has-title" : ""}"${slot.scrim ? ` data-scrim="${slot.scrim}"` : ""} style="aspect-ratio:${slot.ratio}"><img alt="" draggable="false" ${value ? `src="${esc(value)}"` : ""} style="object-position:${slot.position || heroFocus[focus] || heroFocus.center}">${slot.title ? `<b>${esc(title)}</b>` : ""}</span><small>${esc(slot.label)} · ${esc(slot.ratioLabel)}</small></div>`).join("")}</div></figure>`;
 // A PNG with preview and removal. The chosen address sits in the hidden input `name`,
 // so forms read it with the rest of their fields; ids hang off `key` (e.g. book-cover-file).
-const imageField = (key, label, name, value, hint) =>
-  `<div class="image-field"><span class="image-field-label">${label}</span><img id="${key}-preview" class="thumbnail-preview" alt="" ${value ? `src="${esc(value)}"` : "hidden"}><input type="hidden" name="${name}" value="${esc(value || "")}"><div class="image-field-actions"><label class="outline-button small">${icon("upload")} 이미지 선택<input id="${key}-file" type="file" accept="image/png,.png" aria-label="${esc(label)} 파일 선택"></label><button type="button" id="${key}-clear" class="text-button small danger" ${value ? "" : "hidden"}>이미지 지우기</button></div><p id="${key}-status" class="field-hint">${esc(hint)}</p></div>`;
+// The hint stays while the status line under it reports uploads; `slots` adds the reader's frames (cropFrames).
+const imageField = (key, label, name, value, hint, slots = [], frames = {}) =>
+  `<div class="image-field"><span class="image-field-label">${label}</span><img id="${key}-preview" class="thumbnail-preview" alt="" ${value ? `src="${esc(value)}"` : "hidden"}>${slots.length ? cropFrames(key, slots, value, frames) : ""}<input type="hidden" name="${name}" value="${esc(value || "")}"><div class="image-field-actions"><label class="outline-button small">${icon("upload")} 이미지 선택<input id="${key}-file" type="file" accept="image/png,.png" aria-label="${esc(label)} 파일 선택"></label><button type="button" id="${key}-clear" class="text-button small danger" ${value ? "" : "hidden"}>이미지 지우기</button></div><p class="field-hint">${esc(hint)}</p><p id="${key}-status" class="field-status" role="status"></p></div>`;
 function bindImageField(root, key, name, { busy = () => {}, change = () => {} } = {}) {
   const input = root.querySelector(`[name="${name}"]`), preview = root.querySelector(`#${key}-preview`);
   const clear = root.querySelector(`#${key}-clear`), status = root.querySelector(`#${key}-status`);
-  const show = (url) => { input.value = url; preview.hidden = !url; if (url) preview.src = url; else preview.removeAttribute("src"); clear.hidden = !url; };
+  const frames = root.querySelector(`#${key}-frames`);
+  const show = (url) => {
+    input.value = url; preview.hidden = !url; if (url) preview.src = url; else preview.removeAttribute("src"); clear.hidden = !url;
+    if (!frames) return;
+    frames.hidden = !url;
+    for (const img of frames.querySelectorAll("img")) if (url) img.src = url; else img.removeAttribute("src");
+  };
   root.querySelector(`#${key}-file`).onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -150,10 +165,15 @@ function bindImageField(root, key, name, { busy = () => {}, change = () => {} } 
   };
   clear.onclick = () => { show(""); status.textContent = "이미지를 지웠어요. 변경을 적용하면 반영됩니다."; change(""); };
 }
-// Keeps a dialog's action buttons off while an upload runs, restoring their own disabled state.
+// Keeps a dialog's action buttons off while any of its uploads runs, restoring their own disabled state after the
+// last one. Fields of one dialog share the returned function.
 function holdActions(dialog) {
   const buttons = [...dialog.querySelectorAll(".modal-actions button")].map((b) => [b, b.disabled]);
-  return (busy) => buttons.forEach(([b, disabled]) => (b.disabled = busy || disabled));
+  let running = 0;
+  return (busy) => {
+    running = Math.max(0, running + (busy ? 1 : -1));
+    buttons.forEach(([b, disabled]) => (b.disabled = running > 0 || disabled));
+  };
 }
 // ---- The address (admin/route.js): the path names the page, the query what is open on it. ----
 function currentRoute() {
@@ -480,10 +500,16 @@ function editBook(isNew = false) {
     : book();
   const categories = [...new Set(["판타지", "모험", "문학", ...library.books.map(bookCategory)])];
   const d = modal(
-    `<span class="eyebrow">BOOK DETAILS</span><h2>${isNew ? "새 책 만들기" : "책 정보"}</h2><form id="book-form">${imageField("book-cover", "표지 이미지 (PNG)", "cover", original.cover,`${original.cover ? "표지가 등록되어 있습니다." : "표지를 올리지 않으면 빈 표지로 보입니다."} 세로 2:2.85 비율을 권장해요(예: 800×1140).`)}${field("책 제목", "title", original.title, "text", 'required maxlength="200"')}${field("영문 제목", "englishTitle", original.englishTitle, "text", 'required maxlength="200"')}<div class="field-row">${field("작가", "author", original.author, "text", 'maxlength="200"')}${field("원작 출간 연도", "year", original.year, "number", 'required min="1" max="2026"')}</div>${field("분류", "category", bookCategory(original), "text", 'required maxlength="8" list="book-categories" pattern="^(?!(all|reading)$).*" title="8자 이하로 입력해 주세요. all·reading은 쓸 수 없습니다."')}<datalist id="book-categories">${categories.map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist><p class="field-hint">사용자 화면의 빠른 메뉴와 분류 필터에 쓰입니다. 같은 이름을 쓰면 한 분류로 묶여요.</p><label class="field">소개 문장<textarea name="description" rows="2" maxlength="1000">${esc(original.description)}</textarea></label><label class="field">저자 소개<textarea name="authorIntro" rows="5" maxlength="5000">${esc(original.authorIntro)}</textarea></label><label class="field">책 소개<textarea name="bookIntro" rows="6" maxlength="5000">${esc(original.bookIntro)}</textarea></label><p class="field-hint">소개 문장은 홈 추천 배너의 기본 설명과 3D 화면의 작품 소개 창에 쓰는 짧은 글이고, 저자 소개와 책 소개는 작품 상세의 ‘이 책의 여정’ 아래에 차례로 보여요. 빈 줄로 문단을 나누고, 비워 두면 ‘준비 중’ 문구가 보여요.</p>${field("원작 출처 주소", "source", original.source, "url", 'required pattern="https?://.*"')}<label class="field">권리 및 번역·각색 정보<textarea name="rights" rows="3" maxlength="1000">${esc(original.rights)}</textarea></label><label class="checkbox-field"><input type="checkbox" name="published" ${original.published ? "checked" : ""}> 사용자 화면 공개 대상에 포함</label><div class="modal-actions">${!isNew ? '<button id="delete-book" type="button" class="text-button danger">책 삭제</button>' : ""}<button class="primary-button" type="submit">${isNew ? "책 만들기" : "변경 적용"}</button></div></form>`,
+    `<span class="eyebrow">BOOK DETAILS</span><h2>${isNew ? "새 책 만들기" : "책 정보"}</h2><form id="book-form">${imageField("book-cover", "표지 이미지 (PNG)", "cover", original.cover, "책장, 작품 상세와 3D 화면의 작품 소개 창에 세로 2:2.85(예: 800×1140)로 보여요. 비율이 다르면 가운데를 기준으로 잘립니다. 없으면 빈 표지로 둡니다.", imageSlots.cover)}${imageField("book-thumbnail", "도서 메인 썸네일 (PNG)", "thumbnail", original.thumbnail, "홈 ‘한 장면부터 시작하는 여행’의 큰 칸에 정사각형(예: 1200×1200)으로 보이고, 휴대폰에서는 가운데를 기준으로 가로 16:9로 잘려요. 아래쪽에 책 제목이 흰 글씨로 얹히니 글자 없는 그림을 권장해요. 없으면 기본 배경에 책 제목만 보여요.", imageSlots.bookThumbnail, { title: original.title })}${field("책 제목", "title", original.title, "text", 'required maxlength="200"')}${field("영문 제목", "englishTitle", original.englishTitle, "text", 'required maxlength="200"')}<div class="field-row">${field("작가", "author", original.author, "text", 'maxlength="200"')}${field("원작 출간 연도", "year", original.year, "number", 'required min="1" max="2026"')}</div>${field("분류", "category", bookCategory(original), "text", 'required maxlength="8" list="book-categories" pattern="^(?!(all|reading)$).*" title="8자 이하로 입력해 주세요. all·reading은 쓸 수 없습니다."')}<datalist id="book-categories">${categories.map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist><div class="category-icon"><img id="book-category-icon" src="${esc(iconFor(bookCategory(original)))}" alt="" draggable="false"><p class="field-hint">사용자 화면의 빠른 메뉴와 분류 필터에 쓰입니다. 같은 이름을 쓰면 한 분류로 묶여요. 왼쪽 그림이 빠른 메뉴와 사진 없는 추천 슬라이드에 보이는데, ‘판타지’·‘모험’만 전용 그림이 있고 다른 분류는 책 그림이에요.</p></div><label class="field">소개 문장<textarea name="description" rows="2" maxlength="1000">${esc(original.description)}</textarea></label><label class="field">저자 소개<textarea name="authorIntro" rows="5" maxlength="5000">${esc(original.authorIntro)}</textarea></label><label class="field">책 소개<textarea name="bookIntro" rows="6" maxlength="5000">${esc(original.bookIntro)}</textarea></label><p class="field-hint">소개 문장은 홈 추천 배너의 기본 설명과 3D 화면의 작품 소개 창에 쓰는 짧은 글이고, 저자 소개와 책 소개는 작품 상세의 ‘이 책의 여정’ 아래에 차례로 보여요. 빈 줄로 문단을 나누고, 비워 두면 ‘준비 중’ 문구가 보여요.</p>${field("원작 출처 주소", "source", original.source, "url", 'required pattern="https?://.*"')}<label class="field">권리 및 번역·각색 정보<textarea name="rights" rows="3" maxlength="1000">${esc(original.rights)}</textarea></label><label class="checkbox-field"><input type="checkbox" name="published" ${original.published ? "checked" : ""}> 사용자 화면 공개 대상에 포함</label><div class="modal-actions">${!isNew ? '<button id="delete-book" type="button" class="text-button danger">책 삭제</button>' : ""}<button class="primary-button" type="submit">${isNew ? "책 만들기" : "변경 적용"}</button></div></form>`,
   );
   routeDialog(d, isNew ? "new-book" : "book");
-  bindImageField(d, "book-cover", "cover", { busy: holdActions(d) });
+  const hold = holdActions(d);
+  bindImageField(d, "book-cover", "cover", { busy: hold });
+  bindImageField(d, "book-thumbnail", "thumbnail", { busy: hold });
+  // The main thumbnail's frames and the category icon follow the form as it is typed, like the reader will show them.
+  const titleInput = d.querySelector('[name="title"]'), categoryInput = d.querySelector('[name="category"]');
+  titleInput.addEventListener("input", () => d.querySelectorAll("#book-thumbnail-frames b").forEach((b) => { b.textContent = titleInput.value; }));
+  categoryInput.addEventListener("input", () => { d.querySelector("#book-category-icon").src = iconFor(categoryInput.value.trim()); });
   d.querySelector("form").onsubmit = (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
@@ -543,7 +569,7 @@ function editChapter(id) {
   const c = book().chapters.find(c=>c.id===id) || chapter(),
     index = book().chapters.indexOf(c);
   const d = modal(
-    `<span class="eyebrow">CHAPTER ${index + 1}</span><h2>장면과 이야기</h2><form id="chapter-form">${field("챕터 제목", "title", c.title, "text", 'required maxlength="200"')}${field("짧은 소개", "subtitle", c.subtitle, "text", 'maxlength="250"')}${imageField("chapter-thumbnail", "장면 썸네일 (PNG)", "thumbnail", c.thumbnail,"사용자 화면의 장면 목록과 작품 상세의 장면 패널에 16:10 비율로 보여요(예: 1280×800). 없으면 빈 자리로 둡니다.")}${select("장면 분위기", "theme", themes, c.theme)}${field("공간 가로 크기", "width", c.width || 64, "number", 'min="40" max="120" required')}${field("공간 세로 크기", "depth", c.depth || 56, "number", 'min="40" max="100" required')}<p class="field-hint">이 공간이 챕터 순서대로 연결됩니다. 모델은 공간 안 어디든 배치할 수 있고, 이동 조건은 없습니다.</p><a href="${esc(clientUrl)}?book=${book().id}&chapter=${c.id}" target="_blank" rel="noopener">공개된 탐험 화면 보기 ↗</a><div class="field-section">바닥 안내와 독서 화면</div><p class="field-hint">바닥 이미지는 왼쪽 목록에서 월드에 배치하고, 선택해 위치와 방향을 수정합니다.</p><label class="checkbox-field"><input type="checkbox" name="floorEnabled" ${c.floorEnabled !== false ? "checked" : ""}> 모델 접근 시 글 섹션과 카메라 연출</label><label class="field">오른쪽에 보여 줄 글귀<textarea name="floorText" rows="4" maxlength="15000" placeholder="비우면 아래 이야기 본문 전체를 사용합니다.">${esc(c.floorText || "")}</textarea></label>${field("글귀 카메라 여백 배율", "floorZoom", c.floorZoom ?? 1.1, "number", 'min="1" max="1.8" step="0.1"')}${field("애니메이션·글 노출 접근 배율", "reactionMultiplier", c.reactionMultiplier ?? 2, "number", 'min="1" max="4" step="0.1"')}${field("페이지당 최대 글자 수", "floorPageSize", c.floorPageSize ?? 112, "number", 'min="40" max="400" step="1"')}<label class="checkbox-field"><input name="floorStagger" type="checkbox" ${c.floorStagger !== false ? "checked" : ""}> 챕터명과 본문 순차 등장</label><p class="field-hint">글귀는 화면 오른쪽의 반투명 창에, 캐릭터와 모델은 왼쪽에 표시됩니다. 긴 글은 여러 장으로 나뉩니다. 여백 배율이 클수록 카메라가 멀어지며, 화면 크기에 맞춰 글귀가 보이도록 조절됩니다.</p><label class="field">이야기 본문<textarea name="body" rows="9" maxlength="15000">${esc(c.body)}</textarea></label><div class="modal-actions"><button type="button" id="chapter-up" class="outline-button" ${index === 0 ? "disabled" : ""}>앞으로 옮기기</button><button type="button" id="chapter-down" class="outline-button" ${index === book().chapters.length - 1 ? "disabled" : ""}>뒤로 옮기기</button><button type="button" id="delete-chapter" class="text-button danger" ${book().chapters.length === 1 ? "disabled" : ""}>삭제</button><button class="primary-button">변경 적용</button></div></form>`,
+    `<span class="eyebrow">CHAPTER ${index + 1}</span><h2>장면과 이야기</h2><form id="chapter-form">${field("챕터 제목", "title", c.title, "text", 'required maxlength="200"')}${field("짧은 소개", "subtitle", c.subtitle, "text", 'maxlength="250"')}${imageField("chapter-thumbnail", "장면 썸네일 (PNG)", "thumbnail", c.thumbnail, "작품 상세의 장면 패널에는 16:10(예: 1280×800)이 그대로 보이고, 홈 장면 카드에는 가운데 정사각형만 보여요. 중요한 부분은 가운데에 두세요. 없으면 빈 자리로 둡니다.", imageSlots.chapterThumbnail)}${select("장면 분위기", "theme", themes, c.theme)}${field("공간 가로 크기", "width", c.width || 64, "number", 'min="40" max="120" required')}${field("공간 세로 크기", "depth", c.depth || 56, "number", 'min="40" max="100" required')}<p class="field-hint">이 공간이 챕터 순서대로 연결됩니다. 모델은 공간 안 어디든 배치할 수 있고, 이동 조건은 없습니다.</p><a href="${esc(clientUrl)}?book=${book().id}&chapter=${c.id}" target="_blank" rel="noopener">공개된 탐험 화면 보기 ↗</a><div class="field-section">바닥 안내와 독서 화면</div><p class="field-hint">바닥 이미지는 왼쪽 목록에서 월드에 배치하고, 선택해 위치와 방향을 수정합니다.</p><label class="checkbox-field"><input type="checkbox" name="floorEnabled" ${c.floorEnabled !== false ? "checked" : ""}> 모델 접근 시 글 섹션과 카메라 연출</label><label class="field">오른쪽에 보여 줄 글귀<textarea name="floorText" rows="4" maxlength="15000" placeholder="비우면 아래 이야기 본문 전체를 사용합니다.">${esc(c.floorText || "")}</textarea></label>${field("글귀 카메라 여백 배율", "floorZoom", c.floorZoom ?? 1.1, "number", 'min="1" max="1.8" step="0.1"')}${field("애니메이션·글 노출 접근 배율", "reactionMultiplier", c.reactionMultiplier ?? 2, "number", 'min="1" max="4" step="0.1"')}${field("페이지당 최대 글자 수", "floorPageSize", c.floorPageSize ?? 112, "number", 'min="40" max="400" step="1"')}<label class="checkbox-field"><input name="floorStagger" type="checkbox" ${c.floorStagger !== false ? "checked" : ""}> 챕터명과 본문 순차 등장</label><p class="field-hint">글귀는 화면 오른쪽의 반투명 창에, 캐릭터와 모델은 왼쪽에 표시됩니다. 긴 글은 여러 장으로 나뉩니다. 여백 배율이 클수록 카메라가 멀어지며, 화면 크기에 맞춰 글귀가 보이도록 조절됩니다.</p><label class="field">이야기 본문<textarea name="body" rows="9" maxlength="15000">${esc(c.body)}</textarea></label><div class="modal-actions"><button type="button" id="chapter-up" class="outline-button" ${index === 0 ? "disabled" : ""}>앞으로 옮기기</button><button type="button" id="chapter-down" class="outline-button" ${index === book().chapters.length - 1 ? "disabled" : ""}>뒤로 옮기기</button><button type="button" id="delete-chapter" class="text-button danger" ${book().chapters.length === 1 ? "disabled" : ""}>삭제</button><button class="primary-button">변경 적용</button></div></form>`,
   );
   routeDialog(d, "chapter", c.id);
   const apply = () => {
@@ -802,7 +828,7 @@ function slideCard(slide, i, count) {
   const books = library.books.map((b) => `<option value="${esc(b.id)}" ${b.id === slide.bookId ? "selected" : ""}>${esc(b.title)}${b.published ? "" : " (비공개)"}</option>`).join("");
   const focus = Object.entries(focusNames).map(([v, l]) => `<option value="${v}" ${v === slide.focus ? "selected" : ""}>${l}</option>`).join("");
   return `<article class="slide-card" data-slide="${esc(slide.id)}"><div class="slide-order"><b>${String(i + 1).padStart(2, "0")}</b><button type="button" class="icon-button" data-slide-move="-1" aria-label="${i + 1}번 슬라이드를 앞으로" ${i ? "" : "disabled"}>↑</button><button type="button" class="icon-button" data-slide-move="1" aria-label="${i + 1}번 슬라이드를 뒤로" ${i === count - 1 ? "disabled" : ""}>↓</button></div>
-    <div class="slide-media">${imageField(`slide-${i}`, "사진 (PNG)", "image", slide.image,"가로 사진을 권장해요(예: 2400×1000, 5MB 이하). 데스크톱은 약 3.4:1, 휴대폰은 약 0.8:1로 잘립니다. 없으면 기본 그림으로 보여요.")}</div>
+    <div class="slide-media">${imageField(`slide-${i}`, "사진 (PNG)", "image", slide.image, "가로 사진을 권장해요(예: 2400×1000, 5MB 이하). 넓은 화면은 약 3.4:1이라 위아래가, 휴대폰은 약 0.9:1이라 좌우가 잘려요. 휴대폰에서 남길 쪽은 ‘사진 초점’으로 고릅니다. 없으면 기본 그림으로 보여요.", imageSlots.hero, { focus: slide.focus })}</div>
     <div class="slide-fields"><div class="field-row"><div class="field"><label for="slide-${i}-book">연결 책</label><select id="slide-${i}-book" name="bookId">${books}</select></div><div class="field"><label for="slide-${i}-focus">사진 초점</label><select id="slide-${i}-focus" name="focus">${focus}</select></div></div>${target?.published ? "" : '<p class="field-hint slide-warning">비공개 도서라 사용자 화면에 나오지 않습니다.</p>'}${field("작은 문구", "kicker", slide.kicker, "text", `maxlength="40" placeholder="${esc(heroKicker({}, i))}"`)}${field("제목", "title", slide.title, "text", `maxlength="60" placeholder="${esc(target?.title || "")}"`)}<label class="field">설명<textarea name="description" rows="2" maxlength="200" placeholder="${esc(target?.description || "")}">${esc(slide.description)}</textarea></label><p class="field-hint">비워 둔 칸은 흐린 글씨로 보이는 기본값을 씁니다.</p><button type="button" class="text-button danger" data-slide-remove>슬라이드 삭제</button></div></article>`;
 }
 function homeView() {
@@ -857,7 +883,7 @@ function previewHome(saveFirst = true) {
   return openPreview("", "공개 전 홈 화면 체험", "임시 저장한 홈 화면을 확인합니다. 공개 대상 책만 보이며, 공개 중인 화면에는 영향을 주지 않습니다.", saveFirst);
 }
 function settingsView() {
-  return `<div class="page-title"><div><span class="eyebrow">READY TO OPEN THE BOOK</span><h1>공개 및 안내</h1><p>장면을 충분히 살펴본 후 독자를 초대해 주세요.</p></div></div><div class="settings-grid"><section class="settings-card"><h2>저장과 공개</h2><p><b>임시 저장</b>은 관리자 작업을 보관합니다. 사용자에게 보여 주려면 <b>사용자 화면에 공개</b>를 눌러 주세요.</p><p>책 정보에서 ‘공개 대상’을 해제하고 다시 공개하면 해당 책을 책장에서 숨길 수 있어요.</p><a class="outline-button" href="${esc(clientUrl)}" target="_blank">공개된 화면 확인 ${icon("arrow-up-right")}</a></section><section class="settings-card"><h2>작업 데이터 백업</h2><p>책, 챕터, 배치 설정을 한 파일로 내려받습니다. 업로드한 3D 원본 파일은 서버의 데이터 폴더에 별도로 보관됩니다.</p><button id="export" class="outline-button">${icon("save")} 설정 내려받기</button></section><section class="settings-card"><h2>이야기와 모델의 출처</h2><p>기본 이야기는 영어 고전을 바탕으로 직접 작성한 한국어 축약·각색입니다. 기존 번역문과 캐릭터 자산을 가져오지 않았습니다.</p><p>새 책과 모델을 등록할 때에는 이용할 원문·번역·3D 파일 각각의 사용 권한을 기록해 주세요.</p></section><section class="settings-card"><h2>내 컴퓨터에서 실행 중</h2><p>현재 서버는 이 컴퓨터에서만 연결되도록 설정되어 있습니다. ${protectedMode ? "관리자 비밀번호 보호가 켜져 있습니다." : "로컬 작업에서는 로그인 없이 관리할 수 있습니다."}</p><p>외부 서비스로 운영할 때 필요한 배포·로그인·백업 설정은 프로젝트 안내문에 정리했습니다.</p></section></div>`;
+  return `<div class="page-title"><div><span class="eyebrow">READY TO OPEN THE BOOK</span><h1>공개 및 안내</h1><p>장면을 충분히 살펴본 후 독자를 초대해 주세요.</p></div></div><div class="settings-grid"><section class="settings-card"><h2>저장과 공개</h2><p><b>임시 저장</b>은 관리자 작업을 보관합니다. 사용자에게 보여 주려면 <b>사용자 화면에 공개</b>를 눌러 주세요.</p><p>책 정보에서 ‘공개 대상’을 해제하고 다시 공개하면 해당 책을 책장에서 숨길 수 있어요.</p><a class="outline-button" href="${esc(clientUrl)}" target="_blank">공개된 화면 확인 ${icon("arrow-up-right")}</a></section><section class="settings-card"><h2>작업 데이터 백업</h2><p>책·챕터·배치와 홈 슬라이드 설정을 한 파일로 내려받습니다. 업로드한 이미지와 3D 파일은 파일 저장소에 따로 보관되고, 이 파일에는 그 주소만 담깁니다.</p><button id="export" class="outline-button">${icon("save")} 설정 내려받기</button></section><section class="settings-card"><h2>이야기와 모델의 출처</h2><p>기본 이야기는 영어 고전을 바탕으로 직접 작성한 한국어 축약·각색입니다. 기존 번역문과 캐릭터 자산을 가져오지 않았습니다.</p><p>새 책과 모델을 등록할 때에는 이용할 원문·번역·3D 파일 각각의 사용 권한을 기록해 주세요.</p></section><section class="settings-card"><h2>저장 위치와 접속</h2><p>${sharedStore ? "임시 저장과 공개는 운영 사용자 화면과 같은 저장소에 기록됩니다. 이 컴퓨터에서 띄운 스튜디오에서 공개해도 운영 화면이 바로 바뀌어요." : "임시 저장과 공개는 이 서버의 데이터 폴더에 기록되며, 운영 사용자 화면에는 영향을 주지 않습니다."}</p><p>${protectedMode ? "관리자 비밀번호 보호가 켜져 있습니다." : "비밀번호 없이 열려 있으며, 이 컴퓨터에서만 접속할 수 있습니다."}</p><p>배포·로그인·백업 설정은 프로젝트 안내문에 정리했습니다.</p></section></div>`;
 }
 function exportData() {
   const blob = new Blob([JSON.stringify(library, null, 2)], {
@@ -957,6 +983,7 @@ async function load() {
     version = result.version;
     publishedAt = result.publishedAt;
     protectedMode = result.protected;
+    sharedStore = !!result.shared;
     openAddress();
   } catch (e) {
     if (e.status === 401) {

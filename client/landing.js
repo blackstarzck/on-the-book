@@ -2,25 +2,8 @@ import { esc, icon, icons } from "../shared/ui.js";
 import { heroKicker, heroSlides } from "../shared/home.js";
 import { edition, bookCover } from "./book-meta.js";
 import { detailUrl } from "./detail.js";
-import openBookClay from "./assets/quick-menu/open-book-clay.png";
-import fantasySparklesClay from "./assets/quick-menu/fantasy-sparkles-clay.png";
-import adventureMapClay from "./assets/quick-menu/adventure-map-clay.png";
-import bookmarkClay from "./assets/quick-menu/bookmark-clay.png";
-import sceneLayersClay from "./assets/quick-menu/scene-layers-clay.png";
-import helpClay from "./assets/quick-menu/help-clay.png";
+import { iconFor } from "./category-icons.js";
 import "./landing.css";
-
-const quickIcons = {
-  all: openBookClay,
-  판타지: fantasySparklesClay,
-  모험: adventureMapClay,
-  reading: bookmarkClay,
-  scenes: sceneLayersClay,
-  help: helpClay,
-};
-
-// Categories are typed in the studio, so names such as "constructor" must not reach Object.prototype.
-const iconFor = (name) => (Object.hasOwn(quickIcons, name) ? quickIcons[name] : openBookClay);
 
 function clayIcon(name) {
   return `<img src="${iconFor(name)}" alt="" aria-hidden="true" decoding="async">`;
@@ -64,9 +47,11 @@ const two = n => String(n).padStart(2, "0");
 // first book. Undefined only when the draft preview's shelf is empty.
 const sceneBookOf = (books, id) => books.find(b => b.id === id) || books[0];
 
-// The chosen book's cover tile, which opens the book detail. It stays put beside the rail.
+// The chosen book's tile, which opens the book detail. It stays put beside the rail. Its picture is the studio's
+// 도서 메인 썸네일, made square for this tile; without one the tile keeps its plain wash rather than cutting the
+// portrait cover to fit.
 function sceneCover(book, preview) {
-  return `<a class="scene-cover${book.cover ? " has-image" : ""}" href="${esc(detailUrl({ book: book.id, preview }))}" data-scene-cover="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">${book.cover ? `<img src="${esc(book.cover)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<strong>${esc(book.title)}</strong></a>`;
+  return `<a class="scene-cover${book.thumbnail ? " has-image" : ""}" href="${esc(detailUrl({ book: book.id, preview }))}" data-scene-cover="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">${book.thumbnail ? `<img src="${esc(book.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<strong>${esc(book.title)}</strong></a>`;
 }
 
 // The chosen book's chapter cards for the rail; each opens its scene on the book detail.

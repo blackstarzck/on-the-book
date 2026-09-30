@@ -509,8 +509,8 @@ try {
   const managed = {
     ...original,
     books: [
-      { ...alice, cover: upload('1'), chapters: alice.chapters.map((c, i) => i ? c : { ...c, thumbnail: upload('2') }) },
-      { ...oz, category: '세계고전문학선집' },
+      { ...alice, cover: upload('1'), thumbnail: upload('7'), chapters: alice.chapters.map((c, i) => i ? c : { ...c, thumbnail: upload('2') }) },
+      { ...oz, category: '세계고전문학선집', cover: upload('8') },
     ],
     home: { hero: [
       { id: 'slide-missing', bookId: 'missing-book', image: upload('3') },
@@ -533,11 +533,12 @@ try {
   // Reduced motion keeps autoplay off, so the slide under test cannot change mid-check.
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
   const home = await managedPage(desktop, managed);
-  await expect(home.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
-  await expect(home.locator('[data-book="oz"] .catalog-cover img')).toHaveCount(0);
+  await expect(home.locator('[data-book="alice"] .catalog-cover img')).toHaveAttribute('src', upload('1'));
+  await expect(home.locator('[data-book="oz"] .catalog-cover img')).toHaveAttribute('src', upload('8'));
   await expect(home.locator('.scene-image.has-image img')).toHaveCount(1);
-  // The scene previews' cover tile shows the same studio cover; a book without one keeps the plain wash.
-  await expect(home.locator('.scene-cover.has-image img')).toHaveAttribute('src', upload('1'));
+  // The scene previews' tile shows the book's main thumbnail, not its cover; oz has a cover but no main thumbnail,
+  // so its tile keeps the plain wash below.
+  await expect(home.locator('.scene-cover.has-image img')).toHaveAttribute('src', upload('7'));
   await home.locator('.scene-image.has-image').scrollIntoViewIfNeeded();
   await expect.poll(() => loaded(home.locator('.catalog-cover img, .scene-image img, .scene-cover img'))).toBe(true);
   await home.locator('[data-scene-tab="alice"]').focus();
