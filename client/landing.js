@@ -98,7 +98,7 @@ export function landing(library, progress, state, preview = false) {
     <div class="store-content">
       ${featured(heroSlides(library.books, library.home))}
       <div class="quick-menu discovery-content" role="group" aria-label="빠른 탐색"><button data-quick-view="all" aria-label="전체 작품 둘러보기"><span>${clayIcon("all")}</span>전체 작품</button>${categories.map(c => `<button data-quick-category="${esc(c)}" aria-label="${esc(c)} 도서 보기"><span>${clayIcon(c)}</span>${esc(c)}</button>`).join("")}<button data-quick-view="reading" aria-label="읽던 작품 이어 보기"><span>${clayIcon("reading")}</span>읽던 이야기</button><button data-scenes><span>${clayIcon("scenes")}</span>장면 둘러보기</button><button data-help><span>${clayIcon("help")}</span>이용 가이드</button></div>
-      <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기 <span>${library.books.length}</span></h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label></div>
+      <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기</h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label></div>
         <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="도서 분류"><button data-category="all" aria-pressed="true">전체</button>${categories.map(c => `<button data-category="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}</div><p role="status" aria-live="polite" id="catalog-status"></p></div><div id="book-grid" class="catalog-grid catalog-grid--many"></div>
       </section>
       ${sceneSection(library.books, state, preview)}
@@ -216,11 +216,10 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
     const discovery = !query && state.category !== "reading";
     document.querySelectorAll(".discovery-content").forEach(el => el.hidden = !discovery);
     page.querySelectorAll("[data-category]").forEach(el => el.setAttribute("aria-pressed", String(el.dataset.category === state.category)));
-    page.querySelector("#catalog-title").innerHTML = `${query ? "검색 결과" : state.category === "reading" ? "이어 읽는 이야기" : "지금 만나볼 이야기"} <span>${books.length}</span>`;
+    page.querySelector("#catalog-title").textContent = query ? "검색 결과" : state.category === "reading" ? "이어 읽는 이야기" : "지금 만나볼 이야기";
     page.querySelector("#catalog-intro").textContent = state.category === "reading" ? "마지막으로 머문 장면에서 다시 시작하세요." : "책을 고르면, 그 안의 세계가 열립니다.";
     page.querySelector("#catalog-status").textContent = `${query ? `“${state.query.trim()}” · ` : ""}${books.length}권`;
-    const spaces = discovery && books.length > 0 && books.length < 6 ? Array.from({ length: 6 - books.length }, () => '<div class="catalog-slot" aria-label="새로운 도서를 위한 빈 자리"><span class="empty-cover image-placeholder"></span><span>새로운 이야기 준비 중</span></div>').join("") : "";
-    page.querySelector("#book-grid").innerHTML = books.length ? books.map(b => bookCard(b, preview)).join("") + spaces : `<div class="catalog-empty">${icon("book-open")}<h3>${state.category === "reading" && !query ? "아직 펼친 이야기가 없어요" : "찾는 이야기가 없어요"}</h3><p>${state.category === "reading" && !query ? "책을 고르면 마지막으로 머문 장면을 이어볼 수 있어요." : "다른 검색어를 입력하거나 전체 책장을 둘러보세요."}</p><button class="primary-button" data-reset>전체 도서 보기</button></div>`;
+    page.querySelector("#book-grid").innerHTML = books.length ? books.map(b => bookCard(b, preview)).join("") :`<div class="catalog-empty">${icon("book-open")}<h3>${state.category === "reading" && !query ? "아직 펼친 이야기가 없어요" : "찾는 이야기가 없어요"}</h3><p>${state.category === "reading" && !query ? "책을 고르면 마지막으로 머문 장면을 이어볼 수 있어요." : "다른 검색어를 입력하거나 전체 책장을 둘러보세요."}</p><button class="primary-button" data-reset>전체 도서 보기</button></div>`;
     icons();
     updateRail();
   };
