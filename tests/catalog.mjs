@@ -197,6 +197,26 @@ try {
   await expect(page.locator('.scene-panel #panel-scene-title')).toHaveText('작아지는 문, 커지는 세계');
   await expect(page.locator('.scene-panel #panel-scene-title .saved-flag svg')).toHaveCount(1);
   await expect(page.getByRole('img', { name: '마지막에 머문 장면' })).toHaveCount(2);
+  // The flag's tooltip: hidden at rest, shown on hover (row and panel), put away by Escape, shown for the row's
+  // keyboard focus.
+  const rowFlag = '.journey-row[data-scene="alice-2"] .saved-flag', panelFlag = '.scene-panel #panel-scene-title .saved-flag';
+  const tip = selector => page.evaluate(sel => {
+    const bubble = getComputedStyle(document.querySelector(sel), '::after');
+    return `${bubble.content} ${bubble.opacity} ${bubble.visibility}`;
+  }, selector);
+  const shown = '"마지막에 머문 장면" 1 visible', hidden = '"마지막에 머문 장면" 0 hidden';
+  expect(await tip(rowFlag)).toBe(hidden);
+  await page.locator(rowFlag).hover();
+  await expect.poll(() => tip(rowFlag)).toBe(shown);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => tip(rowFlag)).toBe(hidden);
+  await page.locator(panelFlag).hover();
+  await expect.poll(() => tip(panelFlag)).toBe(shown);
+  await page.mouse.move(0, 400);
+  await expect.poll(() => tip(panelFlag)).toBe(hidden);
+  await page.locator('.journey-row[data-scene="alice-1"]').focus();
+  await page.keyboard.press('Tab');
+  await expect.poll(() => tip(rowFlag)).toBe(shown);
   await page.locator('.scene-panel .detail-enter').click();
   await expect(page.locator('#map-button')).toContainText('02');
   await page.reload();

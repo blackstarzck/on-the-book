@@ -198,6 +198,17 @@ function setupDetail() {
     catalogState.query = event.target.value;
     openLibrary({ land: "search" });
   }, { signal: abort.signal });
+  // Escape puts the saved scene's flag tooltip away without moving the mouse (detail.css). It comes back once the
+  // pointer has left the flag, or focus has left its journey row.
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+    for (const flag of document.querySelectorAll(".saved-flag:hover, .journey-row:focus-visible .saved-flag")) flag.classList.add("is-quiet");
+  }, { signal: abort.signal });
+  document.addEventListener("pointerout", event => {
+    const flag = event.target.closest?.(".saved-flag");
+    if (flag && !flag.contains(event.relatedTarget)) flag.classList.remove("is-quiet");
+  }, { signal: abort.signal });
+  document.addEventListener("focusout", event => event.target.querySelector?.(".saved-flag")?.classList.remove("is-quiet"), { signal: abort.signal });
   // The fixed scene panel starts where the pinned top ends, so it follows that top's measured height.
   const pinned = document.querySelector(".detail-top"), detail = document.querySelector(".detail-page");
   const measure = new ResizeObserver(() => detail.style.setProperty("--detail-top", `${pinned.offsetHeight}px`));

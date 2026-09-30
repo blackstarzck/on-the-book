@@ -41,8 +41,19 @@
 /* The saved scene's flag ends its title, in the journey row and in the scene panel. It is filled orange so it stands
    out on the green page (3:1 or more on white and on the selected row), and it follows the title's size: 16px in a
    row, 22px in the panel. */
-.saved-flag { display: inline-block; margin-left: .3em; line-height: 0; vertical-align: -.12em; color: #e8590c; }
+.saved-flag { position: relative; display: inline-block; margin-left: .3em; line-height: 0; vertical-align: -.12em; color: #e8590c; }
 .saved-flag svg { display: block; width: 1em; height: 1em; fill: currentColor; }
+/* The flag's tooltip: its label in a dark bubble above the flag. It shows after a short pause while the pointer is on
+   the flag or on the bubble (so it stays readable under magnification) and while the flag's journey row has keyboard
+   focus. The bubble ends just past the flag and opens leftwards over the title, so it never runs past the scene
+   panel's right edge. Touch screens have no hover, so on phones the flag stands alone. */
+.saved-flag::before, .saved-flag::after { position: absolute; z-index: 2; opacity: 0; visibility: hidden; transform: translateY(3px); transition: opacity .12s ease, transform .12s ease, visibility 0s linear .12s; }
+.saved-flag::after { content: attr(aria-label); bottom: calc(100% + 6px); right: -10px; padding: 7px 10px; border-radius: 6px; background: #26352d; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: 0; white-space: nowrap; }
+.saved-flag::before { content: ""; bottom: 100%; left: 50%; margin-left: -6px; border: 6px solid transparent; border-bottom-width: 0; border-top-color: #26352d; }
+.saved-flag:hover::before, .saved-flag:hover::after, .journey-row:focus-visible .saved-flag::before, .journey-row:focus-visible .saved-flag::after { opacity: 1; visibility: visible; transform: none; transition-delay: .1s, .1s, 0s; }
+/* Escape puts the bubble away until the pointer leaves the flag or focus leaves its row (main.js). These selectors are
+   as specific as the ones above, and later, so they win. */
+.saved-flag.is-quiet::before, .saved-flag.is-quiet::after, .journey-row .saved-flag.is-quiet::before, .journey-row .saved-flag.is-quiet::after { opacity: 0; visibility: hidden; transition: none; }
 /* The scene image's tint mirrors the 3D floor (shared/world.js themes[*].ground). meadow is the default. */
 .scene-image[data-theme] { background: #cad7aa; }
 .scene-image[data-theme="night"] { background: #929aaf; }
@@ -113,6 +124,9 @@
   .detail-prose p { font-size: 15px; line-height: 1.75; }
   .detail-intro-empty { font-size: 14px; }
   .journey-row { gap: 12px; min-height: 58px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .saved-flag::before, .saved-flag::after { transform: none; transition: none; }
 }
 @media (max-width: 370px) {
   .detail-hero { grid-template-columns: minmax(0, 1fr); }

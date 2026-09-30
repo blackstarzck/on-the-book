@@ -29,9 +29,10 @@ const savedChapter = (book, progress) =>
 // The scene the panel opens on: the saved chapter while it exists, otherwise the first chapter.
 export const defaultScene = (book, progress = {}) => savedChapter(book, progress) || book.chapters[0];
 
-// The saved scene's mark: a flag right after the scene title, in its journey row and in the scene panel. Its title
-// names it on hover and for screen readers.
-const savedFlag = `<span class="saved-flag" role="img" title="마지막에 머문 장면">${icon("flag")}</span>`;
+// The saved scene's mark: a flag right after the scene title, in its journey row and in the scene panel. Its label
+// names it for screen readers and is the text of the tooltip detail.css shows on hover. There is no `title`, so the
+// browser's own tooltip does not appear on top of it.
+const savedFlag = `<span class="saved-flag" role="img" aria-label="마지막에 머문 장면">${icon("flag")}</span>`;
 
 // Blank lines split paragraphs. Stored data is not re-parsed, so a field added later may be missing.
 const paragraphsOf = text => String(text ?? "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
