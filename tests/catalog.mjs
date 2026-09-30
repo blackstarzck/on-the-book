@@ -18,7 +18,9 @@ try {
   });
   await page.goto(`${server.url}/client/`);
   await expect(page.locator('.catalog-card')).toHaveCount(2);
-  await expect(page.locator('.catalog-slot')).toHaveCount(4);
+  // The shelf shows only the books: no count beside the title and no empty places after the cards.
+  await expect(page.locator('#catalog-title')).toHaveText('지금 만나볼 이야기');
+  await expect(page.locator('#book-grid > *')).toHaveCount(2);
   await expect(page.locator('.catalog-cover img, .catalog-cover svg')).toHaveCount(0);
   await expect(page.locator('.catalog-cover')).toHaveCount(2);
   await expect(page.locator('.catalog-card .book-category, .catalog-card .book-description, .catalog-card .book-resume, .catalog-card .book-details, .catalog-card .book-format')).toHaveCount(0);
@@ -100,13 +102,12 @@ try {
   await expect(page.getByText('찾는 이야기가 없어요')).toBeVisible();
   await page.getByRole('button', { name: '전체 도서 보기', exact: true }).click();
   await expect(page.locator('.catalog-card')).toHaveCount(2);
-  // A genre chip filters only the section's cards: the section keeps its title and its six places, and the rest of the
-  // home stays on screen.
+  // A genre chip filters only the section's cards: the section keeps its title, and the rest of the home stays on screen.
   await page.getByRole('button', { name: '모험', exact: true }).click();
   await expect(page.locator('.book-title')).toHaveText('오즈의 마법사');
   await expect(page.getByRole('button', { name: '모험', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#catalog-title')).toHaveText('지금 만나볼 이야기 1');
-  await expect(page.locator('.catalog-slot')).toHaveCount(5);
+  await expect(page.locator('#catalog-title')).toHaveText('지금 만나볼 이야기');
+  await expect(page.locator('#book-grid > *')).toHaveCount(1);
   for (const section of ['.reading-ribbon', '.featured-section', '.quick-menu', '.scene-section', '.experience-banner']) await expect(page.locator(section)).toBeVisible();
   // The quick menu's genres pick the same chip.
   await page.getByRole('button', { name: '판타지 도서 보기', exact: true }).click();
@@ -343,7 +344,7 @@ try {
   await page.locator('#book-search').fill('오즈');
   await page.locator('#book-search').press('Enter');
   await expect(page.locator('.library-page')).toBeVisible();
-  await expect(page.locator('#catalog-title')).toContainText('검색 결과');
+  await expect(page.locator('#catalog-title')).toHaveText('검색 결과');
   await expect(page.locator('.catalog-card')).toHaveCount(1);
   await expect(page.locator('#book-search')).toHaveValue('오즈');
   await expect(page.locator('#book-search')).toBeFocused();
