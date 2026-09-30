@@ -146,7 +146,9 @@ export class Journey extends World {
   }
   frame(t) {
     if (this.dead || !this.player || !this.sun) return;
-    const dt = Math.min((t - this.last) / 1000, .05); this.last = t;
+    // A frame's timestamp is when the frame began, which can precede `last` after a long world build; a negative step
+    // would throw the camera off and walk the traveller backwards.
+    const dt = Math.max(0, Math.min((t - this.last) / 1000, .05)); this.last = t;
     const paused = !this.active || !!document.querySelector("dialog[open]") || document.hidden;
     if (paused && this.heldMouse) { this.heldMouse = null; this.target.copy(this.player.position); this.marker.visible = false; }
     let walking = false;

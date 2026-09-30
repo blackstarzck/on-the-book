@@ -27,6 +27,16 @@ try {
   await page.waitForTimeout(600);
   await page.screenshot({ path: "docs/floor-evidence/01-direction-arrows.png" });
   await expect(page.locator('.chapter-caption')).toHaveCount(0);
+  // A frame stamped before the previous one (the first frame after a long world build on a slow or busy device) must not
+  // move anything. Its negative step used to throw the camera thousands of metres off and push the traveller backwards.
+  const lateFrame = await page.evaluate(() => {
+    const w = window.__testWorld;
+    w.cameraFocus.y += 1; w.readingBlend = .5;
+    const focus = w.cameraFocus.y, x = w.player.position.x, z = w.player.position.z;
+    w.frame(w.last - 1700);
+    return { focus: w.cameraFocus.y - focus, blend: w.readingBlend, moved: Math.hypot(w.player.position.x - x, w.player.position.z - z) };
+  });
+  expect(lateFrame).toEqual({ focus: 0, blend: .5, moved: 0 });
   await page.locator('#map-button').click();
   await page.locator('[data-chapter="1"]').click();
   await page.waitForFunction(() => window.__testWorld.index === 1 && window.__testWorld.player.position.y > 1);
