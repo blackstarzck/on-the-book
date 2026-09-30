@@ -6,7 +6,7 @@
    panel's first line, so the cover and the scene image share a top edge; the page ends 120px after the last section.
    Two classes outrank landing.css's .store-content padding at every width. */
 .detail-page.store-content { padding-top: var(--detail-space-top); padding-bottom: 120px; }
-.detail-page h1, .detail-page h2, .detail-page h3 { font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
+.detail-page h1, .detail-page h2, .detail-page h3 { font-weight: 650; }
 .detail-main { min-width: 0; }
 .detail-hero { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 28px; align-items: center; }
 /* An uploaded cover fills its .catalog-cover slot through landing.css's `.catalog-cover img` rule. */
@@ -22,7 +22,7 @@
 /* 저자 소개·책 소개: studio prose. A single line break inside a paragraph is kept (pre-line); an empty field
    shows a muted 준비 중 line. */
 .detail-intro-empty { margin: 0; font-size: 15px; line-height: 1.7; color: #7f8982; }
-.detail-intro-name { margin: 0 0 10px; font-size: 17px; font-weight: 650; letter-spacing: -.025em; color: #26312b; }
+.detail-intro-name { margin: 0 0 10px; font-size: 17px; font-weight: 650; color: #26312b; }
 .detail-prose { max-width: 680px; }
 .detail-prose p { margin: 0 0 14px; font-size: 16px; line-height: 1.8; color: #3f4a44; white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
 .detail-prose p:last-child { margin-bottom: 0; }
@@ -34,7 +34,7 @@
 .journey-row[aria-current="true"] { background: #f0f4ef; border-left-color: var(--accent); }
 .journey-number { flex: none; width: 28px; font-size: 13px; color: #75867a; font-variant-numeric: tabular-nums; }
 .journey-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.journey-copy strong { font-size: 16px; font-weight: 650; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.journey-copy strong { font-size: 16px; font-weight: 650; overflow-wrap: anywhere; }
 .journey-copy small { font-size: 13px; color: #768079; }
 /* The row's chevron only; the flag inside the title keeps its own size and colour. */
 .journey-row > svg { flex: none; width: 16px; height: 16px; margin-left: auto; color: #93a094; }
@@ -79,7 +79,7 @@
    `.scene-image img` covers the slot and `.scene-image.has-image .scene-number` becomes a light pill). */
 .scene-panel .scene-image, .scene-sheet .scene-image { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 10px; }
 .scene-panel .scene-number, .scene-sheet .scene-number { font-size: 13px; color: #3a4a40; }
-.scene-panel h2, .scene-sheet h2 { margin: 18px 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; font-family: inherit; letter-spacing: -.05em; font-weight: 650; }
+.scene-panel h2, .scene-sheet h2 { margin: 18px 0 6px; font-size: 22px; line-height: 1.3; word-break: keep-all; font-weight: 650; }
 .scene-panel .detail-meta, .scene-sheet .detail-meta { margin: 0 0 10px; font-size: 14px; color: #6b7567; }
 .scene-panel .detail-enter, .scene-sheet .detail-enter { width: 100%; margin: 6px 0 4px; justify-content: space-between; }
 /* Previous and next: two buttons of the same width right under the CTA. A missing side stays as a dimmed slot. */
@@ -119,7 +119,7 @@
   .detail-hero { grid-template-columns: 112px minmax(0, 1fr); gap: 18px; align-items: start; }
   .detail-cover { width: 112px; }
   .detail-copy .eyebrow { margin-bottom: 8px; }
-  .detail-copy h1 { margin-bottom: 8px; font-size: 26px; letter-spacing: -.045em; }
+  .detail-copy h1 { margin-bottom: 8px; font-size: 26px; }
   .detail-meta { font-size: 13px; }
   .detail-cta { margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
   .detail-section { padding-top: 30px; margin-top: 28px; }
