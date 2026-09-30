@@ -76,7 +76,7 @@ body { background: #fff; color: #242a27; font-size: 16px; }
 .feature-carousel:hover .feature-next { transform: translate(2px, -50%); }
 .feature-arrow svg { width: 18px; height: 18px; }
 @keyframes hero-copy-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-.quick-menu { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px clamp(24px, 3.8vw, 54px); padding: 24px 0 22px; margin-bottom: 12px; border-bottom: 1px solid #f0f2f0; }
+.quick-menu { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px clamp(24px, 3.8vw, 54px); padding: 24px 0 22px; margin-bottom: 12px; }
 .quick-menu button { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; padding: 0; min-width: 72px; white-space: nowrap; }
 .quick-menu button > span { display: grid; place-items: center; width: 96px; height: 96px; background: transparent; transition: transform .2s ease; }
 .quick-menu button:nth-child(2n) > span { background: transparent; }
@@ -104,7 +104,7 @@ a.book-entry:hover, a.scene-card:hover { color: #173d2a; text-decoration: none; 
 .catalog-cover img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .book-title { font-size: 17px; line-height: 1.45; font-weight: 700; letter-spacing: -.025em; margin-top: 14px; overflow-wrap: anywhere; }
 .book-author { color: #727c76; font-size: 14px; margin-top: 6px; }
-.scene-section { padding-top: 42px; margin-top: 34px; border-top: 1px solid #edf0ec; }
+.scene-section { padding-top: 42px; margin-top: 34px; }
 .section-eyebrow { display: block; font-size: 12px; letter-spacing: .08em; color: #75867a; font-weight: 650; margin-bottom: 8px; }
 .rail-controls { display: flex; gap: 7px; }
 .rail-controls .icon-button { border: 1px solid #e1e6e1; border-radius: 50%; min-width: 32px; min-height: 32px; width: 32px; height: 32px; padding: 8px; }
