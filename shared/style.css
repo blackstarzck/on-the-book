@@ -1203,8 +1203,10 @@ nav #about-link:hover {
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 12px 45px #50604a0d; animation: reading-appear .45s ease-out;
 }
-.floor-reading-controls h2 { font-size: clamp(16px, 1.6vw, 23px); line-height: 1.5; margin: 14px 0; }
-.floor-reading-controls #floor-accessible { font-size: clamp(17px, 1.65vw, 25px); line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; margin: 0; color: #354a3e; }
+/* Korean lines break between words only (keep-all), as on the book detail; overflow-wrap still splits a single word
+   longer than the line. word-break: normal broke Korean inside words ("들여다보/았습니다"). */
+.floor-reading-controls h2 { font-size: clamp(16px, 1.6vw, 23px); line-height: 1.5; margin: 14px 0; word-break: keep-all; overflow-wrap: anywhere; }
+.floor-reading-controls #floor-accessible { font-size: clamp(17px, 1.65vw, 25px); line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; word-break: keep-all; margin: 0; color: #354a3e; }
 .floor-pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 24px; padding-top: 10px; }
 @keyframes reading-appear { from { opacity: 0; translate: 10px 0; } to { opacity: 1; translate: 0 0; } }
 @media (max-width: 700px) {
