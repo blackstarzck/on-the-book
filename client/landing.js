@@ -2,25 +2,8 @@ import { esc, icon, icons } from "../shared/ui.js";
 import { heroKicker, heroSlides } from "../shared/home.js";
 import { edition, bookCover } from "./book-meta.js";
 import { detailUrl } from "./detail.js";
-import openBookClay from "./assets/quick-menu/open-book-clay.png";
-import fantasySparklesClay from "./assets/quick-menu/fantasy-sparkles-clay.png";
-import adventureMapClay from "./assets/quick-menu/adventure-map-clay.png";
-import bookmarkClay from "./assets/quick-menu/bookmark-clay.png";
-import sceneLayersClay from "./assets/quick-menu/scene-layers-clay.png";
-import helpClay from "./assets/quick-menu/help-clay.png";
+import { iconFor } from "./category-icons.js";
 import "./landing.css";
-
-const quickIcons = {
-  all: openBookClay,
-  판타지: fantasySparklesClay,
-  모험: adventureMapClay,
-  reading: bookmarkClay,
-  scenes: sceneLayersClay,
-  help: helpClay,
-};
-
-// Categories are typed in the studio, so names such as "constructor" must not reach Object.prototype.
-const iconFor = (name) => (Object.hasOwn(quickIcons, name) ? quickIcons[name] : openBookClay);
 
 function clayIcon(name) {
   return `<img src="${iconFor(name)}" alt="" aria-hidden="true" decoding="async">`;

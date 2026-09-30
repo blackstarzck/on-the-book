@@ -104,6 +104,8 @@ app.get("/api/studio", auth, async (req, res) => {
     version: current.version,
     publishedAt: current.publishedAt,
     protected: !!password,
+    // Supabase keeps no upload folder; its draft and publications are the ones the public reader reads.
+    shared: !uploadDir,
   });
 });
 let saving = false;
