@@ -1,0 +1,16 @@
+/* The one typeface of every screen (bookshelf, reader, about page and studio): Freesentation, 프리젠테이션
+   (https://freesentation.blog/freesentation, SIL Open Font License 1.1). The files are the designer's own woff2 set,
+   served by jsDelivr from their GitHub repository and pinned to a commit, so browsers cache them for a year and they
+   never change underneath the site. Four weights are declared; the in-between weights the stylesheets use resolve to
+   the nearest file (550 → 600, 650 → 700, 750 and 800 → 700), and `font-synthesis: none` keeps browsers from faking
+   bolder or italic faces. */
+@font-face { font-family: "Freesentation"; font-weight: 400; font-display: swap; src: url("https://cdn.jsdelivr.net/gh/Freesentation/freesentation@98f6b841fca55a23fbb0f9eb91acda0e16a676ea/woff2/Freesentation-4Regular.woff2") format("woff2"); }
+@font-face { font-family: "Freesentation"; font-weight: 500; font-display: swap; src: url("https://cdn.jsdelivr.net/gh/Freesentation/freesentation@98f6b841fca55a23fbb0f9eb91acda0e16a676ea/woff2/Freesentation-5Medium.woff2") format("woff2"); }
+@font-face { font-family: "Freesentation"; font-weight: 600; font-display: swap; src: url("https://cdn.jsdelivr.net/gh/Freesentation/freesentation@98f6b841fca55a23fbb0f9eb91acda0e16a676ea/woff2/Freesentation-6SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Freesentation"; font-weight: 700; font-display: swap; src: url("https://cdn.jsdelivr.net/gh/Freesentation/freesentation@98f6b841fca55a23fbb0f9eb91acda0e16a676ea/woff2/Freesentation-7Bold.woff2") format("woff2"); }
+:root { font-family: "Freesentation", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+/* Body text is 14px, and nothing on screen is set smaller than 13px, captions and labels included.
+   tests/typography.test.js checks every stylesheet for both. */
+body { font-size: 14px; }
+/* Browsers set <small> a size smaller than its parent, 11.7px inside 14px text; it stops at the 13px floor. */
+small { font-size: max(13px, .8333em); }
