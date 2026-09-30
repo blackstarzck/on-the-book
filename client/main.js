@@ -198,6 +198,23 @@ function setupDetail() {
     catalogState.query = event.target.value;
     openLibrary({ land: "search" });
   }, { signal: abort.signal });
+  // The saved scene's flag tooltip opens to the right of its arrow, starting --tip-edge before the flag (detail.css).
+  // Where its journey row, the scene panel or the sheet has no room on that side, it opens leftwards over the title
+  // instead, and at the very edge it slides back inside, since the panel and the sheet are scrolling boxes that would
+  // clip it. The bubble keeps its size while hidden, so it is measured before it shows.
+  const aim = flag => {
+    const box = flag?.closest(".journey-row, .scene-panel, .scene-sheet")?.getBoundingClientRect();
+    if (!box) return;
+    const bubble = getComputedStyle(flag, "::after"), mark = flag.getBoundingClientRect();
+    const width = parseFloat(bubble.width) + (bubble.boxSizing === "border-box" ? 0 : parseFloat(bubble.paddingLeft) + parseFloat(bubble.paddingRight));
+    const edge = parseFloat(getComputedStyle(flag).getPropertyValue("--tip-edge"));
+    let left = mark.left + edge;
+    if (left + width > box.right - 1) left = mark.right - edge - width;
+    left = Math.max(box.left + 1, Math.min(left, box.right - 1 - width));
+    flag.style.setProperty("--tip-left", `${left - mark.left}px`);
+  };
+  document.addEventListener("pointerover", event => aim(event.target.closest?.(".saved-flag")), { signal: abort.signal });
+  document.addEventListener("focusin", event => aim(event.target.querySelector?.(".saved-flag")), { signal: abort.signal });
   // Escape puts the saved scene's flag tooltip away without moving the mouse (detail.css). It comes back once the
   // pointer has left the flag, or focus has left its journey row.
   document.addEventListener("keydown", event => {
