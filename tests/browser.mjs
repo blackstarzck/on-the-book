@@ -56,17 +56,24 @@ try {
   await page.evaluate(() => window.__testWorld.moveTo(window.__testWorld.zones.at(-1).end - 1, 0));
   await expect(page.locator("#story-action, #collection-button")).toHaveCount(0);
   pass("Last chapter stays freely explorable with no completion flow");
+  // The studio opens on its bookshelf. A book opens in the world editor, where a model is picked from the outline and
+  // edited in the property form; number fields apply when they lose focus.
   const admin = await context.newPage();
   await admin.goto(server.url + "/admin/");
+  await admin.locator('[data-open-book="alice"]').click();
   await expect(admin.locator("#studio-world canvas")).toBeVisible();
   await admin.screenshot({
     path: "docs/screenshots/admin-desktop.png",
     fullPage: true,
   });
-  await admin.getByLabel("장면 속 이름", { exact: true }).fill("검증용 토끼");
-  await admin.getByLabel("가로 위치", { exact: true }).fill("-2.5");
-  await admin.getByLabel("재생할 동작", { exact: true }).selectOption("spin");
-  await admin.locator("#preview-animation").click();
+  const field = (label) => admin.locator("#object-form").getByLabel(label, { exact: true });
+  const setField = async (label, value) => { await field(label).fill(value); await field(label).press("Tab"); };
+  await admin.locator("[data-select-model]").first().click();
+  await setField("장면 속 이름", "검증용 토끼");
+  await setField("X", "-3");
+  // A select's label also holds its option text, so the motion select is found by its name.
+  await admin.locator('#object-form [name="animation"]').selectOption("spin");
+  await admin.locator("#play-clip").click();
   await admin.locator("#save").click();
   await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
   let live = await (
@@ -76,12 +83,8 @@ try {
     "조끼 입은 흰 토끼",
   );
   await admin.reload();
-  await expect(admin.getByLabel("장면 속 이름", { exact: true })).toHaveValue(
-    "검증용 토끼",
-  );
-  await expect(admin.getByLabel("가로 위치", { exact: true })).toHaveValue(
-    "-2.5",
-  );
+  await expect(field("장면 속 이름")).toHaveValue("검증용 토끼");
+  await expect(field("X")).toHaveValue("-3");
   await admin.locator("#publish").click();
   await expect(admin.locator("#save-state")).toHaveText("공개 완료");
   live = await (await context.request.get(server.url + "/api/library")).json();
@@ -89,20 +92,23 @@ try {
   pass(
     "Draft persists through reload; publish separately updates public content",
   );
-  await admin.locator("#edit-story").click();
+  await admin.locator("[data-chapter-edit]").first().click();
   await expect(admin.getByLabel("공간 가로 크기")).toHaveValue("64");
   await admin.getByLabel("공간 가로 크기").fill("90");
   await admin.getByLabel("공간 세로 크기").fill("80");
   await admin.getByRole("button", { name: "변경 적용", exact: true }).click();
-  await admin.getByLabel("가로 위치", { exact: true }).fill("35");
-  await admin.getByLabel("반응 거리").fill("8");
+  await admin.locator("[data-select-model]").first().click();
+  await setField("X", "35");
+  await setField("발동 반경 (m)", "8");
   await admin.locator("#save").click();
   await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
   expect((await (await context.request.get(server.url + "/api/library")).json()).books[0].chapters[0].width).toBe(64);
-  await admin.reload(); await expect(admin.getByLabel("가로 위치", { exact: true })).toHaveValue("35");
+  await admin.reload(); await expect(field("X")).toHaveValue("35");
   await admin.locator("#publish").click(); await expect(admin.locator("#save-state")).toHaveText("공개 완료");
   expect((await (await context.request.get(server.url + "/api/library")).json()).books[0].chapters[0].width).toBe(90);
   pass("Wide-world size, placement and radius persist and publish independently");
+  // Everything is saved, so the editor closes without asking; the model library is a tab of the studio.
+  await admin.locator("#back-library").click();
   await admin
     .getByRole("button", { name: "3D 모델 보관함", exact: true })
     .click();
@@ -136,23 +142,31 @@ try {
   await expect(admin.locator("#single-preview canvas")).toBeVisible();
   await admin.keyboard.press("Escape");
   pass("GLB upload with animation, registration, search and 3D preview work");
-  await admin.getByRole("button", { name: "책과 챕터", exact: true }).click();
-  await admin.locator("#add-placement").click();
-  await admin
-    .getByRole("button", { name: "테스트 GLB 업로드한 3D 모델" })
-    .click();
-  await expect(admin.getByLabel("장면 속 이름", { exact: true })).toHaveValue(
-    "테스트 GLB",
-  );
+  // A model is placed by dragging its tile from the editor's library into the world.
+  await admin.getByRole("button", { name: "도서 보관함", exact: true }).click();
+  await admin.locator('[data-open-book="alice"]').click();
+  await expect(admin.locator("#studio-world canvas")).toBeVisible();
+  await admin.locator(".asset-tile").filter({ hasText: "테스트 GLB" }).locator("img").dragTo(admin.locator("#studio-world canvas"), { targetPosition: { x: 720, y: 680 } });
+  await expect(field("장면 속 이름")).toHaveValue("테스트 GLB");
+  // A dropped model lands where the pointer meets the ground, which moves with the editor's camera, so it is set on a
+  // clear spot beside the moved rabbit that the reader can walk up to.
+  await setField("X", "26");
+  await setField("Z", "8");
   await admin.locator("#publish").click();
   await expect(admin.locator("#save-state")).toHaveText("공개 완료");
   await page.goto(server.url + "/client/?book=alice&chapter=alice-1");
   await page.waitForFunction(() => window.__testWorld?.objects.some(o => o.p.title === "테스트 GLB" && o.action));
+  // The traveller walks only once it has landed.
+  await page.waitForFunction(() => window.__testWorld.arrivalTime === null);
   await page.evaluate(() => { const w = window.__testWorld, o = w.objects.find(o => o.p.title === "테스트 GLB"); w.moveTo(o.p.x, o.p.z + .8); });
   await page.waitForFunction(() => window.__testWorld.objects.some(o => o.p.title === "테스트 GLB" && o.near && !o.action.paused));
   pass("Published uploaded GLB plays its clip on approach");
-  await admin.locator("#remove-placement").click();
-  await admin.locator("#confirm-action").click();
+  // The placed model is still selected; deleting it frees the model, which the library can then delete.
+  await admin.locator("#delete-object").click();
+  await expect(admin.locator("[data-select-model]")).toHaveCount(3);
+  await admin.locator("#save").click();
+  await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
+  await admin.locator("#back-library").click();
   await admin
     .getByRole("button", { name: "3D 모델 보관함", exact: true })
     .click();
@@ -161,24 +175,26 @@ try {
     .click();
   await admin.locator("#delete-model").click();
   await admin.locator("#confirm-action").click();
-  await expect(admin.locator(".model-card")).toHaveCount(0);
+  await expect(admin.locator(".model-card").filter({ hasText: "테스트 GLB" })).toHaveCount(0);
   await admin.locator("#save").click();
   await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
   pass("Placement and unused model removal work");
-  await admin.getByRole("button", { name: "책과 챕터", exact: true }).click();
+  await admin.getByRole("button", { name: "도서 보관함", exact: true }).click();
   await admin.locator("#new-book").click();
   await admin.getByLabel("책 제목", { exact: true }).fill("새 책 테스트");
   await admin.getByLabel("작가", { exact: true }).fill("테스트 작가");
   await admin.getByRole("button", { name: "책 만들기", exact: true }).click();
-  await expect(admin.locator("#book-select")).toContainText("새 책 테스트");
-  await admin.locator("#add-chapter").click();
+  await expect(admin.locator(".world-topbar strong")).toHaveText("새 책 테스트");
+  await admin.locator(".world-chapter-tabs #add-chapter").click();
   await admin.getByLabel("챕터 제목", { exact: true }).fill("두 번째 장");
   await admin.getByLabel("이야기 본문").fill("새로운 이야기 본문");
   await admin.getByRole("button", { name: "변경 적용", exact: true }).click();
-  await expect(admin.locator(".chapter-tabs button")).toHaveCount(2);
-  await admin.locator("#edit-story").click();
+  await expect(admin.locator("[data-chapter-row]")).toHaveCount(2);
+  // The chapter form moves its chapter up the list; that applies the form and closes it.
+  await admin.locator("[data-chapter-edit]").nth(1).click();
   await admin.locator("#chapter-up").click();
-  await expect(admin.locator(".chapter-tabs button").first()).toContainText(
+  await expect(admin.locator("#chapter-form")).toHaveCount(0);
+  await expect(admin.locator("[data-chapter-row]").first()).toContainText(
     "두 번째 장",
   );
   await admin.locator("#save").click();
@@ -187,6 +203,9 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(server.url + "/client/?book=alice&chapter=alice-1"); await page.waitForFunction(() => window.__testWorld?.player);
+  // The entry curtain covers the pad until it lifts, and the traveller moves only once it has landed.
+  await expect(page.locator(".reader-curtain")).toHaveCount(0);
+  await page.waitForFunction(() => window.__testWorld.arrivalTime === null);
   await expect(page.locator(".touch-pad")).toBeVisible();
   const before = await page.evaluate(() => window.__testWorld.player.position.x);
   const pad = await page.locator('[data-dir="right"]').boundingBox();
