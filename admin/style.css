@@ -1040,8 +1040,11 @@
     display: flex;
     gap: 3px;
   }
+  /* Icon-only buttons: font-size 0 hides the words, but the words are still a flex item, so without gap: 0 the
+     12px gap stays and each button is 56px wide, which pushed the bar 20px past a 390px phone. */
   .studio-nav button {
     font-size: 0;
+    gap: 0;
     min-width: 44px;
     min-height: 44px;
     padding: 12px;
@@ -1205,6 +1208,18 @@
   }
   .single-preview {
     height: 260px;
+  }
+}
+/* Under 382px the wordmark and the four 44px buttons do not fit on one bar: the book mark stays as the home link and
+   the words are kept for screen readers, since the mark's image has no alt text. */
+@media (max-width: 381px) {
+  .studio-sidebar .wordmark {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 

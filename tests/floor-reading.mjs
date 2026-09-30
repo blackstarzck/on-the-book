@@ -66,7 +66,18 @@ try {
   expect(composition.left).toBeGreaterThan(390 * .5); expect(composition.right).toBeLessThanOrEqual(390);
   expect(composition.blur).toContain('blur'); expect(composition.background).toContain('0.58');
   await page.screenshot({ path: "docs/floor-evidence/03-mobile-reading.png" });
-  console.log("PASS mobile left-side figures and right-side translucent blurred text");
+  // Korean lines break between words only: every word of the narrow phone panel sits on one line.
+  const splitWords = await page.locator("#floor-accessible").evaluate(el => {
+    const node = el.firstChild, split = [];
+    for (const m of node.textContent.matchAll(/\S+/g)) {
+      const range = document.createRange();
+      range.setStart(node, m.index); range.setEnd(node, m.index + m[0].length);
+      if (new Set([...range.getClientRects()].filter(r => r.width > 0).map(r => Math.round(r.top))).size > 1) split.push(m[0]);
+    }
+    return split;
+  });
+  expect(splitWords).toEqual([]);
+  console.log("PASS mobile left-side figures and right-side translucent blurred text, words kept whole");
   await page.locator('#floor-accessible').evaluate(el => el.style.fontSize = '32px');
   const overflow = await page.locator('#floor-accessible').evaluate(el => {
     el.scrollTop = el.scrollHeight;
