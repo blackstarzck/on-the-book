@@ -50,10 +50,12 @@ async function expectFrames(root, key, slots, src, focus) {
 const readerPlaces = {
   cover: {
     shelf: [['/client/', '[data-book="alice"] .catalog-cover img'], ['/client/?book=alice', '.detail-cover img']],
+  },
+  bookThumbnail: {
     scene: [['/client/', '.scene-cover img']],
     'scene-phone': [['/client/', '.scene-cover img']],
   },
-  thumbnail: {
+  chapterThumbnail: {
     card: [['/client/', '[data-scene-chapter="alice-1"] .scene-image img']],
     panel: [['/client/?book=alice', '.scene-panel .scene-image img']],
   },
@@ -79,25 +81,37 @@ try {
   expect(defaultIcon).not.toBe(fantasyIcon);
   await form.getByLabel('분류', { exact: true }).fill('판타지');
   await expect(icon).toHaveAttribute('src', fantasyIcon);
+  await expect(page.locator('#book-thumbnail-frames')).toBeHidden();
   await page.locator('#book-cover-file').setInputFiles(await png(800, 1140, '#3d7f68'));
   await expect(page.locator('#book-cover-status')).toHaveText('업로드 완료');
   // The hint stays under the picture after the upload.
-  await expect(form.locator('.image-field .field-hint')).toContainText('2:2.85');
+  await expect(form.locator('.image-field').first().locator('.field-hint')).toContainText('2:2.85');
   const cover = await page.locator('#book-cover-preview').getAttribute('src');
   await expectFrames(page, 'book-cover', imageSlots.cover, cover);
-  // The scene previews' frames carry the book title as typed.
-  await expect(page.locator('#book-cover-frames b')).toHaveText(['이상한 나라의 앨리스', '이상한 나라의 앨리스']);
+  // The main thumbnail is a picture of its own, not the cover.
+  await expect(page.locator('#book-thumbnail-frames')).toBeHidden();
+  await page.locator('#book-thumbnail-file').setInputFiles(await png(1200, 1200, '#6d4f8f'));
+  await expect(page.locator('#book-thumbnail-status')).toHaveText('업로드 완료');
+  await expect(form.locator('.image-field').nth(1).locator('.field-hint')).toContainText('정사각형');
+  const bookThumbnail = await page.locator('#book-thumbnail-preview').getAttribute('src');
+  expect(bookThumbnail).not.toBe(cover);
+  await expectFrames(page, 'book-thumbnail', imageSlots.bookThumbnail, bookThumbnail);
+  // Its frames carry the book title as typed, as the scene previews' tile does.
+  await expect(page.locator('#book-thumbnail-frames b')).toHaveText(['이상한 나라의 앨리스', '이상한 나라의 앨리스']);
   await form.getByLabel('책 제목', { exact: true }).fill('앨리스');
-  await expect(page.locator('#book-cover-frames b')).toHaveText(['앨리스', '앨리스']);
+  await expect(page.locator('#book-thumbnail-frames b')).toHaveText(['앨리스', '앨리스']);
   await form.getByLabel('책 제목', { exact: true }).fill('이상한 나라의 앨리스');
   await page.locator('.modal').screenshot({ path: `${shots}/studio-cover.png` });
+  await page.locator('#book-thumbnail-frames').scrollIntoViewIfNeeded();
+  await page.locator('.modal').screenshot({ path: `${shots}/studio-book-thumbnail.png` });
   await page.locator('#book-form button[type="submit"]').click();
   await expect(form).toHaveCount(0);
-  // Reopened, the dialog shows the stored cover in the same frames.
+  // Reopened, the dialog shows the stored pictures in the same frames.
   await page.locator('#edit-book').click();
   await expectFrames(page, 'book-cover', imageSlots.cover, cover);
+  await expectFrames(page, 'book-thumbnail', imageSlots.bookThumbnail, bookThumbnail);
   await page.locator('.modal .close-modal').click();
-  pass('The cover shows in the reader\'s frames, with the typed title, and the category shows its quick-menu icon');
+  pass('The cover and the main thumbnail show in the reader\'s frames, with the typed title, and the category shows its quick-menu icon');
 
   await page.locator('[data-chapter-edit="alice-1"]').click();
   await expect(page.locator('#chapter-thumbnail-frames')).toBeHidden();
@@ -105,7 +119,7 @@ try {
   await expect(page.locator('#chapter-thumbnail-status')).toHaveText('업로드 완료');
   await expect(page.locator('#chapter-form .image-field .field-hint')).toContainText('가운데 정사각형');
   const thumbnail = await page.locator('#chapter-thumbnail-preview').getAttribute('src');
-  await expectFrames(page, 'chapter-thumbnail', imageSlots.thumbnail, thumbnail);
+  await expectFrames(page, 'chapter-thumbnail', imageSlots.chapterThumbnail, thumbnail);
   await page.locator('.modal').screenshot({ path: `${shots}/studio-thumbnail.png` });
   // Clearing hides the frames with the picture.
   await page.locator('#chapter-thumbnail-clear').click();
@@ -136,7 +150,7 @@ try {
   await expect(page.locator('#save-state')).toHaveText('공개 완료');
   const reader = await context.newPage();
   reader.on('pageerror', error => errors.push(error.message));
-  const files = { cover, thumbnail: uploaded, hero: photo };
+  const files = { cover, bookThumbnail, chapterThumbnail: uploaded, hero: photo };
   for (const [kind, slots] of Object.entries(imageSlots)) for (const slot of slots) {
     const places = readerPlaces[kind][slot.id];
     expect(places, `reader place for ${kind} ${slot.id}`).toBeTruthy();

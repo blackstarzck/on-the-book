@@ -13,6 +13,8 @@ const tables = {
     // Added by 20260929090000_book_intros.sql. Null means a row saved before the columns (or by an older
     // studio); leaving the field out lets the schema's empty default fill it.
     ["authorIntro", "author_intro", "optional"], ["bookIntro", "book_intro", "optional"],
+    // Added by 20260930090000_book_thumbnails.sql, optional for the same reason.
+    ["thumbnail", "thumbnail", "optional"],
   ],
   chapters: [
     ["id", "id"], ["mainPlacementId", "main_placement_id"], ["title", "title"], ["subtitle", "subtitle"],

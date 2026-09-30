@@ -36,6 +36,9 @@ try {
   await page.locator('#book-cover-file').setInputFiles(await png(400, 570, '#6b8f71'));
   await expect(page.locator('#book-cover-status')).toContainText('업로드 완료');
   await expect(page.locator('#book-cover-preview')).toBeVisible();
+  await page.locator('#book-thumbnail-file').setInputFiles(await png(600, 600, '#8a5d9c'));
+  await expect(page.locator('#book-thumbnail-status')).toContainText('업로드 완료');
+  await expect(page.locator('#book-thumbnail-preview')).toBeVisible();
   const authorIntro = '옥스퍼드의 수학 강사였어요.\n아이들에게 이야기를 들려주곤 했어요.\n\n본명은 찰스 럿위지 도지슨이에요.';
   const bookIntro = '흰 토끼를 따라 굴에 떨어진 앨리스의 이야기예요.';
   await page.getByLabel('저자 소개', { exact: true }).fill(authorIntro);
@@ -55,11 +58,13 @@ try {
   const alice = draft.books.find(b => b.id === 'alice');
   expect(alice.category).toBe('고전');
   expect(alice.cover).toMatch(/^\/uploads\/.+\.png$/);
+  expect(alice.thumbnail).toMatch(/^\/uploads\/.+\.png$/);
+  expect(alice.thumbnail).not.toBe(alice.cover);
   expect(alice.chapters[0].thumbnail).toMatch(/^\/uploads\/.+\.png$/);
   expect([alice.authorIntro, alice.bookIntro]).toEqual([authorIntro, bookIntro]);
   await page.locator('#back-library').click();
   await expect(page.locator('.book-shelf')).toBeVisible();
-  pass('Cover, category (reserved names refused), intros and chapter thumbnail are edited and saved');
+  pass('Cover, main thumbnail, category (reserved names refused), intros and chapter thumbnail are edited and saved');
 
   await page.locator('[data-book-drag="alice"]').focus();
   await page.keyboard.press('Alt+ArrowRight');
@@ -138,9 +143,10 @@ try {
   await expect(reader.locator('[data-scene-tab="oz"]')).toHaveAttribute('aria-selected', 'true');
   await reader.locator('[data-scene-tab="alice"]').click();
   await expect(reader.locator('.scene-image.has-image img')).toHaveCount(1);
-  await expect(reader.locator('.scene-cover img')).toHaveCount(1);
+  // The scene previews' tile shows alice's main thumbnail rather than her cover.
+  await expect(reader.locator('.scene-cover img')).toHaveAttribute('src', alice.thumbnail);
   await expect(reader.locator('.catalog-filters [data-category="고전"]')).toBeVisible();
-  pass('Publishing brings the order, cover, thumbnail, category and slides to readers');
+  pass('Publishing brings the order, cover, main thumbnail, chapter thumbnail, category and slides to readers');
 
   const detail = await context.newPage();
   detail.on('pageerror', error => errors.push(error.message));

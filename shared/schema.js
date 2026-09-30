@@ -93,6 +93,8 @@ export const bookSchema = z.object({
     .refine((c) => !["all", "reading"].includes(c), { message: "분류 이름으로 all·reading은 쓸 수 없습니다." })
     .default(""),
   cover: z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).or(z.literal('')).default(''),
+  // 도서 메인 썸네일: the square picture of the home scene previews' big tile. Without one the tile keeps its plain wash.
+  thumbnail: image,
   floorAssets: z.array(z.object({asset:z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/),name:text})).max(300).optional(),
   year: z.number().int().min(1).max(2026),
   description: z.string().max(1000),
