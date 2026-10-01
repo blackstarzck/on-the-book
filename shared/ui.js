@@ -27,6 +27,8 @@ import {
   HelpCircle,
   LogOut,
   Menu,
+  Grid2x2,
+  List,
 } from "lucide";
 export const icons = () =>
   createIcons({
@@ -58,6 +60,8 @@ export const icons = () =>
       HelpCircle,
       LogOut,
       Menu,
+      Grid2x2,
+      List,
     },
   });
 export const icon = (name) =>

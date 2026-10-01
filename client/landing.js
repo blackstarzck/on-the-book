@@ -2,6 +2,7 @@ import { esc, icon, icons } from "../shared/ui.js";
 import { heroKicker, heroSlides } from "../shared/home.js";
 import { edition, bookCover } from "./book-meta.js";
 import { detailUrl } from "./detail.js";
+import { browseUrl } from "./browse.js";
 import { iconFor } from "./category-icons.js";
 import "./landing.css";
 
@@ -28,7 +29,6 @@ function feature(slide, index) {
   return `<button class="feature-card feature-card-${index % 2}${slide.image ? " feature-card--photo" : ""}${active ? " is-active" : ""}" data-feature-book="${esc(book.id)}" data-feature-index="${index}" aria-label="${esc(title)} 작품 상세" aria-hidden="${String(!active)}" tabindex="${active ? 0 : -1}">
     ${photo}<span class="feature-copy"><span class="feature-kicker">${esc(heroKicker(slide, index))}</span><strong>${esc(title)}</strong><span class="feature-description">${esc(slide.description || book.description)}</span><span class="feature-action">작품 살펴보기 ${icon("arrow-right")}</span></span>
     ${art}
-    <span class="feature-number">ON THE BOOK · ${String(index + 1).padStart(2, "0")}</span>
   </button>`;
 }
 
@@ -70,7 +70,7 @@ function sceneSection(books, state, preview) {
     : "";
   const panel = books.length > 1 ? ` role="tabpanel" aria-labelledby="scene-tab-${picked}"` : "";
   const rail = `<div class="scene-rail" tabindex="0" role="region" aria-label="${book ? `${esc(book.title)} 장면 목록` : "책 속 장면 목록"}">${book ? sceneCards(book, preview) : ""}</div>`;
-  return `<section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><span class="section-eyebrow">STORY PREVIEW</span><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면부터 살펴보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div>${picker}<div class="scene-shelf" id="scene-shelf"${panel}>${book ? sceneCover(book, preview) : ""}${rail}</div></section>`;
+  return `<section class="scene-section discovery-content" aria-labelledby="scene-title"><div class="section-heading"><div><h2 id="scene-title" tabindex="-1">한 장면부터 시작하는 여행</h2><p>마음이 가는 장면부터 살펴보세요.</p></div><div class="rail-controls"><button data-rail="-1" class="icon-button" aria-label="이전 장면들">${icon("arrow-left")}</button><button data-rail="1" class="icon-button" aria-label="다음 장면들">${icon("arrow-right")}</button></div></div>${picker}<div class="scene-shelf" id="scene-shelf"${panel}>${book ? sceneCover(book, preview) : ""}${rail}</div></section>`;
 }
 
 export function announcementBanner() {
@@ -83,16 +83,16 @@ export function landing(library, progress, state, preview = false) {
     <div class="store-content">
       ${featured(heroSlides(library.books, library.home))}
       <div class="quick-menu discovery-content" role="group" aria-label="빠른 탐색"><button data-quick-view="all" aria-label="전체 작품 둘러보기"><span>${clayIcon("all")}</span>전체 작품</button>${categories.map(c => `<button data-quick-category="${esc(c)}" aria-label="${esc(c)} 도서 보기"><span>${clayIcon(c)}</span>${esc(c)}</button>`).join("")}<button data-quick-view="reading" aria-label="읽던 작품 이어 보기"><span>${clayIcon("reading")}</span>읽던 이야기</button><button data-scenes><span>${clayIcon("scenes")}</span>장면 둘러보기</button><button data-help><span>${clayIcon("help")}</span>이용 가이드</button></div>
-      <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기</h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label></div>
+      <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기</h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><div class="catalog-heading-actions"><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label><a class="browse-all-link" data-browse data-browse-all href="${esc(browseUrl(undefined, preview))}">전체 도서 보기 ${icon("chevron-right")}</a></div></div>
         <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="도서 분류"><button data-category="all" aria-pressed="true">전체</button>${categories.map(c => `<button data-category="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}</div><p role="status" aria-live="polite" id="catalog-status"></p></div><div id="book-grid" class="catalog-grid catalog-grid--many"></div>
       </section>
       ${sceneSection(library.books, state, preview)}
-      <section class="experience-banner discovery-content" aria-labelledby="experience-title"><div><span class="section-eyebrow">A DIFFERENT WAY TO READ</span><h2 id="experience-title">읽는 즐거움에, 걷는 설렘을 더하다.</h2><p>책을 고르고, 장면을 걷고, 이야기 곁에 잠시 머물러 보세요.</p><button id="trailer-button">온더북 미리보기 ${icon("arrow-up-right")}</button></div><div class="experience-steps"><span><b>01</b> 책을 고르고</span><span><b>02</b> 장면을 걷고</span><span><b>03</b> 이야기를 만나요</span></div></section>
+      <section class="experience-banner discovery-content" aria-labelledby="experience-title"><div><h2 id="experience-title">읽는 즐거움에, 걷는 설렘을 더하다.</h2><p>책을 고르고, 장면을 걷고, 이야기 곁에 잠시 머물러 보세요.</p><button id="trailer-button">온더북 미리보기 ${icon("arrow-up-right")}</button></div><div class="experience-steps"><span><b>01</b> 책을 고르고</span><span><b>02</b> 장면을 걷고</span><span><b>03</b> 이야기를 만나요</span></div></section>
     </div>
   </main>`;
 }
 
-export function setupCatalog({ library, progress, state, preview = false, onOpen, onTrailer, onHelp }) {
+export function setupCatalog({ library, progress, state, preview = false, onOpen, onTrailer, onHelp, onBrowse }) {
   const page = document.querySelector(".library-page");
   const abort = new AbortController();
   const options = { signal: abort.signal };
@@ -292,6 +292,7 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
     if (button.dataset.category) { state.category = button.dataset.category; update(); }
     // Like 장면 둘러보기, the quick menu's lists land on their section, which may start below the fold.
     if (button.dataset.quickView || button.dataset.quickCategory) {
+      if (button.dataset.quickView === "all") { onBrowse(); return; }
       showCatalog(button.dataset.quickView || button.dataset.quickCategory);
       page.querySelector(".catalog").scrollIntoView({ behavior: motion(), block: "start" });
     }

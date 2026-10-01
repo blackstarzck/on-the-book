@@ -230,13 +230,17 @@ try {
   await expect(page).toHaveURL(at("/admin/", { modal: "new-book" }));
   await page.locator('#book-form [name="title"]').fill("주소 검사 책");
   await page.locator('#book-form button[type="submit"]').click();
+  await expect(page.locator(".book-shelf")).toBeVisible();
+  await expect(page).toHaveURL(at("/admin/"));
+  await expect(page.locator("#studio-world")).toHaveCount(0);
+  await page.getByRole("button", { name: "주소 검사 책 3D 월드 편집", exact: true }).click();
   await expect(page.locator("#studio-world canvas")).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/books\/[0-9a-f-]{36}\?chapter=[0-9a-f-]{36}$/);
   await page.goBack();
   await page.getByRole("button", { name: "저장하지 않고 나가기", exact: true }).click();
   await expect(page.locator(".book-shelf")).toBeVisible();
   await expect(page).toHaveURL(at("/admin/"));
-  pass("A new book's editor takes over the dialog's entry, so back returns to the shelf");
+  pass("A new book returns to the shelf; its world opens only when chosen, and Back returns to the shelf");
 
   const puts = [];
   page.on("request", (request) => { if (request.method() === "PUT" && request.url().endsWith("/api/studio")) puts.push(request.url()); });

@@ -38,6 +38,8 @@ function reveal(app) {
   animate(app.querySelector(".scene-wrap"), [{ opacity: 0 }, { opacity: 1 }], { duration: 700 });
   const groups = app.querySelector(".library-page")
     ? [".site-header", ".featured-section", ".quick-menu", ".catalog", ".scene-section, .experience-banner", ".site-footer"]
+    : app.querySelector(".browse-page")
+      ? [".site-header", ".browse-heading, .browse-search-row", ".browse-categories, .browse-listing", ".site-footer"]
     : app.querySelector(".detail-page")
       ? [".site-header", ".detail-hero", "#detail-journey, .detail-intro", ".scene-panel, .detail-cta"]
       : [".site-header", ".journey-controls", ".touch-pad, .move-hint", ".site-footer"];
@@ -78,7 +80,7 @@ export async function transitionPage(app, update, { initial = false, label, focu
   }
   if (!initial) {
     const target = focus ? app.querySelector(focus)
-      : app.querySelector("#library-title") || app.querySelector("#detail-title") || app.querySelector("#world canvas, #fallback-read");
+      : app.querySelector("#library-title, #browse-title") || app.querySelector("#detail-title") || app.querySelector("#world canvas, #fallback-read");
     if (target) {
       if (!target.hasAttribute("tabindex")) target.tabIndex = -1;
       target.focus({ preventScroll: true });
