@@ -1,0 +1,296 @@
+{
+  "type": "admin-draft-change-record",
+  "bookId": "unsoo",
+  "savedAt": "2026-10-01T05:51:01.887Z",
+  "versionBefore": 16,
+  "versionAfter": 17,
+  "publication": "draft-only-at-save",
+  "chapters": [
+    {
+      "id": "unsoo-1",
+      "title": "비 오는 골목",
+      "placement": {
+        "id": "unsoo-p1",
+        "before": {
+          "x": 0,
+          "z": 0,
+          "scale": 4.2,
+          "radius": 8,
+          "collisionRadius": 4.3
+        },
+        "after": {
+          "x": -6,
+          "z": 0,
+          "scale": 3.4,
+          "radius": 2,
+          "collisionRadius": 1.33
+        }
+      },
+      "floorDecals": {
+        "before": null,
+        "after": [
+          {
+            "id": "unsoo-1-decor-1",
+            "asset": "leaves",
+            "y": 0,
+            "x": -14,
+            "z": 6,
+            "width": 3.5,
+            "height": 3,
+            "rotation": 18
+          },
+          {
+            "id": "unsoo-1-decor-2",
+            "asset": "leaves",
+            "y": 0,
+            "x": 9,
+            "z": -7,
+            "width": 4,
+            "height": 3.5,
+            "rotation": -22
+          }
+        ]
+      },
+      "derivedBefore": {
+        "blockingRadius": 18.06,
+        "reactionRadius": 37.82,
+        "visibleArrows": 0
+      },
+      "derivedAfter": {
+        "blockingRadius": 4.522,
+        "reactionRadius": 10.744,
+        "visibleArrows": 8
+      }
+    },
+    {
+      "id": "unsoo-2",
+      "title": "남대문 정거장",
+      "placement": {
+        "id": "unsoo-p2",
+        "before": {
+          "x": 0,
+          "z": 0,
+          "scale": 4.1,
+          "radius": 8,
+          "collisionRadius": 4.4
+        },
+        "after": {
+          "x": 0,
+          "z": -3,
+          "scale": 3.6,
+          "radius": 2,
+          "collisionRadius": 1.37
+        }
+      },
+      "floorDecals": {
+        "before": null,
+        "after": [
+          {
+            "id": "unsoo-2-decor-1",
+            "asset": "open-book",
+            "y": 0,
+            "x": -12,
+            "z": 6,
+            "width": 3.5,
+            "height": 3,
+            "rotation": -10
+          },
+          {
+            "id": "unsoo-2-decor-2",
+            "asset": "leaves",
+            "y": 0,
+            "x": 12,
+            "z": -8,
+            "width": 3.5,
+            "height": 3,
+            "rotation": 25
+          }
+        ]
+      },
+      "derivedBefore": {
+        "blockingRadius": 18.04,
+        "reactionRadius": 37.78,
+        "visibleArrows": 0
+      },
+      "derivedAfter": {
+        "blockingRadius": 4.932,
+        "reactionRadius": 11.564,
+        "visibleArrows": 8
+      }
+    },
+    {
+      "id": "unsoo-3",
+      "title": "이어지는 벌이",
+      "placement": {
+        "id": "unsoo-p3",
+        "before": {
+          "x": 0,
+          "z": 0,
+          "scale": 4.2,
+          "radius": 8,
+          "collisionRadius": 4.5
+        },
+        "after": {
+          "x": 4,
+          "z": 0,
+          "scale": 3.5,
+          "radius": 2,
+          "collisionRadius": 1.43
+        }
+      },
+      "floorDecals": {
+        "before": null,
+        "after": [
+          {
+            "id": "unsoo-3-decor-1",
+            "asset": "leaves",
+            "y": 0,
+            "x": -12,
+            "z": -6,
+            "width": 4,
+            "height": 3.5,
+            "rotation": -18
+          },
+          {
+            "id": "unsoo-3-decor-2",
+            "asset": "leaves",
+            "y": 0,
+            "x": 14,
+            "z": 7,
+            "width": 3.5,
+            "height": 3,
+            "rotation": 24
+          }
+        ]
+      },
+      "derivedBefore": {
+        "blockingRadius": 18.9,
+        "reactionRadius": 39.5,
+        "visibleArrows": 0
+      },
+      "derivedAfter": {
+        "blockingRadius": 5.005,
+        "reactionRadius": 11.71,
+        "visibleArrows": 8
+      }
+    },
+    {
+      "id": "unsoo-4",
+      "title": "선술집",
+      "placement": {
+        "id": "unsoo-p4",
+        "before": {
+          "x": 0,
+          "z": 0,
+          "scale": 4.3,
+          "radius": 8,
+          "collisionRadius": 4.2
+        },
+        "after": {
+          "x": -4,
+          "z": -2,
+          "scale": 3.6,
+          "radius": 2,
+          "collisionRadius": 1.34
+        }
+      },
+      "floorDecals": {
+        "before": null,
+        "after": [
+          {
+            "id": "unsoo-4-decor-1",
+            "asset": "tea-cup",
+            "y": 0,
+            "x": -13,
+            "z": 6,
+            "width": 3.5,
+            "height": 3,
+            "rotation": 12
+          },
+          {
+            "id": "unsoo-4-decor-2",
+            "asset": "leaves",
+            "y": 0,
+            "x": 11,
+            "z": -7,
+            "width": 3.5,
+            "height": 3,
+            "rotation": -20
+          }
+        ]
+      },
+      "derivedBefore": {
+        "blockingRadius": 18.06,
+        "reactionRadius": 37.82,
+        "visibleArrows": 0
+      },
+      "derivedAfter": {
+        "blockingRadius": 4.824,
+        "reactionRadius": 11.348,
+        "visibleArrows": 8
+      }
+    },
+    {
+      "id": "unsoo-5",
+      "title": "너무 늦은 설렁탕",
+      "placement": {
+        "id": "unsoo-p5",
+        "before": {
+          "x": 0,
+          "z": 0,
+          "scale": 4.4,
+          "radius": 8,
+          "collisionRadius": 4
+        },
+        "after": {
+          "x": 0,
+          "z": 0,
+          "scale": 3.4,
+          "radius": 2,
+          "collisionRadius": 1.39
+        }
+      },
+      "floorDecals": {
+        "before": null,
+        "after": [
+          {
+            "id": "unsoo-5-decor-1",
+            "asset": "open-book",
+            "y": 0,
+            "x": -11,
+            "z": 6,
+            "width": 3.5,
+            "height": 3,
+            "rotation": -12
+          },
+          {
+            "id": "unsoo-5-decor-2",
+            "asset": "leaves",
+            "y": 0,
+            "x": 11,
+            "z": -7,
+            "width": 3,
+            "height": 2.5,
+            "rotation": 22
+          }
+        ]
+      },
+      "derivedBefore": {
+        "blockingRadius": 17.6,
+        "reactionRadius": 36.9,
+        "visibleArrows": 0
+      },
+      "derivedAfter": {
+        "blockingRadius": 4.726,
+        "reactionRadius": 11.152,
+        "visibleArrows": 8
+      }
+    }
+  ],
+  "verification": {
+    "chapters": 5,
+    "browserErrors": [],
+    "publicUnchangedAtSave": true,
+    "otherBooksUnchangedAtSave": true
+  }
+}
