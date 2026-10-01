@@ -217,6 +217,7 @@ export class World {
       onMove = () => {},
       onSelect = () => {},
       onError = () => {},
+      onReady = () => {},
       editor = false,
       modelOnly = false,
       hero = false,
@@ -230,6 +231,7 @@ export class World {
     this.onMove = onMove;
     this.onSelect = onSelect;
     this.onError = onError;
+    this.onReady = onReady;
     this.editor = editor;
     this.modelOnly = modelOnly;
     this.hero = hero;
@@ -259,7 +261,7 @@ export class World {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.setAttribute(
       "aria-label",
-      modelOnly ? "선택한 모델 미리보기. 드래그로 회전하고 휠로 확대하세요." : "책 속 3D 공간. 땅을 누르거나 방향키로 이동하세요.",
+      modelOnly ? "선택한 모델 미리보기. 드래그로 회전, 휠로 확대, 오른쪽 버튼 드래그로 화면 이동. 터치에서는 두 손가락으로 확대하고 이동하세요." : "책 속 3D 공간. 땅을 누르거나 방향키로 이동하세요.",
     );
     this.renderer.domElement.tabIndex = 0;
     container.append(this.renderer.domElement);
@@ -309,7 +311,9 @@ export class World {
       if (modelOnly) {
         this.controls.maxPolarAngle = Math.PI;
         this.controls.minDistance = 0.5;
-        this.controls.enablePan = false;
+        this.controls.enablePan = true;
+        this.controls.screenSpacePanning = true;
+        this.controls.enabled = false;
       }
     }
     const signal = this.abort.signal;
@@ -541,6 +545,7 @@ export class World {
       phase: 0,
       mixer: null,
       action: null,
+      ready: model.kind !== "glb",
     };
     this.objects.push(entry);
     if (model.kind === "glb") {
@@ -580,8 +585,10 @@ export class World {
             entry.action.play();
             entry.action.paused = true;
           }
+          entry.ready = true;
         })
         .catch(() => {
+          if (this.dead) return;
           this.onError(`“${model.name}” 모델을 불러오지 못했습니다.`);
           if (this.modelOnly) return;
           const fallback = makeModel("cards", "#c66c65");
@@ -634,15 +641,33 @@ export class World {
     if (!group || !this.controls) return;
     const bounds = new THREE.Box3().setFromObject(group);
     if (bounds.isEmpty()) return;
-    const sphere = bounds.getBoundingSphere(new THREE.Sphere());
-    const halfFov = Math.min(THREE.MathUtils.degToRad(this.camera.fov / 2), Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect));
-    const distance = Math.max(sphere.radius, 0.1) / Math.sin(halfFov) * 1.15;
-    this.controls.target.copy(sphere.center);
-    this.camera.position.copy(sphere.center).add(new THREE.Vector3(3, 1.8, 4).normalize().multiplyScalar(distance));
+    // Clear any remaining drag inertia before setting the fitted view.
+    const damping = this.controls.enableDamping;
+    this.controls.enableDamping = false;
+    this.controls.update();
+    const center = bounds.getCenter(new THREE.Vector3());
+    const direction = new THREE.Vector3(3, 1.8, 4).normalize();
+    this.camera.position.copy(center).add(direction);
+    this.camera.lookAt(center);
+    const inverseRotation = this.camera.quaternion.clone().invert();
+    const tanVertical = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+    const tanHorizontal = tanVertical * this.camera.aspect;
+    // Fit every corner in camera space, keeping a small margin on the limiting axis.
+    let distance = 0.5;
+    for (const x of [bounds.min.x, bounds.max.x])
+      for (const y of [bounds.min.y, bounds.max.y])
+        for (const z of [bounds.min.z, bounds.max.z]) {
+          const corner = new THREE.Vector3(x, y, z).sub(center).applyQuaternion(inverseRotation);
+          distance = Math.max(distance, corner.z + 1.1 * Math.max(Math.abs(corner.x) / tanHorizontal, Math.abs(corner.y) / tanVertical));
+        }
+    this.controls.target.copy(center);
+    this.camera.position.copy(center).addScaledVector(direction, distance);
+    this.controls.minDistance = Math.max(0.1, distance * 0.08);
     this.controls.maxDistance = distance * 4;
     this.camera.far = Math.max(150, distance * 5);
     this.camera.updateProjectionMatrix();
     this.controls.update();
+    this.controls.enableDamping = damping;
   }
   moveTo(x, z) {
     this.target.set(
@@ -816,6 +841,11 @@ export class World {
     }
     if (this.controls) this.controls.update();
     this.renderer.render(this.scene, this.camera);
+    if (this.modelOnly && !this.previewReady && this.objects.length && this.objects.every((o) => o.ready)) {
+      this.previewReady = true;
+      this.controls.enabled = true;
+      this.onReady();
+    }
   }
   disposeTree(tree) {
     tree.traverse((o) => {

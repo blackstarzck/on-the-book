@@ -6,6 +6,7 @@ import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
 import { heroFocus, imageSlots } from "../shared/image-slots.js";
 import { iconFor } from "../client/category-icons.js";
 import { World } from "../shared/world.js";
+import { MOUSE, TOUCH } from "three";
 import {
   api,
   esc,
@@ -684,8 +685,10 @@ function bindModels() {
 }
 function previewModel(m) {
   const d = modal(
-    `<span class="eyebrow">MODEL PREVIEW</span><h2>${esc(m.name)}</h2><div id="single-preview" class="single-preview"></div><p class="muted">드래그로 회전 · 휠로 확대</p><p class="source-note">${esc(m.credit)}</p>`,
+    `<header class="model-preview-header"><h2 id="model-preview-title">${esc(m.name)}</h2><div class="model-preview-tools" role="group" aria-label="모델 보기 조작"><button class="text-button small" data-preview-mode="rotate" aria-pressed="true" title="드래그로 회전 · 두 손가락으로 확대 및 이동" disabled>${icon("rotate-3d")} 회전</button><button class="text-button small" data-preview-mode="pan" aria-pressed="false" title="드래그로 화면 이동 · 오른쪽 버튼 드래그로도 이동" disabled>${icon("move")} 이동</button><button class="icon-button" data-preview-zoom="in" aria-label="확대" title="확대 · 마우스 휠로도 조절" disabled>${icon("plus")}</button><button class="icon-button" data-preview-zoom="out" aria-label="축소" title="축소" disabled>${icon("minus")}</button><button class="icon-button" data-preview-reset aria-label="전체 모델 보기" title="전체 모델 보기" disabled>${icon("maximize")}</button></div></header><div id="single-preview" class="single-preview" aria-busy="true"><div class="model-preview-status" role="status"><span class="model-preview-spinner" aria-hidden="true"></span><p>모델을 불러오는 중이에요…</p><button class="outline-button" data-preview-retry hidden>다시 시도</button></div></div>`,
   );
+  d.classList.add("model-preview-dialog");
+  d.setAttribute("aria-labelledby", "model-preview-title");
   routeDialog(d, "model-preview", m.id);
   const p = {
     id: "preview",
@@ -695,24 +698,81 @@ function previewModel(m) {
     scale: 2,
     rotation: 0,
     radius: 2,
-    animation: m.kind !== "glb" ? "spin" : m.clips?.length ? "clip" : "none",
+    animation: m.kind === "glb" && m.clips?.length ? "clip" : "none",
     clip: m.clips?.[0] || "",
     title: m.name,
     story: "",
   };
   let preview;
-  try {
-    preview = new World(d.querySelector("#single-preview"), {
-      chapter: { theme: "meadow", placements: [p] },
-      models: [m],
-      editor: true,
-      modelOnly: true,
-      onError: toast,
+  const container = d.querySelector("#single-preview");
+  const status = d.querySelector(".model-preview-status");
+  const retry = d.querySelector("[data-preview-retry]");
+  const buttons = d.querySelectorAll(".model-preview-tools button");
+  const setMode = (mode) => {
+    preview.controls.mouseButtons.LEFT = mode === "pan" ? MOUSE.PAN : MOUSE.ROTATE;
+    preview.controls.touches.ONE = mode === "pan" ? TOUCH.PAN : TOUCH.ROTATE;
+    container.dataset.mode = mode;
+    d.querySelectorAll("[data-preview-mode]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.previewMode === mode));
     });
-    preview.preview("preview");
-  } catch (e) {
-    toast(e.message);
-  }
+  };
+  const showError = (message) => {
+    if (!d.open) return;
+    container.setAttribute("aria-busy", "false");
+    container.dataset.state = "error";
+    status.hidden = false;
+    status.setAttribute("role", "alert");
+    status.querySelector("p").textContent = message;
+    retry.hidden = false;
+    buttons.forEach((button) => (button.disabled = true));
+  };
+  const load = () => {
+    preview?.dispose();
+    preview = null;
+    container.setAttribute("aria-busy", "true");
+    container.dataset.state = "loading";
+    status.hidden = false;
+    status.setAttribute("role", "status");
+    status.querySelector("p").textContent = "모델을 불러오는 중이에요…";
+    retry.hidden = true;
+    buttons.forEach((button) => (button.disabled = true));
+    try {
+      preview = new World(container, {
+        chapter: { theme: "meadow", placements: [p] },
+        models: [m],
+        editor: true,
+        modelOnly: true,
+        onReady: () => {
+          container.setAttribute("aria-busy", "false");
+          container.dataset.state = "ready";
+          status.hidden = true;
+          buttons.forEach((button) => (button.disabled = false));
+        },
+        onError: showError,
+      });
+      setMode("rotate");
+      preview.preview("preview");
+    } catch (e) {
+      showError(e.message);
+    }
+  };
+  d.querySelectorAll("[data-preview-mode]").forEach((button) => {
+    button.onclick = () => setMode(button.dataset.previewMode);
+  });
+  d.querySelectorAll("[data-preview-zoom]").forEach((button) => {
+    button.onclick = () => {
+      const { camera, controls } = preview;
+      const distance = camera.position.distanceTo(controls.target);
+      const next = Math.max(controls.minDistance, Math.min(controls.maxDistance, distance * (button.dataset.previewZoom === "in" ? 0.8 : 1.25)));
+      camera.position.lerp(controls.target, 1 - next / distance);
+      controls.update();
+    };
+  });
+  d.querySelector("[data-preview-reset]").onclick = () => {
+    preview.fitModel();
+  };
+  retry.onclick = load;
+  load();
   d.addEventListener("close", () => preview?.dispose());
 }
 function editModel(existing) {
