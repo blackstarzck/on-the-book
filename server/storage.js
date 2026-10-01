@@ -45,8 +45,12 @@ const uploadNames = (value, found = new Set()) => {
   return found;
 };
 
+const SIGNED_LIFE = 60 * 60 * 1000;
+const SIGNED_REUSE_MIN = 20 * 60 * 1000;
+
 function supabaseBackend(db) {
   const uploads = db.storage.from('uploads');
+  const signed = new Map();
   const check = (error, what) => {
     if (error) throw Object.assign(new Error(`${what}: ${error.message}`), { cause: error });
   };
@@ -100,7 +104,8 @@ function supabaseBackend(db) {
       return Buffer.from(await data.arrayBuffer());
     },
     async storeUpload(filename, buffer, details = {}) {
-      const { error } = await uploads.upload(filename, buffer, { contentType: contentType(filename), upsert: false });
+      // Every upload gets a new random name and is never overwritten, so its bytes may be kept for a year.
+      const { error } = await uploads.upload(filename, buffer, { contentType: contentType(filename), upsert: false, cacheControl: '31536000' });
       check(error, 'upload');
       const { error: rowError } = await db.from('assets').insert({
         bucket: 'uploads', path: filename, kind: path.extname(filename).slice(1), content_type: contentType(filename),
@@ -109,10 +114,18 @@ function supabaseBackend(db) {
       });
       check(rowError, 'assets');
     },
+    // One signed address is handed out again while it has plenty of life left, so readers share the
+    // storage CDN's cached copy instead of each new token fetching the file from the origin again.
     async signedDownload(filename) {
-      const { data, error } = await uploads.createSignedUrl(filename, 10 * 60);
+      const now = Date.now();
+      const kept = signed.get(filename);
+      if (kept && kept.expires - now >= SIGNED_REUSE_MIN) return { url: kept.url, expires: kept.expires };
+      const { data, error } = await uploads.createSignedUrl(filename, SIGNED_LIFE / 1000);
       if (error) throw missing();
-      return data.signedUrl;
+      const fresh = { url: data.signedUrl, expires: now + SIGNED_LIFE };
+      if (signed.size >= 2000) signed.clear();
+      signed.set(filename, fresh);
+      return { ...fresh };
     },
     async saveSession(token, expiry) {
       await db.from('sessions').delete().lt('expires_at', new Date().toISOString());

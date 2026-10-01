@@ -271,9 +271,27 @@ app.post(
 );
 // Signed-out readers get exactly the files the public library points to. The local studio without a
 // password sees every file, as it did when files sat in its data folder.
+// A page asks for many files at once, so the public names are kept for a minute instead of reading the
+// publication for every file. A name the kept list lacks is looked up again, so a new publication shows
+// at once; a file taken out of the publication stays readable for at most that minute.
+const PUBLIC_NAMES_LIFE = 60 * 1000;
+let publicNames = { names: new Set(), at: 0 };
+let publicLookup = null;
+async function readPublicNames() {
+  const [live, site] = await Promise.all([readLive(), siteAssetNames()]);
+  return new Set([...publicAssetNames(live), ...site]);
+}
+async function isPublic(filename) {
+  if (Date.now() - publicNames.at < PUBLIC_NAMES_LIFE && publicNames.names.has(filename)) return true;
+  // Files asked for together share one lookup.
+  publicLookup ??= readPublicNames()
+    .then((names) => { publicNames = { names, at: Date.now() }; return names; })
+    .finally(() => { publicLookup = null; });
+  return (await publicLookup).has(filename);
+}
 async function mayDownload(req, filename) {
   if (!cloud && !password) return true;
-  if (publicAssetNames(await readLive()).has(filename) || (await siteAssetNames()).has(filename)) return true;
+  if (await isPublic(filename)) return true;
   if (cloud && process.env.DEPLOYMENT_APP !== 'admin') return false;
   return validSession(sessionToken(req));
 }
@@ -284,15 +302,16 @@ if (uploadDir) app.use(
 else app.get('/uploads/:filename', async (req, res) => {
   const { filename } = req.params;
   if (!/^[a-f0-9-]{36}\.(png|glb|webp)$/.test(filename) || !(await mayDownload(req, filename))) return res.sendStatus(404);
-  let address;
-  try { address = await signedDownload(filename); }
+  let signed;
+  try { signed = await signedDownload(filename); }
   catch (e) {
     if (e.code === 'ENOENT') return res.sendStatus(404);
     throw e;
   }
-  // Images may stay in the browser for 5 minutes, inside the 10-minute life of the signed address.
-  res.set('Cache-Control', filename.endsWith('.png') ? 'private, max-age=300' : 'private, no-store');
-  res.redirect(307, address);
+  // The browser may keep an image's redirect for 10 minutes, well inside the life the signed address has left.
+  const keep = Math.min(600, Math.floor((signed.expires - Date.now()) / 1000) - 300);
+  res.set('Cache-Control', filename.endsWith('.png') && keep > 0 ? `private, max-age=${keep}` : 'private, no-store');
+  res.redirect(307, signed.url);
 });
 app.use("/api", (req, res) =>
   res.status(404).json({ error: "요청을 찾을 수 없습니다." }),
