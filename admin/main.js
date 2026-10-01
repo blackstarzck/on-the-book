@@ -260,7 +260,7 @@ function routeDialog(dialog, modal, modalId, push = !applying) {
 function openRouteDialog(route) {
   const model = library.models.find((m) => m.id === route.modalId);
   if (route.modal === "new-book") editBook(true);
-  else if (route.modal === "book") editBook();
+  else if (route.modal === "book") editBook(false, route.view === "books" ? library.books.find(b => b.id === route.modalId) : book());
   else if (route.modal === "chapter") editChapter(route.modalId);
   else if (route.modal === "new-model") editModel();
   else if (route.modal === "model") editModel(model);
@@ -348,9 +348,10 @@ function draw() {
   }));
   if (tab === "books") {
     document.querySelector('#new-book').onclick=()=>editBook(true);
+    document.querySelectorAll('[data-edit-book]').forEach(button=>button.onclick=()=>editBook(false,library.books.find(b=>b.id===button.dataset.editBook)));
     // The editor's undo covers only what happens inside it, not home or shelf changes made before.
     document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY};navigate(()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;assetQuery="";inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);});});
-    const filter=()=>{const query=shelfQuery.toLowerCase(),state=shelfStatus||'all';let count=0;document.querySelectorAll('[data-open-book]').forEach(button=>{const row=button.closest('.book-tile-row');row.hidden=!button.dataset.title.includes(query)||(state!=='all'&&button.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
+    const filter=()=>{const query=shelfQuery.toLowerCase(),state=shelfStatus||'all';let count=0;document.querySelectorAll('[data-book-row]').forEach(row=>{row.hidden=!row.dataset.title.includes(query)||(state!=='all'&&row.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
     const search=document.querySelector('#book-search'),status=document.querySelector('#book-filter');search.value=shelfQuery;status.value=shelfStatus||'all';
     search.oninput=()=>{shelfQuery=search.value;filter();syncUrlSoon();};status.onchange=()=>{shelfStatus=status.value==='all'?'':status.value;filter();syncUrl();};filter();
     bindShelfOrder(app,(ids,moved)=>{
@@ -481,7 +482,7 @@ function bindBooks() {
       },
     );
 }
-function editBook(isNew = false) {
+function editBook(isNew = false, target = book()) {
   const original = isNew
     ? {
         id: uid(),
@@ -497,12 +498,12 @@ function editBook(isNew = false) {
         published: false,
         chapters: [newChapter()],
       }
-    : book();
+    : target;
   const categories = [...new Set(["판타지", "모험", "문학", ...library.books.map(bookCategory)])];
   const d = modal(
-    `<span class="eyebrow">BOOK DETAILS</span><h2>${isNew ? "새 책 만들기" : "책 정보"}</h2><form id="book-form">${imageField("book-cover", "표지 이미지 (PNG)", "cover", original.cover, "책장, 작품 상세와 3D 화면의 작품 소개 창에 세로 2:2.85(예: 800×1140)로 보여요. 비율이 다르면 가운데를 기준으로 잘립니다. 없으면 빈 표지로 둡니다.", imageSlots.cover)}${imageField("book-thumbnail", "도서 메인 썸네일 (PNG)", "thumbnail", original.thumbnail, "홈 ‘한 장면부터 시작하는 여행’의 큰 칸에 정사각형(예: 1200×1200)으로 보이고, 휴대폰에서는 가운데를 기준으로 가로 16:9로 잘려요. 아래쪽에 책 제목이 흰 글씨로 얹히니 글자 없는 그림을 권장해요. 없으면 기본 배경에 책 제목만 보여요.", imageSlots.bookThumbnail, { title: original.title })}${field("책 제목", "title", original.title, "text", 'required maxlength="200"')}${field("영문 제목", "englishTitle", original.englishTitle, "text", 'required maxlength="200"')}<div class="field-row">${field("작가", "author", original.author, "text", 'maxlength="200"')}${field("원작 출간 연도", "year", original.year, "number", 'required min="1" max="2026"')}</div>${field("분류", "category", bookCategory(original), "text", 'required maxlength="8" list="book-categories" pattern="^(?!(all|reading)$).*" title="8자 이하로 입력해 주세요. all·reading은 쓸 수 없습니다."')}<datalist id="book-categories">${categories.map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist><div class="category-icon"><img id="book-category-icon" src="${esc(iconFor(bookCategory(original)))}" alt="" draggable="false"><p class="field-hint">사용자 화면의 빠른 메뉴와 분류 필터에 쓰입니다. 같은 이름을 쓰면 한 분류로 묶여요. 왼쪽 그림이 빠른 메뉴와 사진 없는 추천 슬라이드에 보이는데, ‘판타지’·‘모험’만 전용 그림이 있고 다른 분류는 책 그림이에요.</p></div><label class="field">소개 문장<textarea name="description" rows="2" maxlength="1000">${esc(original.description)}</textarea></label><label class="field">저자 소개<textarea name="authorIntro" rows="5" maxlength="5000">${esc(original.authorIntro)}</textarea></label><label class="field">책 소개<textarea name="bookIntro" rows="6" maxlength="5000">${esc(original.bookIntro)}</textarea></label><p class="field-hint">소개 문장은 홈 추천 배너의 기본 설명과 3D 화면의 작품 소개 창에 쓰는 짧은 글이고, 저자 소개와 책 소개는 작품 상세의 ‘이 책의 여정’ 아래에 차례로 보여요. 빈 줄로 문단을 나누고, 비워 두면 ‘준비 중’ 문구가 보여요.</p>${field("원작 출처 주소", "source", original.source, "url", 'required pattern="https?://.*"')}<label class="field">권리 및 번역·각색 정보<textarea name="rights" rows="3" maxlength="1000">${esc(original.rights)}</textarea></label><label class="checkbox-field"><input type="checkbox" name="published" ${original.published ? "checked" : ""}> 사용자 화면 공개 대상에 포함</label><div class="modal-actions">${!isNew ? '<button id="delete-book" type="button" class="text-button danger">책 삭제</button>' : ""}<button class="primary-button" type="submit">${isNew ? "책 만들기" : "변경 적용"}</button></div></form>`,
+    `<h2>${isNew ? "새 책 만들기" : "책 정보"}</h2><form id="book-form">${imageField("book-cover", "표지 이미지 (PNG)", "cover", original.cover, "책장, 작품 상세와 3D 화면의 작품 소개 창에 세로 2:2.85(예: 800×1140)로 보여요. 비율이 다르면 가운데를 기준으로 잘립니다. 없으면 빈 표지로 둡니다.", imageSlots.cover)}${imageField("book-thumbnail", "도서 메인 썸네일 (PNG)", "thumbnail", original.thumbnail, "홈 ‘한 장면부터 시작하는 여행’의 큰 칸에 정사각형(예: 1200×1200)으로 보이고, 휴대폰에서는 가운데를 기준으로 가로 16:9로 잘려요. 아래쪽에 책 제목이 흰 글씨로 얹히니 글자 없는 그림을 권장해요. 없으면 기본 배경에 책 제목만 보여요.", imageSlots.bookThumbnail, { title: original.title })}${field("책 제목", "title", original.title, "text", 'required maxlength="200"')}${field("영문 제목", "englishTitle", original.englishTitle, "text", 'required maxlength="200"')}<div class="field-row">${field("작가", "author", original.author, "text", 'maxlength="200"')}${field("원작 출간 연도", "year", original.year, "number", 'required min="1" max="2026"')}</div>${field("분류", "category", bookCategory(original), "text", 'required maxlength="8" list="book-categories" pattern="^(?!(all|reading)$).*" title="8자 이하로 입력해 주세요. all·reading은 쓸 수 없습니다."')}<datalist id="book-categories">${categories.map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist><div class="category-icon"><img id="book-category-icon" src="${esc(iconFor(bookCategory(original)))}" alt="" draggable="false"><p class="field-hint">사용자 화면의 빠른 메뉴와 분류 필터에 쓰입니다. 같은 이름을 쓰면 한 분류로 묶여요. 왼쪽 그림이 빠른 메뉴와 사진 없는 추천 슬라이드에 보이는데, ‘판타지’·‘모험’만 전용 그림이 있고 다른 분류는 책 그림이에요.</p></div><label class="field">소개 문장<textarea name="description" rows="2" maxlength="1000">${esc(original.description)}</textarea></label><label class="field">저자 소개<textarea name="authorIntro" rows="5" maxlength="5000">${esc(original.authorIntro)}</textarea></label><label class="field">책 소개<textarea name="bookIntro" rows="6" maxlength="5000">${esc(original.bookIntro)}</textarea></label><p class="field-hint">소개 문장은 홈 추천 배너의 기본 설명과 3D 화면의 작품 소개 창에 쓰는 짧은 글이고, 저자 소개와 책 소개는 작품 상세의 ‘이 책의 여정’ 아래에 차례로 보여요. 빈 줄로 문단을 나누고, 비워 두면 ‘준비 중’ 문구가 보여요.</p>${field("원작 출처 주소", "source", original.source, "url", 'required pattern="https?://.*"')}<label class="field">권리 및 번역·각색 정보<textarea name="rights" rows="3" maxlength="1000">${esc(original.rights)}</textarea></label><label class="checkbox-field"><input type="checkbox" name="published" ${original.published ? "checked" : ""}> 사용자 화면 공개 대상에 포함</label><div class="modal-actions">${!isNew ? '<button id="delete-book" type="button" class="text-button danger">책 삭제</button>' : ""}<button class="primary-button" type="submit">${isNew ? "책 만들기" : "변경 적용"}</button></div></form>`,
   );
-  routeDialog(d, isNew ? "new-book" : "book");
+  routeDialog(d, isNew ? "new-book" : "book", !isNew && !inEditor ? original.id : undefined);
   const hold = holdActions(d);
   bindImageField(d, "book-cover", "cover", { busy: hold });
   bindImageField(d, "book-thumbnail", "thumbnail", { busy: hold });
@@ -518,15 +519,14 @@ function editBook(isNew = false) {
       published: f.has("published"),
       category: String(f.get("category")).trim(),
     });
-    if (isNew) {library.books.push(original);shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY};}
+    if (isNew) { library.books.push(original); shelfQuery = ""; shelfStatus = ""; }
     bookId = original.id;
     chapterId = original.chapters[0].id;
     placementId = original.chapters[0].placements[0]?.id;
     mark();
-    // A new book's editor takes over the dialog's history entry, so Back from it returns to the shelf.
-    if (isNew) { routeModal = null; inEditor = true; assetQuery = ""; writeHistory(() => history.replaceState({ scroll: 0 }, "")); }
     d.close();
     render();
+    if (!inEditor) document.querySelector(`[data-edit-book="${CSS.escape(original.id)}"]`)?.focus({ preventScroll: !isNew });
   };
   d.querySelector("#delete-book")?.addEventListener("click", () => {
     d.close();
@@ -534,8 +534,8 @@ function editBook(isNew = false) {
       "책과 연결된 챕터를 삭제할까요?",
       "공개된 화면은 다시 공개하기 전까지 유지돼요. 저장 전에는 새로고침으로 되돌릴 수 있어요.",
       () => {
-        library.books = library.books.filter((b) => b.id !== bookId);
-        library.home.hero = library.home.hero.filter((s) => s.bookId !== bookId);
+        library.books = library.books.filter((b) => b.id !== original.id);
+        library.home.hero = library.home.hero.filter((s) => s.bookId !== original.id);
         bookId = library.books[0]?.id;
         chapterId = book()?.chapters[0]?.id;
         placementId = chapter()?.placements[0]?.id;

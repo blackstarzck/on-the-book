@@ -4,16 +4,17 @@
 const tabs = ["home", "models", "settings"];
 // Dialogs each page can name in `modal`; those in `targeted` also need an `id`.
 const dialogs = {
-  books: ["new-book"],
+  books: ["new-book", "book"],
   home: ["home-preview"],
   models: ["new-model", "model", "model-preview"],
   settings: [],
   editor: ["book", "chapter", "new-model", "model"],
 };
 const targeted = ["chapter", "model", "model-preview"];
+const needsId = (view, modal) => targeted.includes(modal) || (view === "books" && modal === "book");
 // Query parameters each page writes, in address order.
 const order = {
-  books: ["q", "status", "modal"],
+  books: ["q", "status", "modal", "id"],
   home: ["modal"],
   models: ["q", "modal", "id"],
   settings: [],
@@ -43,8 +44,8 @@ export function parseRoute(pathname, search = "") {
   if (order[view].includes("q")) route.q = params.get("q");
   if (view === "books" && ["draft", "public"].includes(params.get("status"))) route.status = params.get("status");
   const modal = params.get("modal"), id = params.get("id");
-  if (dialogs[view].includes(modal) && !route.reader && (!targeted.includes(modal) || id))
-    Object.assign(route, { modal, modalId: targeted.includes(modal) ? id : undefined });
+  if (dialogs[view].includes(modal) && !route.reader && (!needsId(view, modal) || id))
+    Object.assign(route, { modal, modalId: needsId(view, modal) ? id : undefined });
   return compact(route);
 }
 
@@ -72,6 +73,7 @@ export function resolveRoute(route, library) {
   let notice = null;
   const miss = (key) => { notice ??= notices[key]; };
   const dropDialog = () => { delete next.modal; delete next.modalId; miss("item"); };
+  if (next.view === "books" && next.modal === "book" && !library.books.some((b) => b.id === next.modalId)) dropDialog();
   if (next.view === "editor") {
     const book = library.books.find((b) => b.id === next.bookId);
     if (!book?.chapters.length) return { route: { view: "books" }, notice: notices.book };

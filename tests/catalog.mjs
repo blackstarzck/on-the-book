@@ -21,7 +21,8 @@ try {
   // The shelf shows only the books: no count beside the title and no empty places after the cards.
   await expect(page.locator('#catalog-title')).toHaveText('지금 만나볼 이야기');
   await expect(page.locator('#book-grid > *')).toHaveCount(2);
-  await expect(page.locator('.catalog-cover img, .catalog-cover svg')).toHaveCount(0);
+  await expect(page.locator('.catalog-cover img')).toHaveCount(2);
+  await expect.poll(() => page.locator('.catalog-cover img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0))).toBe(true);
   await expect(page.locator('.catalog-cover')).toHaveCount(2);
   await expect(page.locator('.catalog-card .book-category, .catalog-card .book-description, .catalog-card .book-resume, .catalog-card .book-details, .catalog-card .book-format')).toHaveCount(0);
   await expect(page.locator('.catalog-card .book-title, .catalog-card .book-author')).toHaveCount(4);
@@ -308,7 +309,7 @@ try {
   await expect(page.locator('#map-button')).toContainText('03');
   await expect(page).toHaveURL(/book=alice&chapter=alice-3/);
   await page.getByRole('button', { name: '책장으로', exact: true }).click();
-  pass('Blank image slots; scene cards open the book detail on that scene and its CTA enters that chapter');
+  pass('Scene cards open the book detail on that scene and its CTA enters that chapter');
   // Picking a book in the scene previews swaps the tiles in place; the arrow keys move the pick like tabs.
   await page.getByRole('tab', { name: '오즈의 마법사', exact: true }).click();
   await expect(page.getByRole('tab', { name: '오즈의 마법사', exact: true })).toHaveAttribute('aria-selected', 'true');
@@ -372,7 +373,7 @@ try {
   await expect(page.locator('.library-page')).toBeVisible();
   pass('The second hero slide opens its book detail');
 
-  // The shared top works from the book detail too: Enter in its search box shows the bookshelf's results with the
+  // The shared top works from the book detail too: Enter in its search box opens the book list with the
   // query kept, and the ribbon opens the bookshelf on the scene previews.
   await page.locator('[data-book="alice"]').click();
   await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
@@ -380,22 +381,22 @@ try {
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
   await page.locator('#book-search').fill('오즈');
   await page.locator('#book-search').press('Enter');
-  await expect(page.locator('.library-page')).toBeVisible();
-  await expect(page.locator('#catalog-title')).toHaveText('검색 결과');
-  await expect(page.locator('.catalog-card')).toHaveCount(1);
+  await expect(page.locator('.browse-page')).toBeVisible();
+  await expect(page.locator('#browse-status')).toContainText('검색 결과 1권');
+  await expect(page.locator('.browse-card')).toHaveCount(1);
   await expect(page.locator('#book-search')).toHaveValue('오즈');
   await expect(page.locator('#book-search')).toBeFocused();
   expect(await page.locator('#book-search').getAttribute('tabindex')).toBe(null);
   await page.locator('#book-search').fill('');
-  await expect(page.locator('.catalog-card')).toHaveCount(2);
-  await page.locator('[data-book="alice"]').click();
+  await expect(page.locator('.browse-card')).toHaveCount(2);
+  await page.locator('[data-browse-book="alice"]').click();
   await expect(page.locator('.detail-page[data-view="book"]')).toBeVisible();
   await expect(page.locator('.reader-curtain')).toHaveCount(0);
   await page.locator('.detail-top .reading-ribbon').click();
   await expect(page.locator('.library-page')).toBeVisible();
   await expect(page.locator('#scene-title')).toBeFocused();
   await expect(page.locator('#scene-title')).toBeInViewport();
-  pass('From the book detail, the search box shows the bookshelf results and the ribbon opens the scene previews');
+  pass('From the book detail, the search box opens the book list and the ribbon opens the scene previews');
 
   // Direct addresses: first load resolves the view and cleans unusable parts. No focus move on a cold load.
   await page.goto(`${server.url}/client/?book=alice`);

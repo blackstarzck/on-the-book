@@ -7,11 +7,13 @@ import { announcementBanner, landing, setupCatalog } from "./landing.js";
 import { bookCover, edition } from "./book-meta.js";
 import { bookDetail, scenePanel, sceneBar, sceneStatus, defaultScene, detailUrl } from "./detail.js";
 import "./detail.css";
+import { browseDefaults, browseUrl, readBrowseState, browsePage, setupBrowse } from "./browse.js";
+import "./browse.css";
 let library,
   book,
   chapter,
   world,
-  // Which screen is on: the bookshelf ("home"), the book detail ("book", with `chapter` as the panel's scene) or the 3D world.
+  // Screens: home, the book list ("books"), the detail ("book") and the 3D world.
   view = "home",
   // Whether the address names the panel's scene (`&scene=`). False while the panel shows the default scene.
   sceneAddressed = false,
@@ -24,6 +26,7 @@ let library,
   disposeView;
 // `sceneBook` is the book picked in the scene previews (null: the first book on the shelf).
 const catalogState = { query: "", category: "all", sort: "default", scroll: 0, selected: null, sceneBook: null };
+const browseState = { ...browseDefaults, scroll: 0, selected: null };
 const draftPreview = new URLSearchParams(location.search).get("preview") === "draft";
 // The draft preview holds unpublished books too; its bookshelf shows what publishing would show.
 const shelf = () => draftPreview ? { ...library, books: library.books.filter((b) => b.published) } : library;
@@ -60,6 +63,7 @@ function record() {
 // The address of the current screen, carrying the draft preview flag when it is on.
 function currentUrl() {
   if (view === "home") return `${location.pathname}${draftPreview ? "?preview=draft" : ""}`;
+  if (view === "books") return location.pathname + browseUrl(browseState, draftPreview);
   return location.pathname + detailUrl({
     book: book.id,
     scene: view === "book" && sceneAddressed ? chapter.id : undefined,
@@ -71,7 +75,7 @@ function currentUrl() {
 // `clean` says the address had unusable parts and should be rewritten.
 function resolveView(params) {
   const selected = library.books.find(b => b.id === params.get("book"));
-  if (!selected) return { view: "home", book: library.books[0], chapter: library.books[0].chapters[0], sceneAddressed: false, clean: params.has("book") || params.has("scene") || params.has("chapter") };
+  if (!selected) return { view: params.get("view") === "books" ? "books" : "home", book: library.books[0], chapter: library.books[0]?.chapters[0], sceneAddressed: false, clean: params.has("book") || params.has("scene") || params.has("chapter") };
   const explored = selected.chapters.find(c => c.id === params.get("chapter"));
   if (explored) return { view: "world", book: selected, chapter: explored, sceneAddressed: false, clean: false };
   const scene = selected.chapters.find(c => c.id === params.get("scene"));
@@ -83,10 +87,12 @@ function applyResolved(state) {
   book = state.book;
   chapter = state.chapter;
   sceneAddressed = state.sceneAddressed;
+  if (view === "books") Object.assign(browseState, readBrowseState(new URLSearchParams(location.search), shelf().books));
   if (view === "world") { record().chapter = chapter.id; remember(); }
   if (state.clean) history.replaceState(null, "", currentUrl());
 }
 function pageTitle() {
+  if (view === "books") return "도서 둘러보기 — On the Book";
   if (view === "book") return `${book.title} — On the Book`;
   return baseTitle;
 }
@@ -94,10 +100,11 @@ function header() {
   const brand = `<a class="brand" href="/client/${draftPreview ? "?preview=draft" : ""}" aria-label="On the Book 홈">${logo}</a>`;
   // The book detail shares the bookshelf's header (search, 소개, 책장, help); only the 3D world is compact.
   const compact = view === "world";
-  return `<header class="site-header${compact ? " reader-header" : ""}">${brand}${compact ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
+  return `<header class="site-header${compact ? " reader-header" : view === "books" ? " browse-header" : ""}">${brand}${compact || view === "books" ? "" : `<label class="header-search">${icon("search")}<input id="book-search" type="search" aria-label="도서 제목 또는 작가 검색" placeholder="어떤 이야기를 찾으세요?" value="${esc(catalogState.query)}" autocomplete="off"></label>`}<nav aria-label="주 메뉴">${compact ? "" : `<a class="browse-nav" data-browse href="${esc(browseUrl(browseState, draftPreview))}"${view === "books" ? ' aria-current="page"' : ""}>도서 목록</a>`}${aboutLink ? '<a id="about-link" class="text-button" href="/about">소개</a>' : ""}<button id="library-button" class="${compact ? "text-button" : "icon-button"}" aria-label="${compact ? "책장으로" : "책장 홈"}">${icon(compact ? "arrow-left" : "book-open")}${compact ? "책장으로" : ""}</button>${view === "world" ? `<button id="sound-button" class="icon-button" aria-label="${sound ? "소리 끄기" : "소리 켜기"}" aria-pressed="${sound}">${icon(sound ? "volume-2" : "volume-x")}</button>` : ""}<button id="help-button" class="icon-button" aria-label="이용 방법">${icon("help-circle")}</button></nav></header>`;
 }
 function page() {
   if (view === "home") return landing(shelf(), progress, catalogState, draftPreview);
+  if (view === "books") return browsePage(shelf(), browseState);
   if (view === "book") return bookDetail({ book, chapter, progress, preview: draftPreview });
   const index = book.chapters.indexOf(chapter);
   return `<main class="reader is-exploring"><div class="scene-wrap" id="world"></div>
@@ -116,7 +123,7 @@ function render() {
   document.title = pageTitle();
   // The book detail repeats the bookshelf's top (ribbon and header) inside .detail-top, which stays pinned above 850px
   // so the scene panel can fill the rest of the screen. It has no footer; home and the 3D world keep theirs.
-  const top = view === "home" ? `${announcementBanner()}${header()}` : view === "book" ? `<div class="detail-top">${announcementBanner()}${header()}</div>` : header();
+  const top = view === "home" || view === "books" ? `${announcementBanner()}${header()}` : view === "book" ? `<div class="detail-top">${announcementBanner()}${header()}</div>` : header();
   app.innerHTML = `${top}${page()}${view === "book" ? "" : `
  <footer class="site-footer"><span>${exploring ? "문장 너머의 세계를, 천천히." : "오래된 이야기, 새로운 발견."}</span>${exploring ? `<div><span>땅을 클릭 · 방향키로 이동 · 가까이서 움직임 감상</span></div>` : ""}<span class="footer-brand">ON THE BOOK © 2026</span></footer>`}`;
   if (exploring) try {
@@ -149,10 +156,21 @@ function render() {
     openLibrary();
   };
   document.querySelector("#help-button").onclick = help;
+  for (const link of document.querySelectorAll("a[data-browse]")) link.onclick = event => {
+    if (modifiedClick(event)) return;
+    event.preventDefault();
+    openBrowse(link.hasAttribute("data-browse-all") ? { ...browseDefaults, layout: browseState.layout } : {});
+  };
   const soundButton = document.querySelector("#sound-button");
   if (soundButton) soundButton.onclick = toggleSound;
   if (view === "home") {
-    disposeView = setupCatalog({ library: shelf(), progress, state: catalogState, preview: draftPreview, onOpen: openDetail, onTrailer: showTrailer, onHelp: help });
+    disposeView = setupCatalog({ library: shelf(), progress, state: catalogState, preview: draftPreview, onOpen: openDetail, onTrailer: showTrailer, onHelp: help, onBrowse: () => openBrowse({ ...browseDefaults, layout: browseState.layout }) });
+  } else if (view === "books") {
+    disposeView = setupBrowse({ library: shelf(), progress, state: browseState, preview: draftPreview, onOpen: openDetail, onChange: () => {
+      history.replaceState(null, "", currentUrl());
+      document.querySelector(".browse-nav").href = browseUrl(browseState, draftPreview);
+    } });
+    document.querySelector(".reading-ribbon").onclick = () => openLibrary({ land: "scenes" });
   } else if (exploring) {
     document.querySelector("#reader-book-info").onclick = () => bookDetails(book.id);
     document.querySelector("#map-button").onclick = chapterMap;
@@ -190,13 +208,12 @@ function setupDetail() {
     event.preventDefault();
     selectScene(target.dataset.scene, { sheet: target.classList.contains("journey-row") && narrow() });
   }, { signal: abort.signal });
-  // The shared top leads back to the bookshelf: the ribbon to its scene previews, Enter in the search box to the
-  // results. Enter that only ends a Korean IME composition is not a search.
+  // The ribbon opens the home's scene previews; Enter opens search results in the book list.
+  // Enter that only ends a Korean IME composition is not a search.
   document.querySelector(".detail-top .reading-ribbon").addEventListener("click", () => openLibrary({ land: "scenes" }), { signal: abort.signal });
   document.querySelector("#book-search").addEventListener("keydown", event => {
     if (event.key !== "Enter" || event.isComposing) return;
-    catalogState.query = event.target.value;
-    openLibrary({ land: "search" });
+    openBrowse({ ...browseDefaults, layout: browseState.layout, query: event.target.value }, { search: true });
   }, { signal: abort.signal });
   // The saved scene's flag tooltip opens to the right of its arrow, starting --tip-edge before the flag (detail.css).
   // Where its journey row, the scene panel or the sheet has no room on that side, it opens leftwards over the title
@@ -307,12 +324,12 @@ function goChapter(index) {
 function nextChapter() { goChapter(book.chapters.indexOf(chapter) + 1); }
 function help() {
   modal(
-    `<span class="eyebrow">HOW TO WANDER</span><h2>정해진 속도는 없어요.</h2><div class="instruction"><b>01</b><p><strong>가고 싶은 곳을 눌러요</strong>땅을 클릭하거나 마우스를 누른 채 움직이면 그 위치를 따라가요. 방향키·W A S D로도 이동해요. 휴대폰에서는 화면의 방향 버튼도 사용할 수 있어요.</p></div><div class="instruction"><b>02</b><p><strong>작은 물체에 다가가요</strong>챕터의 3D 모델에 가까워지면 애니메이션이 재생돼요. 멀어지면 멈추고, 다시 가까워지면 처음부터 재생돼요.</p></div><div class="instruction"><b>03</b><p><strong>다음 이야기를 만나요</strong>넓게 이어진 공간을 자유롭게 걸어요. 이동을 위한 조건은 없어요. 지도에서 원하는 챕터를 바로 열 수도 있어요.</p></div><p class="muted">소리는 오른쪽 위에서 켤 수 있어요. 탐험 기록은 이 브라우저에 저장돼요.</p>`,
+    `<h2>정해진 속도는 없어요.</h2><div class="instruction"><b>01</b><p><strong>가고 싶은 곳을 눌러요</strong>땅을 클릭하거나 마우스를 누른 채 움직이면 그 위치를 따라가요. 방향키·W A S D로도 이동해요. 휴대폰에서는 화면의 방향 버튼도 사용할 수 있어요.</p></div><div class="instruction"><b>02</b><p><strong>작은 물체에 다가가요</strong>챕터의 3D 모델에 가까워지면 애니메이션이 재생돼요. 멀어지면 멈추고, 다시 가까워지면 처음부터 재생돼요.</p></div><div class="instruction"><b>03</b><p><strong>다음 이야기를 만나요</strong>넓게 이어진 공간을 자유롭게 걸어요. 이동을 위한 조건은 없어요. 지도에서 원하는 챕터를 바로 열 수도 있어요.</p></div><p class="muted">소리는 오른쪽 위에서 켤 수 있어요. 탐험 기록은 이 브라우저에 저장돼요.</p>`,
   );
 }
 function readChapter() {
   modal(
-    `<span class="eyebrow">CHAPTER ${String(book.chapters.indexOf(chapter) + 1).padStart(2, "0")}</span><h2>${esc(chapter.title)}</h2><div class="reading-text">${chapter.body
+    `<h2>${esc(chapter.title)}</h2><div class="reading-text">${chapter.body
       .split("\n\n")
       .map((p) => `<p>${esc(p)}</p>`)
       .join(
@@ -348,8 +365,24 @@ async function openDetail(target, bookId, sceneId) {
     render();
   }, { label: "작품을 펼치는 중이에요…" });
 }
-// `land` picks where the bookshelf opens: back where the reader left it (default), on the scene previews
-// ("scenes", from the ribbon) or at the top with the search results ("search", from the header search box).
+async function openBrowse(filters = {}, { search = false } = {}) {
+  if (view === "books") return;
+  if (view === "home") catalogState.scroll = scrollY;
+  const restore = Object.keys(filters).length === 0;
+  const changed = await transitionPage(app, () => {
+    Object.assign(browseState, filters, restore ? {} : { scroll: 0, selected: null });
+    view = "books";
+    history.pushState(null, "", currentUrl());
+    render();
+  }, { label: "도서 목록을 펼치는 중이에요…" });
+  if (changed && search) document.querySelector("#book-search").focus();
+  else if (changed && restore) restoreBrowsePosition();
+}
+function restoreBrowsePosition() {
+  window.scrollTo({ top: browseState.scroll, behavior: "instant" });
+  if (browseState.selected) document.querySelector(`[data-browse-book="${CSS.escape(browseState.selected)}"]`)?.focus({ preventScroll: true });
+}
+// The ribbon opens the home's scene previews; otherwise restore where the reader left the home.
 async function openLibrary({ land } = {}) {
   if (view === "home") {
     catalogState.query = "";
@@ -368,8 +401,6 @@ async function openLibrary({ land } = {}) {
   }, { label: "책장으로 돌아가는 중이에요…", focus: land === "scenes" ? "#scene-title" : "#catalog-title" });
   if (!changed) return;
   if (land === "scenes") document.querySelector("#scene-title").scrollIntoView({ block: "start" });
-  // The search box gets focus here rather than through transitionPage, which would give it tabindex="-1".
-  else if (land === "search") { window.scrollTo({ top: 0, behavior: "instant" }); document.querySelector("#book-search").focus(); }
   else restoreCatalogPosition();
 }
 function restoreCatalogPosition() {
@@ -395,7 +426,7 @@ function showTrailer() {
 }
 function chapterMap() {
   const d = modal(
-    `<span class="eyebrow">YOUR JOURNEY</span><h2>이야기의 지도</h2><div class="chapter-list">${book.chapters.map((c, i) => `<button data-chapter="${i}" class="${c === chapter ? "selected" : ""}"><b>${String(i + 1).padStart(2, "0")}</b><span><strong>${esc(c.title)}</strong><small>${esc(c.subtitle)}</small></span>${icon(c === chapter ? "check" : "arrow-right")}</button>`).join("")}</div>`,
+    `<h2>이야기의 지도</h2><div class="chapter-list">${book.chapters.map((c, i) => `<button data-chapter="${i}" class="${c === chapter ? "selected" : ""}"><b>${String(i + 1).padStart(2, "0")}</b><span><strong>${esc(c.title)}</strong><small>${esc(c.subtitle)}</small></span>${icon(c === chapter ? "check" : "arrow-right")}</button>`).join("")}</div>`,
   );
   for (const b of d.querySelectorAll("[data-chapter]"))
     b.onclick = () => {
@@ -440,7 +471,7 @@ document.addEventListener("visibilitychange", () => {
 });
 let navigationVersion = 0;
 window.addEventListener("popstate", async () => {
-  if (!library?.books.length) return;
+  if (!library) return;
   const version = ++navigationVersion;
   // Browser Back remains available while the visual transition blocks page clicks.
   while (app.inert) await new Promise(resolve => setTimeout(resolve, 40));
@@ -452,6 +483,7 @@ window.addEventListener("popstate", async () => {
     render();
   }, { focus: state.view === "home" ? "#catalog-title" : undefined });
   if (changed && view === "home" && version === navigationVersion) restoreCatalogPosition();
+  if (changed && view === "books" && version === navigationVersion) restoreBrowsePosition();
 });
 async function init() {
   if (draftPreview) document.documentElement.dataset.draftPreview = "true";
@@ -462,7 +494,7 @@ async function init() {
     library = draftPreview ? (await api("/api/studio")).library : await api("/api/library");
     const params = new URLSearchParams(location.search);
     // A draft preview may still open an unpublished book's detail or 3D world by address; only its bookshelf is limited to published books.
-    if (!library.books.length || (!shelf().books.length && resolveView(params).view === "home")) {
+    if (!shelf().books.length && resolveView(params).view === "home") {
       clearLoading();
       app.removeAttribute("aria-busy");
       app.innerHTML =

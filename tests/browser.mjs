@@ -184,6 +184,7 @@ try {
   await admin.getByLabel("책 제목", { exact: true }).fill("새 책 테스트");
   await admin.getByLabel("작가", { exact: true }).fill("테스트 작가");
   await admin.getByRole("button", { name: "책 만들기", exact: true }).click();
+  await admin.getByRole("button", { name: "새 책 테스트 3D 월드 편집", exact: true }).click();
   await expect(admin.locator(".world-topbar strong")).toHaveText("새 책 테스트");
   await admin.locator(".world-chapter-tabs #add-chapter").click();
   await admin.getByLabel("챕터 제목", { exact: true }).fill("두 번째 장");

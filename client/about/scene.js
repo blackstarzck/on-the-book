@@ -29,7 +29,6 @@ function paperTexture(side) {
     ctx.fillStyle = '#8c826e';
     ctx.textAlign = side < 0 ? 'left' : 'right';
     ctx.font = '14px Arial, sans-serif';
-    ctx.fillText(side < 0 ? 'ON THE BOOK  /  A READING GARDEN' : 'EVERY PAGE, A PLACE TO GROW.', side < 0 ? 84 : 940, 927);
     ctx.fillStyle = '#c2b7a0';
     for (let line = 0; line < 4; line += 1) {
       const lineWidth = 240 - line * 28;

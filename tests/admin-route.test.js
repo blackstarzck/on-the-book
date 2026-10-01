@@ -39,6 +39,8 @@ test("each page keeps only its own query parameters and known values", () => {
 
 test("dialogs belong to their page, carry an id when they target one, and never open over the reader", () => {
   assert.deepEqual(at("/admin/?modal=new-book"), { view: "books", modal: "new-book" });
+  assert.deepEqual(at("/admin/?modal=book&id=alice"), { view: "books", modal: "book", modalId: "alice" });
+  assert.deepEqual(at("/admin/?modal=book"), { view: "books" });
   assert.deepEqual(at("/admin/?modal=model&id=rabbit"), { view: "books" });
   assert.deepEqual(at("/admin/models?modal=model-preview&id=rabbit"), { view: "models", modal: "model-preview", modalId: "rabbit" });
   assert.deepEqual(at("/admin/models?modal=model"), { view: "models" });
@@ -57,6 +59,7 @@ test("addresses drop defaults, keep a fixed order and read back as the same plac
   assert.equal(routeHref({ view: "editor", bookId: "책 1", chapterId: "c1", reader: true }), "/admin/books/%EC%B1%85%201?chapter=c1&mode=reader");
   for (const route of [
     { view: "books", q: "a b", status: "draft", modal: "new-book" },
+    { view: "books", q: "앨리스", status: "public", modal: "book", modalId: "alice" },
     { view: "models", q: "토끼", modal: "model", modalId: "rabbit" },
     { view: "settings" },
     { view: "editor", bookId: "alice", chapterId: "alice-2", objectId: "a2-key", reader: true, q: "x" },
@@ -66,6 +69,9 @@ test("addresses drop defaults, keep a fixed order and read back as the same plac
 
 test("addresses resolve against the library and fall back to the nearest place with one notice", () => {
   const resolve = (href) => resolveRoute(at(href), library);
+  assert.deepEqual(resolve("/admin/?modal=book&id=alice"), { route: { view: "books", modal: "book", modalId: "alice" }, notice: null });
+  assert.deepEqual(resolve("/admin/?q=test&modal=book&id=missing"), { route: { view: "books", q: "test" }, notice: notices.item });
+  assert.deepEqual(resolve("/admin/?modal=book&id=empty"), { route: { view: "books", modal: "book", modalId: "empty" }, notice: null });
   assert.deepEqual(resolve("/admin/books/alice"), { route: { view: "editor", bookId: "alice", chapterId: "alice-1" }, notice: null });
   assert.deepEqual(resolve("/admin/books/nope?chapter=x&modal=book"), { route: { view: "books" }, notice: notices.book });
   assert.deepEqual(resolve("/admin/books/empty"), { route: { view: "books" }, notice: notices.book });

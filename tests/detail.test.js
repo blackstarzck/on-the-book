@@ -6,7 +6,7 @@ import { librarySchema } from "../shared/schema.js";
 import { detailUrl, defaultScene, scenePanel, sceneBar, sceneStatus, bookDetail } from "../client/detail.js";
 
 // /api/library serves the seed after schema parsing, which fills mainPlacementId, floorEnabled, cover and
-// thumbnail. The seed registers no cover or chapter thumbnail, so its pages keep the empty image slots.
+// thumbnail. The seed uses the known source works' archival covers, but has no chapter thumbnails.
 const library = librarySchema.parse(seed);
 const alice = library.books.find(b => b.id === "alice");
 const count = (html, needle) => html.split(needle).length - 1;
@@ -27,6 +27,14 @@ test("bookCover shows an uploaded cover and keeps the labelled empty slot withou
   assert.match(empty, /class="catalog-cover image-placeholder"/);
   assert.match(empty, /role="img" aria-label="표지 이미지 준비 중"/);
   assert.doesNotMatch(empty, /<img/);
+});
+
+test("known source works use archival covers only when no cover was uploaded", () => {
+  assert.match(bookCover(alice), /src="\/book-covers\/alice-1865.jpg"/);
+  assert.match(bookCover(library.books.find(book => book.id === "oz")), /src="\/book-covers\/oz-1900.jpg"/);
+  assert.match(bookCover({ ...alice, cover: upload }), new RegExp(`src="${upload}"`));
+  assert.doesNotMatch(bookCover({ ...alice, cover: upload }), /book-covers|catalog-cover--archive/);
+  assert.doesNotMatch(bookCover({ ...alice, source: "https://example.com/a-different-book" }), /<img/);
 });
 
 test("detailUrl builds the three reader addresses and keeps the draft preview flag", () => {
@@ -52,8 +60,8 @@ test("bookDetail opens the panel on the first scene when nothing is saved", () =
   // The hero keeps the year, the Korean title and the author, in that order, and nothing else beside the cover.
   assert.match(html, /<div class="detail-copy"><span class="eyebrow">1865<\/span><h1 id="detail-title" tabindex="-1">이상한 나라의 앨리스<\/h1><p class="detail-meta">루이스 캐럴<\/p><\/div><\/section>/);
   assert.doesNotMatch(html, /판타지|개의 장면|Alice in Wonderland|흰 토끼의 발자국을 따라|detail-description/);
-  assert.match(html, /aria-label="표지 이미지 준비 중"/);
-  assert.doesNotMatch(html, /<img/);
+  assert.match(html, /src="\/book-covers\/alice-1865.jpg"/);
+  assert.equal(count(html, "<img"), 1);
   assert.doesNotMatch(html, /이야기 속으로 들어가기|이어 읽기|처음부터 시작하기|detail-crumbs|neighbor-all/);
   assert.equal(count(html, 'class="journey-row"'), 6);
   assert.equal(count(html, 'aria-current="true"'), 1);
