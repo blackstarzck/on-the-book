@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isServiceUrl } from "./home.js";
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 const text = z.string().trim().min(1).max(200);
 const image = z.string().regex(/^\/uploads\/[a-f0-9-]+\.png$/).or(z.literal("")).default("");
@@ -108,8 +109,12 @@ export const bookSchema = z.object({
 });
 export const heroSlideSchema = z.object({
   id,
-  bookId: id,
+  bookId: id.optional(), // Compatibility with slides saved before service URLs.
+  url: z.string().trim().max(2000).refine((value) => !value || isServiceUrl(value), {
+    message: "이동 URL은 /로 시작하는 서비스 내부 주소를 입력해 주세요. 예: /about",
+  }).default(""),
   image,
+  imageMobile: image,
   focus: z.enum(["left", "center", "right"]).default("center"),
   kicker: z.string().trim().max(40).default(""),
   title: z.string().trim().max(60).default(""),
@@ -146,6 +151,6 @@ export const librarySchema = z
           message: "배치된 모델을 먼저 장면에서 제거해 주세요.",
         });
     for (const slide of s.home.hero)
-      if (!bookIds.has(slide.bookId))
+      if (slide.bookId && !slide.url && !bookIds.has(slide.bookId))
         c.addIssue({ code: "custom", message: "추천 슬라이드에 연결된 책을 찾을 수 없습니다." });
   });

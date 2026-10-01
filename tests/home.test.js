@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../server/seed.js";
 import { librarySchema } from "../shared/schema.js";
-import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
+import { bookCategory, editableHeroSlide, heroKicker, heroLink, heroSlides } from "../shared/home.js";
 
 const image = "/uploads/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png";
 const withHome = (hero) => ({ ...structuredClone(seed), home: { hero } });
@@ -25,8 +25,8 @@ test("hero slides fill in their defaults and keep their order", () => {
     { id: "slide-alice", bookId: "alice" },
   ]));
   assert.deepEqual(parsed.home.hero, [
-    { id: "slide-oz", bookId: "oz", image, focus: "left", kicker: "새로 공개", title: "", description: "" },
-    { id: "slide-alice", bookId: "alice", image: "", focus: "center", kicker: "", title: "", description: "" },
+    { id: "slide-oz", bookId: "oz", url: "", image, imageMobile: "", focus: "left", kicker: "새로 공개", title: "", description: "" },
+    { id: "slide-alice", bookId: "alice", url: "", image: "", imageMobile: "", focus: "center", kicker: "", title: "", description: "" },
   ]);
 });
 
@@ -85,4 +85,28 @@ test("hero kickers use the written text or the former defaults", () => {
   assert.equal(heroKicker({ kicker: "이번 주" }, 0), "이번 주");
   assert.equal(heroKicker({ kicker: "" }, 0), "오늘의 이야기");
   assert.equal(heroKicker({}, 3), "한 걸음, 새로운 모험");
+});
+
+test("service slides need no book and preserve independent device images", () => {
+  const slide = { id: "banner", url: " /about?from=home#story ", image, imageMobile: "/uploads/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.png" };
+  const parsed = librarySchema.parse({ models: [], books: [], home: { hero: [slide] } });
+  assert.equal(parsed.home.hero[0].url, "/about?from=home#story");
+  assert.equal(parsed.home.hero[0].imageMobile, slide.imageMobile);
+  assert.equal(heroSlides([], parsed.home).length, 1);
+  for (const url of ["https://example.com", "//example.com", "/\\example.com", "javascript:alert(1)", "/\n/evil", "about"]) {
+    assert.equal(librarySchema.safeParse(withHome([{ ...slide, url }])).success, false, url);
+    assert.equal(heroSlides([], { hero: [{ ...slide, url }] }).length, 0, url);
+  }
+  assert.equal(heroLink({ url: "/?book=alice#story" }, true), "/client/?book=alice&preview=draft#story");
+  assert.equal(heroLink({ url: "/about?from=home#story" }), "/about?from=home#story");
+});
+
+test("opening old slides in the studio retains their destination, image and book copy", () => {
+  const migrated = editableHeroSlide({ id: "old", bookId: "alice", image, focus: "left" }, seed.books, 0);
+  assert.equal(migrated.url, "/client/?book=alice");
+  assert.equal(migrated.image, image);
+  assert.equal(migrated.title, seed.books[0].title);
+  assert.equal(migrated.imageMobile, "");
+  assert.equal("bookId" in migrated, false);
+  assert.equal("focus" in migrated, false);
 });

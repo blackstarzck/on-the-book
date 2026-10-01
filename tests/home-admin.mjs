@@ -92,10 +92,15 @@ try {
   await expect(page.locator('.home-slides .inline-empty')).toContainText('오즈의 마법사, 이상한 나라의 앨리스');
   await page.locator('#add-slide').click();
   await expect(page.locator('[data-slide]')).toHaveCount(1);
-  await expect(page.locator('#slide-0-book')).toHaveValue('oz');
-  await page.locator('#slide-0-file').setInputFiles(await png(1200, 500, '#2f5d4a'));
-  await expect(page.locator('#slide-0-preview')).toBeVisible();
-  await page.locator('#slide-0-focus').selectOption('right');
+  await expect(page.getByLabel('연결 책', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('사진 초점', { exact: true })).toHaveCount(0);
+  await page.locator('[name="url"]').fill('/about');
+  await page.locator('#slide-0-pc-file').setInputFiles(await png(2784, 800, '#2f5d4a'));
+  await expect(page.locator('#slide-0-pc-frames')).toBeVisible();
+  await page.locator('#slide-0-mobile-file').setInputFiles(await png(654, 720, '#9a613c'));
+  await expect(page.locator('#slide-0-mobile-frames')).toBeVisible();
+  const pcImage = await page.locator('#slide-0-pc-preview').getAttribute('src');
+  const mobileImage = await page.locator('#slide-0-mobile-preview').getAttribute('src');
   const first = page.locator('[data-slide]').first();
   await first.getByLabel('작은 문구', { exact: true }).fill('이번 주 추천');
   await first.getByLabel('제목', { exact: true }).fill('노란 길로 떠나요');
@@ -103,20 +108,24 @@ try {
   await first.getByLabel('설명', { exact: true }).blur();
   await expect(page.locator('#save-state')).toHaveText('저장하지 않은 변경사항');
   await page.locator('#add-slide').click();
-  await expect(page.locator('#slide-1-book')).toHaveValue('alice');
+  await page.locator('[data-slide]').nth(1).getByLabel('이동 URL', { exact: true }).fill('/client/?book=alice');
+  await page.locator('#slide-1-pc-file').setInputFiles(await png(2784, 800, '#4a638c'));
+  await expect(page.locator('#slide-1-pc-status')).toHaveText('업로드 완료');
+  await page.locator('#slide-1-mobile-file').setInputFiles(await png(654, 720, '#8c4a72'));
+  await expect(page.locator('#slide-1-mobile-status')).toHaveText('업로드 완료');
   await page.locator('[data-slide]').nth(1).locator('[data-slide-move="-1"]').click();
-  await expect(page.locator('#slide-0-book')).toHaveValue('alice');
-  await expect(page.locator('#slide-1-preview')).toBeVisible();
+  await expect(page.locator('[data-slide]').first().getByLabel('이동 URL', { exact: true })).toHaveValue('/client/?book=alice');
+  await expect(page.locator('#slide-1-pc-frames')).toBeVisible();
   // First in line, the moved slide's up arrow is disabled, so focus lands on its down arrow.
   await expect(page.locator('[data-slide]').first().locator('[data-slide-move="1"]')).toBeFocused();
   await page.locator('[data-slide]').nth(1).locator('[data-slide-move="-1"]').click();
-  await expect(page.locator('#slide-0-book')).toHaveValue('oz');
+  await expect(page.locator('[data-slide]').first().getByLabel('이동 URL', { exact: true })).toHaveValue('/about');
   await page.screenshot({ path: 'test-results/home-admin/home-tab.png', fullPage: true });
   pass('Home tab adds, fills, uploads and reorders hero slides');
 
   await page.locator('#preview-home').click();
   const frame = page.frameLocator('iframe[title="공개 전 독자 화면"]');
-  await expect(frame.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'oz');
+  await expect(frame.locator('.feature-card.is-active')).toHaveAttribute('href', '/about?preview=draft');
   await expect(frame.locator('.feature-card.is-active')).toHaveClass(/feature-card--photo/);
   await expect(frame.locator('.feature-card.is-active .feature-kicker')).toHaveText('이번 주 추천');
   await expect(frame.locator('.catalog-card')).toHaveCount(2);
@@ -124,21 +133,56 @@ try {
   await expect(frame.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
   await page.locator('#preview-mobile').click();
   expect((await page.locator('iframe').boundingBox()).width).toBe(390);
+  await expect.poll(() => frame.locator('.feature-card.is-active .feature-photo').evaluate(img => new URL(img.currentSrc).pathname)).toBe(mobileImage);
   await page.locator('.client-preview-dialog .close-modal').click();
   expect((await live()).home.hero).toEqual([]);
   pass('Home preview saves first and shows the draft home, while the public home is unchanged');
 
+  await expect(page).toHaveURL(`${server.url}/admin/home`);
+  await page.reload();
+  await expect(page.locator('[data-slide]').first().getByLabel('이동 URL', { exact: true })).toHaveValue('/about');
+  await expect(page.locator('#slide-0-mobile-preview')).toHaveAttribute('src', mobileImage);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/home-admin/admin-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   await saved('#publish');
   let published = await live();
   expect(published.books.map(b => b.id)).toEqual(['oz', 'alice']);
-  expect(published.home.hero.map(s => [s.bookId, s.focus, s.kicker, s.title])).toEqual([['oz', 'right', '이번 주 추천', '노란 길로 떠나요'], ['alice', 'center', '', '']]);
+  expect(published.home.hero.map(s => [s.url, s.kicker, s.title])).toEqual([['/about', '이번 주 추천', '노란 길로 떠나요'], ['/client/?book=alice', '', '']]);
   const reader = await context.newPage();
   reader.on('pageerror', error => errors.push(error.message));
   await reader.goto(`${server.url}/client/`);
-  await expect(reader.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'oz');
+  await expect(reader.locator('.feature-card.is-active')).toHaveAttribute('href', '/about');
   await expect(reader.locator('.feature-card.is-active .feature-copy > strong')).toHaveText('노란 길로 떠나요');
   await expect(reader.locator('.catalog-card').first().locator('[data-book]')).toHaveAttribute('data-book', 'oz');
   await expect(reader.locator('[data-book="alice"] .catalog-cover img')).toHaveCount(1);
+  for (const width of [1440, 768, 601, 600, 390, 360]) {
+    await reader.setViewportSize({ width, height: 900 });
+    const mobile = width <= 600;
+    await expect.poll(() => reader.locator('.feature-card.is-active .feature-photo').evaluate(img => new URL(img.currentSrc).pathname)).toBe(mobile ? mobileImage : pcImage);
+    const box = await reader.locator('.feature-grid').boundingBox();
+    expect(Math.abs(box.width / box.height - (mobile ? 654 / 720 : 2784 / 800))).toBeLessThan(.01);
+    expect(await reader.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    if ([1440, 390].includes(width)) await reader.screenshot({ path: 'test-results/home-admin/home-' + width + '.png', fullPage: true });
+  }
+  await reader.setViewportSize({ width: 1440, height: 1000 });
+  const bannerBox = await reader.locator('.feature-grid').boundingBox();
+  await reader.mouse.move(bannerBox.x + bannerBox.width * .7, bannerBox.y + 60);
+  await reader.mouse.down();
+  await reader.mouse.move(bannerBox.x + bannerBox.width * .3, bannerBox.y + 60, { steps: 8 });
+  await reader.mouse.up();
+  await expect(reader.locator('.feature-card.is-active')).toHaveAttribute('href', '/client/?book=alice');
+  await expect(reader).toHaveURL(/\/client\/$/);
+  await reader.locator('[data-feature-direction="-1"]').click();
+  await reader.locator('[data-feature-direction="1"]').click();
+  await expect(reader.locator('.feature-card.is-active')).toHaveClass(/feature-card--image-only/);
+  await reader.locator('.feature-card.is-active').click();
+  await expect(reader).toHaveURL(/book=alice/);
+  await expect(reader.locator('.detail-page')).toBeVisible();
+  await reader.goto(server.url + '/client/');
+  pass('Desktop/mobile sources, image ratios, blank copy and internal link navigation work');
   // The scene previews open on the first book (now oz); the thumbnail belongs to alice's first chapter.
   await expect(reader.locator('[data-scene-tab="oz"]')).toHaveAttribute('aria-selected', 'true');
   await reader.locator('[data-scene-tab="alice"]').click();
@@ -182,16 +226,16 @@ try {
   await saved('#publish');
   published = await live();
   expect(published.books.map(b => b.id)).toEqual(['alice']);
-  expect(published.home.hero).toEqual([]);
+  expect(published.home.hero.map(slide => slide.url)).toEqual(['/about']);
   await reader.reload();
   await expect(reader.locator('.feature-card')).toHaveCount(1);
-  await expect(reader.locator('.feature-card.is-active')).toHaveAttribute('data-feature-book', 'alice');
-  await expect(reader.locator('.feature-card.is-active .feature-art')).toHaveCount(1);
+  await expect(reader.locator('.feature-card.is-active')).toHaveAttribute('href', '/about');
+  await expect(reader.locator('.feature-card.is-active .feature-photo')).toHaveCount(1);
   await expect(reader.locator('.feature-arrow')).toHaveCount(0);
   await page.locator('#back-library').click();
   await page.getByRole('button', { name: '홈 화면', exact: true }).click();
-  await expect(page.locator('.slide-warning')).toContainText('비공개 도서');
-  pass('An unpublished book drops out of the public slides and the hero falls back to the published book');
+  await expect(page.locator('.slide-warning')).toHaveCount(0);
+  pass('Unpublishing a book leaves the independent service banner intact');
 
   await page.getByRole('button', { name: '도서 보관함', exact: true }).click();
   await page.locator('[data-open-book="oz"]').click();
@@ -201,8 +245,23 @@ try {
   await saved('#save');
   draft = await studio();
   expect(draft.books.map(b => b.id)).toEqual(['alice']);
-  expect(draft.home.hero).toEqual([]);
-  pass('Deleting a book removes its slides, so the draft still saves');
+  expect(draft.home.hero.map(slide => slide.url)).toEqual(['/about']);
+  pass('Deleting a book does not remove an independent banner');
+  const empty = await (await page.request.get(`${server.url}/api/studio`)).json();
+  empty.library.books = [];
+  empty.library.models = [];
+  const withoutBooks = await page.request.put(`${server.url}/api/studio`, {
+    headers: { 'X-On-The-Book': 'studio' }, data: { ...empty, publish: true },
+  });
+  expect(withoutBooks.ok()).toBe(true);
+  await reader.reload();
+  await expect(reader.locator('.feature-card.is-active')).toHaveAttribute('href', '/about');
+  await expect(reader.locator('.catalog-empty')).toBeVisible();
+  await page.goto(`${server.url}/admin/home`);
+  await expect(page.locator('#add-slide')).toBeEnabled();
+  await page.locator('#add-slide').click();
+  await expect(page.locator('[data-slide]')).toHaveCount(2);
+  pass('Banners remain visible and can be added even with no books');
   expect(errors).toEqual([]);
   pass('No page errors');
 } finally {

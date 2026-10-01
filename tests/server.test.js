@@ -175,6 +175,27 @@ test("readers get hero slides, main thumbnails and chapter thumbnails of publish
   assert.equal(live.books[0].thumbnail, image);
   assert.equal(live.books[0].chapters[0].thumbnail, image);
 });
+test("banner drafts can be incomplete, but publishing requires a URL and both uploaded images", async () => {
+  let state = await (await request("/api/studio")).json();
+  state.library.home.hero = [{ id: "banner", url: "", image: "", imageMobile: "" }];
+  assert.equal((await request("/api/studio", "PUT", state)).status, 200);
+  state = await (await request("/api/studio")).json();
+  const banner = state.library.home.hero[0];
+  for (const update of [{}, { url: "/about" }, { image: await uploadPng() }]) {
+    Object.assign(banner, update);
+    const res = await request("/api/studio", "PUT", { ...state, publish: true });
+    assert.equal(res.status, 400);
+    assert.match((await res.json()).error, /PC용·모바일용/);
+  }
+  banner.imageMobile = "/uploads/00000000-0000-0000-0000-000000000000.png";
+  assert.equal((await request("/api/studio", "PUT", { ...state, publish: true })).status, 400);
+  banner.imageMobile = await uploadPng();
+  assert.equal((await request("/api/studio", "PUT", { ...state, publish: true })).status, 200);
+  const live = await (await request("/api/library")).json();
+  assert.deepEqual(live.home.hero[0], banner);
+  for (const url of [banner.image, banner.imageMobile]) assert.equal((await fetch(server.url + url)).status, 200);
+});
+
 test("an image that was never uploaded cannot be saved", async () => {
   const missing = "/uploads/00000000-0000-0000-0000-000000000000.png";
   for (const place of [(library) => { library.books[0].chapters[1].thumbnail = missing; }, (library) => { library.books[0].thumbnail = missing; }]) {

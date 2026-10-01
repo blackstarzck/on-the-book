@@ -31,7 +31,7 @@ const png = (width, height, color) => page.evaluate(([w, h, c]) => {
 // The shape a picture is shown in, the point its crop keeps and the file, for a studio frame or a reader image.
 const box = image => image.evaluate(img => {
   const r = (img.closest('.crop-box') || img).getBoundingClientRect();
-  return { ratio: r.width / r.height, position: getComputedStyle(img).objectPosition, src: img.getAttribute('src') };
+  return { ratio: r.width / r.height, position: getComputedStyle(img).objectPosition, src: new URL(img.currentSrc || img.src).pathname };
 });
 const near = (actual, expected, what) => expect(Math.abs(actual / expected - 1), `${what}: ${actual.toFixed(3)} vs ${expected.toFixed(3)}`).toBeLessThan(.02);
 async function expectFrames(root, key, slots, src, focus) {
@@ -59,7 +59,8 @@ const readerPlaces = {
     card: [['/client/', '[data-scene-chapter="alice-1"] .scene-image img']],
     panel: [['/client/?book=alice', '.scene-panel .scene-image img']],
   },
-  hero: Object.fromEntries(['wide', 'tablet', 'phone'].map(id => [id, [['/client/', '.feature-card.is-active .feature-photo']]])),
+  heroMobile: { phone: [['/client/', '.feature-card.is-active .feature-photo']] },
+  hero: Object.fromEntries(['wide', 'tablet'].map(id => [id, [['/client/', '.feature-card.is-active .feature-photo']]])),
 };
 try {
   await page.goto(`${server.url}/admin/`);
@@ -136,21 +137,23 @@ try {
   await page.locator('#back-library').click();
   await page.getByRole('button', { name: '홈 화면', exact: true }).click();
   await page.locator('#add-slide').click();
-  await expect(page.locator('#slide-0-book')).toHaveValue('alice');
-  await page.locator('#slide-0-file').setInputFiles(await png(2400, 1000, '#2f5d4a'));
-  await expect(page.locator('#slide-0-frames')).toBeVisible();
-  const photo = await page.locator('#slide-0-preview').getAttribute('src');
-  await expectFrames(page, 'slide-0', imageSlots.hero, photo, 'center');
-  await page.locator('#slide-0-focus').selectOption('right');
-  await expectFrames(page, 'slide-0', imageSlots.hero, photo, 'right');
-  await page.locator('[data-slide]').first().screenshot({ path: `${shots}/studio-hero.png` });
-  pass('A hero photo shows in the wide, tablet and phone frames and follows the photo focus');
+  await page.getByLabel('이동 URL', { exact: true }).fill('/about');
+  await page.locator('#slide-0-pc-file').setInputFiles(await png(2784, 800, '#2f5d4a'));
+  await expect(page.locator('#slide-0-pc-frames')).toBeVisible();
+  const photo = await page.locator('#slide-0-pc-preview').getAttribute('src');
+  await expectFrames(page, 'slide-0-pc', imageSlots.hero.slice(0, 1), photo);
+  await page.locator('#slide-0-mobile-file').setInputFiles(await png(654, 720, '#6a3c9a'));
+  await expect(page.locator('#slide-0-mobile-frames')).toBeVisible();
+  const mobilePhoto = await page.locator('#slide-0-mobile-preview').getAttribute('src');
+  await expectFrames(page, 'slide-0-mobile', imageSlots.heroMobile, mobilePhoto);
+  await page.locator('[data-slide]').first().screenshot({ path: shots + '/studio-hero.png' });
+  pass('PC and mobile artwork have separate uploads and matching previews');
 
   await page.locator('#publish').click();
   await expect(page.locator('#save-state')).toHaveText('공개 완료');
   const reader = await context.newPage();
   reader.on('pageerror', error => errors.push(error.message));
-  const files = { cover, bookThumbnail, chapterThumbnail: uploaded, hero: photo };
+  const files = { cover, bookThumbnail, chapterThumbnail: uploaded, hero: photo, heroMobile: mobilePhoto };
   for (const [kind, slots] of Object.entries(imageSlots)) for (const slot of slots) {
     const places = readerPlaces[kind][slot.id];
     expect(places, `reader place for ${kind} ${slot.id}`).toBeTruthy();

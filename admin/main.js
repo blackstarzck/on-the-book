@@ -2,7 +2,7 @@ import { shelfHTML, bindShelfOrder, mountWorkspace, thumbnails } from "./workspa
 import { hasObject, parseRoute, resolveRoute, routeHref } from "./route.js";
 
 import { reactionSize } from "../shared/experience.js";
-import { bookCategory, heroKicker, heroSlides } from "../shared/home.js";
+import { bookCategory, editableHeroSlide, heroSlides } from "../shared/home.js";
 import { heroFocus, imageSlots } from "../shared/image-slots.js";
 import { iconFor } from "../client/category-icons.js";
 import { World } from "../shared/world.js";
@@ -822,19 +822,15 @@ function editModel(existing) {
     );
   });
 }
-const focusNames = { left: "왼쪽", center: "가운데", right: "오른쪽" };
 function slideCard(slide, i, count) {
-  const target = library.books.find((b) => b.id === slide.bookId);
-  const books = library.books.map((b) => `<option value="${esc(b.id)}" ${b.id === slide.bookId ? "selected" : ""}>${esc(b.title)}${b.published ? "" : " (비공개)"}</option>`).join("");
-  const focus = Object.entries(focusNames).map(([v, l]) => `<option value="${v}" ${v === slide.focus ? "selected" : ""}>${l}</option>`).join("");
   return `<article class="slide-card" data-slide="${esc(slide.id)}"><div class="slide-order"><b>${String(i + 1).padStart(2, "0")}</b><button type="button" class="icon-button" data-slide-move="-1" aria-label="${i + 1}번 슬라이드를 앞으로" ${i ? "" : "disabled"}>↑</button><button type="button" class="icon-button" data-slide-move="1" aria-label="${i + 1}번 슬라이드를 뒤로" ${i === count - 1 ? "disabled" : ""}>↓</button></div>
-    <div class="slide-media">${imageField(`slide-${i}`, "사진 (PNG)", "image", slide.image, "가로 사진을 권장해요(예: 2400×1000, 5MB 이하). 넓은 화면은 약 3.4:1이라 위아래가, 휴대폰은 약 0.9:1이라 좌우가 잘려요. 휴대폰에서 남길 쪽은 ‘사진 초점’으로 고릅니다. 없으면 기본 그림으로 보여요.", imageSlots.hero, { focus: slide.focus })}</div>
-    <div class="slide-fields"><div class="field-row"><div class="field"><label for="slide-${i}-book">연결 책</label><select id="slide-${i}-book" name="bookId">${books}</select></div><div class="field"><label for="slide-${i}-focus">사진 초점</label><select id="slide-${i}-focus" name="focus">${focus}</select></div></div>${target?.published ? "" : '<p class="field-hint slide-warning">비공개 도서라 사용자 화면에 나오지 않습니다.</p>'}${field("작은 문구", "kicker", slide.kicker, "text", `maxlength="40" placeholder="${esc(heroKicker({}, i))}"`)}${field("제목", "title", slide.title, "text", `maxlength="60" placeholder="${esc(target?.title || "")}"`)}<label class="field">설명<textarea name="description" rows="2" maxlength="200" placeholder="${esc(target?.description || "")}">${esc(slide.description)}</textarea></label><p class="field-hint">비워 둔 칸은 흐린 글씨로 보이는 기본값을 씁니다.</p><button type="button" class="text-button danger" data-slide-remove>슬라이드 삭제</button></div></article>`;
+    <div class="slide-media">${imageField(`slide-${i}-pc`, "PC용 이미지 (PNG)", "image", slide.image, "권장 크기 2784×800px · 87:25 비율 · 5MB 이하. 화면 너비가 600px보다 클 때 보여요. 다른 비율은 가운데를 기준으로 잘립니다.", imageSlots.hero.slice(0, 1))}${imageField(`slide-${i}-mobile`, "모바일용 이미지 (PNG)", "imageMobile", slide.imageMobile, "권장 크기 654×720px · 109:120 비율 · 5MB 이하. 화면 너비가 600px 이하일 때 보여요. PC용과 각각 올려 주세요.", imageSlots.heroMobile)}</div>
+    <div class="slide-fields">${field("이동 URL", "url", slide.url, "text", 'maxlength="2000" placeholder="/about" autocomplete="off"')}<p class="field-hint">서비스 안에서 이동할 주소를 /로 시작해 입력해 주세요. 예: /about 또는 /client/?book=alice. 공개하려면 주소와 두 이미지를 모두 입력해야 해요.</p>${field("작은 문구", "kicker", slide.kicker, "text", 'maxlength="40" placeholder="선택 입력"')}${field("제목", "title", slide.title, "text", 'maxlength="60" placeholder="선택 입력"')}<label class="field">설명<textarea name="description" rows="2" maxlength="200" placeholder="선택 입력">${esc(slide.description)}</textarea></label><p class="field-hint">문구를 비워 두면 이미지 위에 글을 표시하지 않아요. 이미지에 글이 이미 들어 있다면 비워 두세요.</p><button type="button" class="text-button danger" data-slide-remove>슬라이드 삭제</button></div></article>`;
 }
 function homeView() {
   const slides = library.home.hero;
   const shown = heroSlides(library.books.filter((b) => b.published), { hero: [] }).map((s) => s.book.title);
-  return `<div class="page-title"><div><span class="eyebrow">THE FIRST PAGE READERS SEE</span><h1>홈 화면</h1><p>사용자 화면 첫머리의 추천 슬라이드를 꾸며요. 책장에 놓일 순서는 도서 보관함에서 끌어서 바꿉니다.</p></div><button id="preview-home" class="outline-button">${icon("eye")} 홈 미리보기</button></div><section class="home-slides" aria-labelledby="home-slides-title"><div class="home-slides-heading"><h2 id="home-slides-title">추천 슬라이드 <span>${slides.length} / 5</span></h2><button id="add-slide" class="primary-button" ${slides.length >= 5 || !library.books.length ? "disabled" : ""}>${icon("plus")} 슬라이드 추가</button></div>${slides.length ? slides.map((s, i) => slideCard(s, i, slides.length)).join("") : `<p class="inline-empty">슬라이드가 없으면 ${shown.length ? `도서 보관함 순서의 앞 ${shown.length}권(${shown.map(esc).join(", ")})이` : "공개 대상 책이"} 기본 모습으로 나옵니다.</p>`}</section>`;
+  return `<div class="page-title"><div><span class="eyebrow">THE FIRST PAGE READERS SEE</span><h1>홈 화면</h1><p>사용자 화면 첫머리의 추천 슬라이드를 꾸며요. 책장에 놓일 순서는 도서 보관함에서 끌어서 바꿉니다.</p></div><button id="preview-home" class="outline-button">${icon("eye")} 홈 미리보기</button></div><section class="home-slides" aria-labelledby="home-slides-title"><div class="home-slides-heading"><h2 id="home-slides-title">추천 슬라이드 <span>${slides.length} / 5</span></h2><button id="add-slide" class="primary-button" ${slides.length >= 5 ? "disabled" : ""}>${icon("plus")} 슬라이드 추가</button></div>${slides.length ? slides.map((s, i) => slideCard(s, i, slides.length)).join("") : `<p class="inline-empty">슬라이드가 없으면 ${shown.length ? `도서 보관함 순서의 앞 ${shown.length}권(${shown.map(esc).join(", ")})이` : "공개 대상 책이"} 기본 모습으로 나옵니다.</p>`}</section>`;
 }
 function bindHome() {
   const slides = library.home.hero;
@@ -843,18 +839,18 @@ function bindHome() {
   // Typing changes the slide at once; the change event records one undo step, as the world editor does.
   section.oninput = (e) => {
     const slide = slideOf(e.target);
-    if (slide && ["kicker", "title", "description"].includes(e.target.name)) slide[e.target.name] = e.target.value;
+    if (slide && ["url", "kicker", "title", "description"].includes(e.target.name)) slide[e.target.name] = e.target.value;
   };
   section.onchange = (e) => {
     const slide = slideOf(e.target);
-    if (!slide || !["bookId", "focus", "kicker", "title", "description"].includes(e.target.name)) return;
+    if (!slide || !["url", "kicker", "title", "description"].includes(e.target.name)) return;
     slide[e.target.name] = e.target.value;
     mark();
-    if (["bookId", "focus"].includes(e.target.name)) render();
   };
   section.querySelectorAll("[data-slide]").forEach((card, i) => {
     const slide = slides[i];
-    bindImageField(card, `slide-${i}`, "image", { change: (url) => { slide.image = url; mark(); render(); } });
+    bindImageField(card, `slide-${i}-pc`, "image", { change: (url) => { slide.image = url; mark(); } });
+    bindImageField(card, `slide-${i}-mobile`, "imageMobile", { change: (url) => { slide.imageMobile = url; mark(); } });
     card.querySelectorAll("[data-slide-move]").forEach((button) => button.onclick = () => {
       const j = i + Number(button.dataset.slideMove);
       [slides[i], slides[j]] = [slides[j], slides[i]];
@@ -871,9 +867,7 @@ function bindHome() {
     });
   });
   app.querySelector("#add-slide").onclick = () => {
-    const used = new Set(slides.map((s) => s.bookId));
-    const target = library.books.find((b) => b.published && !used.has(b.id)) || library.books.find((b) => b.published) || library.books[0];
-    slides.push({ id: uid(), bookId: target.id, image: "", focus: "center", kicker: "", title: "", description: "" });
+    slides.push({ id: uid(), url: "", image: "", imageMobile: "", kicker: "", title: "", description: "" });
     mark();
     render();
   };
@@ -979,6 +973,7 @@ async function load() {
     // Cloud data saved before home slides existed has no home; fill it before the saved copy is taken.
     library.home ??= {};
     library.home.hero ??= [];
+    library.home.hero = library.home.hero.map((slide, index) => editableHeroSlide(slide, library.books, index));
     baseline=structuredClone(library);savedLibrary=structuredClone(library);
     version = result.version;
     publishedAt = result.publishedAt;

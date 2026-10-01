@@ -78,3 +78,10 @@ test("saved images are collected from books and hero slides, not models", () => 
   assert.deepEqual(imageUrls(live), new Set([upload("5"), upload("e"), upload("6"), upload("7"), upload("8"), upload("9"), upload("c")]));
   assert.deepEqual(imageUrls({ books: [] }), new Set());
 });
+
+test("standalone banners expose both images, but a navigation URL cannot expose a private upload", () => {
+  const live = { models: [], books: [], home: { hero: [{ id: "banner", url: upload("a"), image: upload("b"), imageMobile: upload("c") }] } };
+  assert.equal(publicLibrary({ live }).home.hero.length, 1);
+  assert.deepEqual(publicAssetNames({ live }), names(upload("b"), upload("c")));
+  assert.deepEqual(imageUrls(live), new Set([upload("b"), upload("c")]));
+});
