@@ -1,5 +1,5 @@
 import { esc, icon, icons } from "../shared/ui.js";
-import { heroKicker, heroSlides } from "../shared/home.js";
+import { heroKicker, heroLink, heroSlides } from "../shared/home.js";
 import { edition, bookCover } from "./book-meta.js";
 import { detailUrl } from "./detail.js";
 import { browseUrl } from "./browse.js";
@@ -18,27 +18,32 @@ function bookCard(book, preview) {
     </a></article>`;
 }
 
-function feature(slide, index) {
+function feature(slide, index, preview) {
   const { book } = slide;
   const active = index === 0;
-  const title = slide.title || book.title;
+  const title = slide.title || book?.title || "";
+  const kicker = slide.url ? slide.kicker : heroKicker(slide, index);
+  const description = slide.description || book?.description || "";
+  const hasCopy = !!(title || kicker || description);
+  const image = slide.image || slide.imageMobile;
   // Slides are stacked in one place, so lazy loading would fetch every photo at once;
   // later photos keep data-src until their slide comes up (see loadPhoto).
-  const photo = slide.image ? `<img class="feature-photo" ${active ? "src" : "data-src"}="${esc(slide.image)}" data-focus="${esc(slide.focus || "center")}" alt="" decoding="async" draggable="false">` : "";
-  const art = slide.image ? "" : `<span class="feature-art" aria-hidden="true"><span class="feature-art-card"></span><span class="feature-art-ring"></span><img src="${iconFor(edition(book).category)}" alt="" decoding="async" draggable="false"></span>`;
-  return `<button class="feature-card feature-card-${index % 2}${slide.image ? " feature-card--photo" : ""}${active ? " is-active" : ""}" data-feature-book="${esc(book.id)}" data-feature-index="${index}" aria-label="${esc(title)} 작품 상세" aria-hidden="${String(!active)}" tabindex="${active ? 0 : -1}">
-    ${photo}<span class="feature-copy"><span class="feature-kicker">${esc(heroKicker(slide, index))}</span><strong>${esc(title)}</strong><span class="feature-description">${esc(slide.description || book.description)}</span><span class="feature-action">작품 살펴보기 ${icon("arrow-right")}</span></span>
+  const photo = image ? `<picture>${slide.imageMobile ? `<source media="(max-width: 600px)" ${active ? "srcset" : "data-srcset"}="${esc(slide.imageMobile)}">` : ""}<img class="feature-photo" ${active ? "src" : "data-src"}="${esc(image)}" data-focus="${esc(slide.url ? "center" : slide.focus || "center")}" alt="" decoding="async" draggable="false"></picture>` : "";
+  const art = image || !book ? "" : `<span class="feature-art" aria-hidden="true"><span class="feature-art-card"></span><span class="feature-art-ring"></span><img src="${iconFor(edition(book).category)}" alt="" decoding="async" draggable="false"></span>`;
+  const tag = slide.url ? "a" : "button";
+  return `<${tag} class="feature-card feature-card-${index % 2}${image ? " feature-card--photo" : ""}${hasCopy ? "" : " feature-card--image-only"}${active ? " is-active" : ""}" ${slide.url ? `href="${esc(heroLink(slide, preview))}"` : `data-feature-book="${esc(book.id)}"`} data-feature-index="${index}" aria-label="${esc(title || kicker || `추천 슬라이드 ${index + 1}`)} ${slide.url ? "페이지로 이동" : "작품 상세"}" aria-hidden="${String(!active)}" tabindex="${active ? 0 : -1}">
+    ${photo}${hasCopy ? `<span class="feature-copy">${kicker ? `<span class="feature-kicker">${esc(kicker)}</span>` : ""}${title ? `<strong>${esc(title)}</strong>` : ""}${description ? `<span class="feature-description">${esc(description)}</span>` : ""}<span class="feature-action">${slide.url ? "자세히 보기" : "작품 살펴보기"} ${icon("arrow-right")}</span></span>` : ""}
     ${art}
-  </button>`;
+  </${tag}>`;
 }
 
-function featured(slides) {
+function featured(slides, preview) {
   const heading = (text) => `<h1 class="reader-sr-only" id="library-title" tabindex="-1">${text}</h1>`;
   if (!slides.length) return heading("책장");
   const controls = slides.length > 1
     ? `<button class="feature-arrow feature-prev" data-feature-direction="-1" aria-label="이전 추천 작품">${icon("arrow-left")}</button><button class="feature-arrow feature-next" data-feature-direction="1" aria-label="다음 추천 작품">${icon("arrow-right")}</button><div class="feature-controls"><button data-feature-autoplay aria-label="히어로 자동 재생 중지"><span aria-hidden="true">II</span></button><span class="feature-progress" role="status" aria-live="polite"><b>1</b> / ${slides.length}</span><span class="feature-swipe-hint">SWIPE</span></div>`
     : "";
-  return `<section class="featured-section discovery-content" aria-label="추천 작품">${heading("추천 작품")}<div class="feature-carousel" data-feature-carousel><div class="feature-grid" role="region" aria-roledescription="carousel" aria-label="추천 작품 슬라이드" tabindex="0">${slides.map(feature).join("")}</div>${controls}</div></section>`;
+  return `<section class="featured-section discovery-content" aria-label="추천 작품">${heading("추천 작품")}<div class="feature-carousel" data-feature-carousel><div class="feature-grid${slides.some(slide => slide.url) ? " feature-grid--banners" : ""}" role="region" aria-roledescription="carousel" aria-label="추천 작품 슬라이드" tabindex="0">${slides.map((slide, index) => feature(slide, index, preview)).join("")}</div>${controls}</div></section>`;
 }
 
 const two = n => String(n).padStart(2, "0");
@@ -81,7 +86,7 @@ export function landing(library, progress, state, preview = false) {
   const categories = [...new Set(library.books.map(b => edition(b).category))];
   return `<main class="library-page" id="main-content">
     <div class="store-content">
-      ${featured(heroSlides(library.books, library.home))}
+      ${featured(heroSlides(library.books, library.home), preview)}
       <div class="quick-menu discovery-content" role="group" aria-label="빠른 탐색"><button data-quick-view="all" aria-label="전체 작품 둘러보기"><span>${clayIcon("all")}</span>전체 작품</button>${categories.map(c => `<button data-quick-category="${esc(c)}" aria-label="${esc(c)} 도서 보기"><span>${clayIcon(c)}</span>${esc(c)}</button>`).join("")}<button data-quick-view="reading" aria-label="읽던 작품 이어 보기"><span>${clayIcon("reading")}</span>읽던 이야기</button><button data-scenes><span>${clayIcon("scenes")}</span>장면 둘러보기</button><button data-help><span>${clayIcon("help")}</span>이용 가이드</button></div>
       <section class="catalog" aria-labelledby="catalog-title"><div class="section-heading"><div><h2 id="catalog-title" tabindex="-1">지금 만나볼 이야기</h2><p id="catalog-intro">책을 고르면, 그 안의 세계가 열립니다.</p></div><div class="catalog-heading-actions"><label class="catalog-sort"><span class="reader-sr-only">도서 정렬</span><select id="book-sort"><option value="default">기본순</option><option value="title">제목순</option><option value="year">출간연도순</option></select></label><a class="browse-all-link" data-browse data-browse-all href="${esc(browseUrl(undefined, preview))}">전체 도서 보기 ${icon("chevron-right")}</a></div></div>
         <div class="catalog-toolbar"><div class="catalog-filters" role="group" aria-label="도서 분류"><button data-category="all" aria-pressed="true">전체</button>${categories.map(c => `<button data-category="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}</div><p role="status" aria-live="polite" id="catalog-status"></p></div><div id="book-grid" class="catalog-grid catalog-grid--many"></div>
@@ -100,7 +105,7 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
   const sort = page.querySelector("#book-sort");
   const rail = page.querySelector(".scene-rail");
   const sceneTabs = [...page.querySelectorAll("[data-scene-tab]")];
-  // The hero is absent when no published book is left (possible in the studio's draft preview).
+  // The hero is absent when neither a configured banner nor a published book is left.
   const hero = page.querySelector("[data-feature-carousel]");
   const heroTrack = hero?.querySelector(".feature-grid");
   const heroCards = hero ? [...hero.querySelectorAll(".feature-card")] : [];
@@ -113,6 +118,8 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
   sort.value = state.sort;
   const motion = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
   const loadPhoto = card => {
+    const source = card?.querySelector("source[data-srcset]");
+    if (source) { source.srcset = source.dataset.srcset; source.removeAttribute("data-srcset"); }
     const photo = card?.querySelector(".feature-photo[data-src]");
     if (!photo) return;
     photo.src = photo.dataset.src;
@@ -229,7 +236,8 @@ export function setupCatalog({ library, progress, state, preview = false, onOpen
   heroTrack?.addEventListener("pointerdown", event => {
     if (event.button !== 0) return;
     pointerStart = { x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, id: event.pointerId };
-    try { heroTrack.setPointerCapture?.(event.pointerId); } catch {}
+    // Capture on the card so a tap still activates its native link after pointerup.
+    try { (event.target.closest(".feature-card") || heroTrack).setPointerCapture?.(event.pointerId); } catch {}
   }, options);
   heroTrack?.addEventListener("pointermove", event => {
     if (!pointerStart || pointerStart.id !== event.pointerId) return;

@@ -11,6 +11,17 @@ test("the sample library survives the trip through table rows", () => {
   assert.deepEqual(librarySchema.parse(fromRows(toRows(original))), original);
 });
 
+test("service slide URLs and both device images survive storage without a book", () => {
+  const original = librarySchema.parse({ models: [], books: [], home: { hero: [{ id: "banner", url: "/about", image: "/uploads/aaaa.png", imageMobile: "/uploads/bbbb.png" }] } });
+  const rows = toRows(original);
+  assert.equal(rows.hero_slides[0].book_id, null);
+  assert.equal(rows.hero_slides[0].image_mobile, "/uploads/bbbb.png");
+  assert.deepEqual(librarySchema.parse(fromRows(rows)), original);
+  delete rows.hero_slides[0].url;
+  delete rows.hero_slides[0].image_mobile;
+  assert.equal(librarySchema.parse(fromRows(rows)).home.hero[0].imageMobile, "");
+});
+
 test("rows keep shelf, chapter, placement, model and slide order", () => {
   const original = library();
   original.books.reverse();

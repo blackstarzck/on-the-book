@@ -32,8 +32,9 @@ const tables = {
     ["title", "title"], ["story", "story"],
   ],
   hero_slides: [
-    ["id", "id"], ["bookId", "book_id"], ["image", "image"], ["focus", "focus"], ["kicker", "kicker"],
+    ["id", "id"], ["bookId", "book_id", "optional"], ["image", "image"], ["focus", "focus"], ["kicker", "kicker"],
     ["title", "title"], ["description", "description"],
+    ["url", "url", "optional"], ["imageMobile", "image_mobile", "optional"],
   ],
 };
 
@@ -47,7 +48,7 @@ const item = (table, stored) => {
   const out = {};
   for (const [field, column, optional] of tables[table]) {
     const value = stored[column];
-    if (value === null && optional) continue;
+    if (value == null && optional) continue;
     out[field] = value ?? null;
   }
   return out;

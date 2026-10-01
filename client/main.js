@@ -4,6 +4,7 @@ import { showLoading, clearLoading, transitionPage } from "./transitions.js";
 import { api, esc, icon, icons, logo, modal, toast } from "../shared/ui.js";
 import "../shared/style.css";
 import { announcementBanner, landing, setupCatalog } from "./landing.js";
+import { heroSlides } from "../shared/home.js";
 import { bookCover, edition } from "./book-meta.js";
 import { bookDetail, scenePanel, sceneBar, sceneStatus, defaultScene, detailUrl } from "./detail.js";
 import "./detail.css";
@@ -494,7 +495,7 @@ async function init() {
     library = draftPreview ? (await api("/api/studio")).library : await api("/api/library");
     const params = new URLSearchParams(location.search);
     // A draft preview may still open an unpublished book's detail or 3D world by address; only its bookshelf is limited to published books.
-    if (!shelf().books.length && resolveView(params).view === "home") {
+    if (!shelf().books.length && !heroSlides([], library.home).length && resolveView(params).view === "home") {
       clearLoading();
       app.removeAttribute("aria-busy");
       app.innerHTML =

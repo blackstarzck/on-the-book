@@ -12,7 +12,8 @@ export const cloud = process.env.VERCEL === '1';
 // Raise this when the library shape changes, so an older studio cannot save over fields it does not know.
 // 2: books carry authorIntro and bookIntro (저자 소개·책 소개).
 // 3: books carry thumbnail (도서 메인 썸네일).
-export const SCHEMA_VERSION = 3;
+// 4: hero slides carry service URLs and separate mobile images; book_id is optional.
+export const SCHEMA_VERSION = 4;
 
 const parse = library => librarySchema.parse(upgrade(library));
 const conflict = () => Object.assign(new Error('Save conflict'), { status: 409 });

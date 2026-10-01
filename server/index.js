@@ -126,6 +126,10 @@ app.put("/api/studio", sameOrigin, auth, async (req, res) => {
       .status(400)
       .json({ error: parsed.error.issues.map((i) => i.message).join(" ") });
   if(req.body.publish&&parsed.data.books.some(b=>b.published&&(!b.author.trim()||!b.rights.trim())))return res.status(400).json({error:'공개할 도서의 저자와 권리 정보를 완성해 주세요.'});
+  if (req.body.publish) {
+    const incomplete = parsed.data.home.hero.findIndex(slide => !slide.bookId && (!slide.url || !slide.image || !slide.imageMobile));
+    if (incomplete >= 0) return res.status(400).json({ error: `${incomplete + 1}번 슬라이드의 이동 URL과 PC용·모바일용 이미지를 모두 입력해 주세요.` });
+  }
   saving = true;
   try {
     if(req.body.publish)for(const b of parsed.data.books.filter(b=>b.published))for(const c of b.chapters)if(!c.mainPlacementId)return res.status(400).json({error:`“${b.title} / ${c.title}”에 메인 모델을 배치한 뒤 공개해 주세요.`});
