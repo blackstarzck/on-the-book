@@ -3,7 +3,7 @@ import {startServer} from './helpers.js';
 const server=await startServer(), browser=await chromium.launch({channel:'msedge',headless:true});
 const page=await browser.newPage({viewport:{width:1600,height:1000}}), errors=[];
 page.on('pageerror',e=>errors.push(e.message));
-const open=async()=>{await page.locator('[data-open-book="alice"]').click();await expect(page.locator('#studio-world canvas')).toBeVisible();};
+const open=async()=>{await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();await expect(page.locator('#studio-world canvas')).toBeVisible();};
 const select=()=>page.locator('[data-select-model]').nth(2).click();
 const change=async(name,value)=>{await page.locator(`#object-form [name="${name}"]`).fill(value);await page.locator(`#object-form [name="${name}"]`).press('Tab');};
 const guard=async(name,edit)=>{await open();await edit();await page.locator('#back-library').click();await expect(page.locator('.leave-editor-dialog')).toBeVisible();await page.getByRole('button',{name:'계속 편집',exact:true}).click();await expect(page.locator('#studio-world canvas')).toBeVisible();await page.locator('#back-library').click();await page.getByRole('button',{name:'저장하지 않고 나가기',exact:true}).click();await expect(page.locator('.book-shelf')).toBeVisible();console.log('PASS '+name);};

@@ -60,7 +60,7 @@ try {
   // edited in the property form; number fields apply when they lose focus.
   const admin = await context.newPage();
   await admin.goto(server.url + "/admin/");
-  await admin.locator('[data-open-book="alice"]').click();
+  await admin.locator('[data-book-menu="alice"]').click();await admin.locator('[data-open-book="alice"]').click();
   await expect(admin.locator("#studio-world canvas")).toBeVisible();
   await admin.screenshot({
     path: "docs/screenshots/admin-desktop.png",
@@ -144,7 +144,7 @@ try {
   pass("GLB upload with animation, registration, search and 3D preview work");
   // A model is placed by dragging its tile from the editor's library into the world.
   await admin.getByRole("button", { name: "도서 보관함", exact: true }).click();
-  await admin.locator('[data-open-book="alice"]').click();
+  await admin.locator('[data-book-menu="alice"]').click();await admin.locator('[data-open-book="alice"]').click();
   await expect(admin.locator("#studio-world canvas")).toBeVisible();
   await admin.locator(".asset-tile").filter({ hasText: "테스트 GLB" }).locator("img").dragTo(admin.locator("#studio-world canvas"), { targetPosition: { x: 720, y: 680 } });
   await expect(field("장면 속 이름")).toHaveValue("테스트 GLB");
@@ -184,7 +184,7 @@ try {
   await admin.getByLabel("책 제목", { exact: true }).fill("새 책 테스트");
   await admin.getByLabel("작가", { exact: true }).fill("테스트 작가");
   await admin.getByRole("button", { name: "책 만들기", exact: true }).click();
-  await admin.getByRole("button", { name: "새 책 테스트 3D 월드 편집", exact: true }).click();
+  await admin.getByRole('button',{name:"새 책 테스트 관리 메뉴",exact:true}).click();await admin.getByRole('menuitem',{name:"새 책 테스트 3D 월드 편집",exact:true}).click();
   await expect(admin.locator(".world-topbar strong")).toHaveText("새 책 테스트");
   await admin.locator(".world-chapter-tabs #add-chapter").click();
   await admin.getByLabel("챕터 제목", { exact: true }).fill("두 번째 장");

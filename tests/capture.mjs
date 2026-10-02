@@ -28,7 +28,7 @@ try {
   // The studio preview comes last so a studio change cannot block the reader previews above. The studio opens on
   // its bookshelf, so the book is opened to show its world editor.
   await page.goto(`${base}/admin/`);
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await expect(page.locator('#studio-world canvas')).toBeVisible();
   await page.screenshot({ path: 'docs/preview/admin.png', fullPage: true });
   console.log('Saved five clean previews in docs/preview');

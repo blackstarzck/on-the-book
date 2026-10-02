@@ -15,7 +15,7 @@ page.on('pageerror',e=>errors.push(e.message));
 try {
   // The studio opens on its bookshelf; the chapter's story and reading settings are edited from the world editor.
   await page.goto(server.url+'/admin/');
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await expect(page.locator('#studio-world canvas')).toBeVisible();
   await page.locator('[data-chapter-edit]').first().click();
   const story='공개 전 설정 확인을 위한 이야기입니다. '.repeat(30);

@@ -29,7 +29,7 @@ try {
   await expect(page.locator('.book-tile')).toHaveCount(2);
   await expect(page.locator('#save-state')).toHaveText('변경사항 저장됨');
 
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await page.locator('#edit-book').click();
   const category = page.getByLabel('분류', { exact: true });
   await expect(category).toHaveValue('판타지');
@@ -218,7 +218,7 @@ try {
   await page.locator('#confirm-action').click();
   await expect(page.locator('[data-slide]')).toHaveCount(1);
   await page.getByRole('button', { name: '도서 보관함', exact: true }).click();
-  await page.locator('[data-open-book="oz"]').click();
+  await page.locator('[data-book-menu="oz"]').click();await page.locator('[data-open-book="oz"]').click();
   await page.locator('#edit-book').click();
   await page.getByLabel('사용자 화면 공개 대상에 포함').uncheck();
   await page.locator('#book-form button[type="submit"]').click();
@@ -237,7 +237,7 @@ try {
   pass('Unpublishing a book leaves the independent service banner intact');
 
   await page.getByRole('button', { name: '도서 보관함', exact: true }).click();
-  await page.locator('[data-open-book="oz"]').click();
+  await page.locator('[data-book-menu="oz"]').click();await page.locator('[data-open-book="oz"]').click();
   await page.locator('#edit-book').click();
   await page.locator('#delete-book').click();
   await page.locator('#confirm-action').click();

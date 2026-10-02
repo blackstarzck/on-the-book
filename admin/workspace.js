@@ -25,12 +25,58 @@ export function shelfHTML(books) {
      <div class="book-order-buttons"><button type="button" data-book-up="${b.id}" aria-label="${esc(b.title)} 위로 이동" title="위로 이동" ${i===0?'disabled':''}>${icon('chevron-up')}</button><button type="button" data-book-down="${b.id}" aria-label="${esc(b.title)} 아래로 이동" title="아래로 이동" ${i===books.length-1?'disabled':''}>${icon('chevron-down')}</button></div>
     </div>
     <div class="book-tile"><div class="book-cover">${b.cover?`<img src="${esc(b.cover)}" alt="" loading="lazy" draggable="false">`:icon('book-open')}</div><div class="book-tile-info"><strong>${esc(b.title)}</strong><span>${esc(b.author||'작가 미등록')}</span><small>${esc(bookCategory(b))}<span aria-hidden="true">·</span>${b.chapters.length}개 챕터</small></div></div>
-    <div class="book-publication"><span class="book-status ${b.published?'is-public':''}"><span aria-hidden="true"></span>${b.published?'공개 대상':'비공개 초안'}</span></div>
-    <div class="book-tile-actions"><button type="button" class="outline-button book-edit" data-edit-book="${b.id}" aria-label="${esc(b.title)} 도서 정보 수정">${icon('pencil')} 정보 수정</button><button type="button" class="outline-button" data-open-book="${b.id}" aria-label="${esc(b.title)} 3D 월드 편집">${icon('box')} 3D 월드 편집</button><button type="button" class="book-delete" data-delete-book="${b.id}" aria-label="${esc(b.title)} 삭제">${icon('trash-2')} 삭제</button></div>
+    <div class="book-publication"><span class="book-publication-label">공개 설정</span><button type="button" class="book-publish-switch" role="switch" aria-checked="${!!b.published}" aria-label="${esc(b.title)} 공개 대상" data-publish-book="${b.id}"><span class="switch-track" aria-hidden="true"><span></span></span><span>${b.published?'공개 대상':'비공개 초안'}</span></button></div>
+    <div class="book-tile-actions"><button type="button" class="book-menu-trigger" data-book-menu="${b.id}" aria-label="${esc(b.title)} 관리 메뉴" aria-haspopup="menu" aria-expanded="false" aria-controls="book-menu-${b.id}">${icon('ellipsis-vertical')}</button><div id="book-menu-${b.id}" class="book-action-menu" popover="manual" role="menu" aria-label="${esc(b.title)} 관리"><button type="button" role="menuitem" tabindex="-1" data-edit-book="${b.id}" aria-label="${esc(b.title)} 도서 정보 수정">${icon('pencil')} 정보 수정</button><button type="button" role="menuitem" tabindex="-1" data-open-book="${b.id}" aria-label="${esc(b.title)} 3D 월드 편집">${icon('box')} 3D 월드 편집</button><button type="button" role="menuitem" tabindex="-1" class="book-delete" data-delete-book="${b.id}" aria-label="${esc(b.title)} 삭제">${icon('trash-2')} 삭제</button></div></div>
    </article>`).join('')}</div>
    <div id="shelf-empty" class="shelf-empty" hidden>${icon(books.length?'search':'book-open')}<h2>${books.length?'검색 결과가 없어요':'아직 등록된 도서가 없어요'}</h2><p>${books.length?'검색어나 공개 상태를 바꾸어 다시 찾아보세요.':'새 도서를 추가해 첫 이야기를 만들어 보세요.'}</p><button id="shelf-empty-action" class="outline-button">${books.length?'검색 조건 초기화':'새 도서 추가'}</button></div>
   </div><p class="shelf-save-note">${icon('info')} 변경 후 ‘임시 저장’으로 보관하고, ‘사용자 화면에 공개’를 눌러 실제 화면에 반영하세요.</p>
  </section>`;
+}
+
+export function bindShelfMenus(app) {
+ const events=new AbortController(),options={signal:events.signal};
+ let active=null;
+ const close=(restoreFocus=false)=>{
+   if(!active)return;
+   const {menu,trigger}=active;active=null;
+   if(menu.matches(':popover-open'))menu.hidePopover();
+   trigger.setAttribute('aria-expanded','false');
+   if(restoreFocus)trigger.focus({preventScroll:true});
+ };
+ const position=()=>{
+   if(!active)return;
+   const {menu,trigger}=active,anchor=trigger.getBoundingClientRect(),box=menu.getBoundingClientRect();
+   if(anchor.bottom<0||anchor.top>innerHeight){close();return;}
+   menu.style.left=`${Math.max(12,Math.min(anchor.right-box.width,innerWidth-box.width-12))}px`;
+   menu.style.top=`${Math.max(12,anchor.bottom+6+box.height<=innerHeight-12?anchor.bottom+6:anchor.top-box.height-6)}px`;
+ };
+ app.querySelectorAll('[data-book-menu]').forEach(trigger=>{
+   const menu=document.getElementById(trigger.getAttribute('aria-controls'));
+   const items=[...menu.querySelectorAll('[role="menuitem"]')];
+   const open=(last=false)=>{
+     close();active={menu,trigger};menu.showPopover();
+     position();
+     trigger.setAttribute('aria-expanded','true');
+     (last?items.at(-1):items[0]).focus({preventScroll:true});
+   };
+   trigger.addEventListener('click',()=>menu.matches(':popover-open')?close(true):open(),options);
+   trigger.addEventListener('keydown',e=>{if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();open(e.key==='ArrowUp');}},options);
+   menu.addEventListener('beforetoggle',e=>{if(e.newState==='closed'){trigger.setAttribute('aria-expanded','false');if(active?.menu===menu)active=null;}},options);
+   // Restore the trigger before an action opens a dialog, so cancel returns to a visible control.
+   menu.addEventListener('click',e=>{if(e.target.closest('[role="menuitem"]'))close(true);},{...options,capture:true});
+   menu.addEventListener('keydown',e=>{
+     if(e.key==='Escape'){e.preventDefault();close(true);return;}
+     if(e.key==='Tab'){close(true);return;}
+     if(!['ArrowDown','ArrowUp','Home','End'].includes(e.key))return;
+     e.preventDefault();
+     const index=items.indexOf(document.activeElement),next=e.key==='Home'?0:e.key==='End'?items.length-1:(index+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;
+     items[next].focus();
+   },options);
+ });
+ document.addEventListener('pointerdown',e=>{if(active&&!active.menu.contains(e.target)&&!active.trigger.contains(e.target))close();},options);
+ window.addEventListener('resize',position,options);
+ window.addEventListener('scroll',position,{...options,capture:true});
+ return ()=>{close();events.abort();};
 }
 
 // The shelf order is the order readers see ("기본순", and the first two books when no hero slide is set).
