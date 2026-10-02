@@ -350,15 +350,36 @@ function draw() {
   if (tab === "books") {
     document.querySelector('#new-book').onclick=()=>editBook(true);
     document.querySelectorAll('[data-edit-book]').forEach(button=>button.onclick=()=>editBook(false,library.books.find(b=>b.id===button.dataset.editBook)));
+    document.querySelectorAll('[data-delete-book]').forEach(button=>button.onclick=()=>deleteBook(library.books.find(b=>b.id===button.dataset.deleteBook)));
     // The editor's undo covers only what happens inside it, not home or shelf changes made before.
     document.querySelectorAll('[data-open-book]').forEach(button=>button.onclick=()=>{shelfReturn={q:shelfQuery,status:shelfStatus,scroll:scrollY};navigate(()=>{bookId=button.dataset.openBook;chapterId=book().chapters[0]?.id;placementId=null;assetQuery="";inEditor=true;undoStack=[];redoStack=[];baseline=structuredClone(library);});});
-    const filter=()=>{const query=shelfQuery.toLowerCase(),state=shelfStatus||'all';let count=0;document.querySelectorAll('[data-book-row]').forEach(row=>{row.hidden=!row.dataset.title.includes(query)||(state!=='all'&&row.dataset.state!==state);if(!row.hidden)count++;});document.querySelector('#shelf-empty').hidden=count>0;document.querySelector('.book-shelf').classList.toggle('is-filtered',!!query||state!=='all');};
+    const filter=()=>{
+      const query=shelfQuery.trim().toLowerCase(),state=shelfStatus||'all',filtered=!!query||state!=='all';let count=0;
+      document.querySelectorAll('[data-book-row]').forEach((row,index)=>{
+        row.hidden=!row.dataset.search.includes(query)||(state!=='all'&&row.dataset.state!==state);if(!row.hidden)count++;
+        const handle=row.querySelector('[data-book-drag]');handle.disabled=filtered;handle.draggable=!filtered;
+        row.querySelector('[data-book-up]').disabled=filtered||index===0;
+        row.querySelector('[data-book-down]').disabled=filtered||index===library.books.length-1;
+      });
+      document.querySelector('#shelf-empty').hidden=count>0;
+      document.querySelector('.shelf-columns').hidden=count===0;
+      document.querySelector('.book-shelf').classList.toggle('is-filtered',filtered);
+      document.querySelector('#reset-book-filter').hidden=!shelfQuery&&!shelfStatus;
+      document.querySelector('#shelf-count').textContent=filtered?`${library.books.length}권 중 ${count}권 표시`:`총 ${count}권`;
+      document.querySelector('#shelf-hint').textContent=filtered?'검색·필터 중에는 순서를 바꿀 수 없어요. ‘조건 초기화’를 눌러 전체 도서에서 변경하세요.':'위·아래 버튼이나 손잡이 드래그로 순서를 바꾸세요. 공개 대상 도서만 이 순서대로 노출됩니다.';
+    };
     const search=document.querySelector('#book-search'),status=document.querySelector('#book-filter');search.value=shelfQuery;status.value=shelfStatus||'all';
     search.oninput=()=>{shelfQuery=search.value;filter();syncUrlSoon();};status.onchange=()=>{shelfStatus=status.value==='all'?'':status.value;filter();syncUrl();};filter();
-    bindShelfOrder(app,(ids,moved)=>{
-      if(ids.length!==library.books.length||ids.some(id=>!library.books.some(b=>b.id===id)))return;
+    const reset=()=>{shelfQuery='';shelfStatus='';search.value='';status.value='all';filter();syncUrl();search.focus();};
+    document.querySelector('#reset-book-filter').onclick=reset;
+    document.querySelector('#shelf-empty-action').onclick=()=>library.books.length?reset():editBook(true);
+    bindShelfOrder(app,(ids,moved,control)=>{
+      if(shelfQuery.trim()||shelfStatus||ids.length!==library.books.length||new Set(ids).size!==ids.length||ids.some(id=>!library.books.some(b=>b.id===id)))return;
       library.books=ids.map(id=>library.books.find(b=>b.id===id));mark();render();
-      document.querySelector(`[data-book-drag="${CSS.escape(moved)}"]`)?.focus();
+      const row=document.querySelector(`[data-book-row="${CSS.escape(moved)}"]`);
+      const focus=row.querySelector(`[data-book-${control}]:not(:disabled)`)||row.querySelector('[data-book-up]:not(:disabled),[data-book-down]:not(:disabled)')||row.querySelector('[data-book-drag]');
+      focus?.focus({preventScroll:true});row.scrollIntoView({block:'nearest'});
+      toast(`${library.books.find(b=>b.id===moved).title}을(를) ${ids.indexOf(moved)+1}번째로 옮겼어요. 임시 저장 또는 공개로 반영해 주세요.`);
     });
   }
   if (tab === "home") bindHome();
@@ -531,20 +552,28 @@ function editBook(isNew = false, target = book()) {
   };
   d.querySelector("#delete-book")?.addEventListener("click", () => {
     d.close();
-    confirmAction(
-      "책과 연결된 챕터를 삭제할까요?",
-      "공개된 화면은 다시 공개하기 전까지 유지돼요. 저장 전에는 새로고침으로 되돌릴 수 있어요.",
-      () => {
-        library.books = library.books.filter((b) => b.id !== original.id);
-        library.home.hero = library.home.hero.filter((s) => s.bookId !== original.id);
-        bookId = library.books[0]?.id;
-        chapterId = book()?.chapters[0]?.id;
-        placementId = chapter()?.placements[0]?.id;
-        mark();
-        render();
-      },
-    );
+    deleteBook(original);
   });
+}
+function deleteBook(target) {
+  const index=library.books.indexOf(target);
+  confirmAction(
+    `‘${target.title}’ 도서를 삭제할까요?`,
+    `도서 정보와 챕터 ${target.chapters.length}개, 챕터 안의 장면·본문이 함께 삭제됩니다. 모델 원본은 보관함에 남습니다. 사용자 화면에는 다시 공개한 후 반영됩니다.`,
+    () => {
+      library.books=library.books.filter(b=>b.id!==target.id);
+      library.home.hero=library.home.hero.filter(s=>s.bookId!==target.id);
+      if(bookId===target.id){bookId=library.books[0]?.id;chapterId=book()?.chapters[0]?.id;placementId=chapter()?.placements[0]?.id;inEditor=false;}
+      mark();render();
+      const next=library.books[Math.min(index,library.books.length-1)];
+      if(!inEditor){
+        const visibleNext=next&&document.querySelector(`[data-book-row="${CSS.escape(next.id)}"]:not([hidden]) [data-edit-book]`);
+        const focus=visibleNext||document.querySelector('[data-book-row]:not([hidden]) [data-edit-book]')||document.querySelector(library.books.length?'#book-search':'#new-book');
+        focus?.focus({preventScroll:true});
+      }
+      toast(`‘${target.title}’ 도서를 삭제했어요. 임시 저장 또는 공개로 반영해 주세요.`);
+    },
+  );
 }
 function newChapter() {
   return {
