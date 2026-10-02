@@ -70,23 +70,22 @@ try {
   await page.keyboard.press('Alt+ArrowRight');
   expect(await shelfOrder()).toEqual(['oz', 'alice']);
   await expect(page.locator('[data-book-drag="alice"]')).toBeFocused();
-  await page.locator('[data-book-drag="alice"]').dragTo(page.locator('[data-book-row="oz"]'), { targetPosition: { x: 20, y: 150 } });
+  await page.locator('[data-book-drag="alice"]').dragTo(page.locator('[data-book-row="oz"]'), { targetPosition: { x: 20, y: 12 } });
   expect(await shelfOrder()).toEqual(['alice', 'oz']);
-  // Drop into the 32px gap between the two tiles: nothing moves (appending to the end would move alice).
-  const tile = await page.locator('[data-book-row="alice"]').boundingBox(), shelf = await page.locator('.book-shelf').boundingBox();
-  await page.locator('[data-book-drag="alice"]').dragTo(page.locator('.book-shelf'), { targetPosition: { x: tile.x - shelf.x + tile.width + 16, y: 60 } });
+  // Dropping outside the list must not change the order.
+  await page.locator('[data-book-drag="alice"]').dragTo(page.locator('.library-filter'), { targetPosition: { x: 20, y: 12 } });
   expect(await shelfOrder()).toEqual(['alice', 'oz']);
-  await page.locator('[data-book-drag="alice"]').dragTo(page.locator('[data-book-row="alice"]'), { targetPosition: { x: 200, y: 150 } });
+  await page.locator('[data-book-drag="alice"]').dragTo(page.locator('[data-book-row="alice"]'), { targetPosition: { x: 200, y: 40 } });
   expect(await shelfOrder()).toEqual(['alice', 'oz']);
-  await page.locator('[data-book-drag="oz"]').dragTo(page.locator('[data-book-row="alice"]'), { targetPosition: { x: 20, y: 150 } });
+  await page.locator('[data-book-drag="oz"]').dragTo(page.locator('[data-book-row="alice"]'), { targetPosition: { x: 20, y: 12 } });
   expect(await shelfOrder()).toEqual(['oz', 'alice']);
   await page.locator('#book-search').fill('앨리스');
   await expect(page.locator('.book-shelf')).toHaveClass(/is-filtered/);
-  await expect(page.locator('[data-book-drag="alice"]')).toBeHidden();
+  await expect(page.locator('[data-book-drag="alice"]')).toBeDisabled();
   await expect(page.locator('[data-book-row="oz"]')).toBeHidden();
   await page.locator('#book-search').fill('');
   await expect(page.locator('[data-book-drag="alice"]')).toBeVisible();
-  pass('Books reorder by keyboard and by dragging; gaps and filtered shelves do not reorder');
+  pass('Books reorder by keyboard and vertical dragging; outside drops and filtered shelves do not reorder');
 
   await page.getByRole('button', { name: '홈 화면', exact: true }).click();
   await expect(page.locator('.home-slides .inline-empty')).toContainText('오즈의 마법사, 이상한 나라의 앨리스');

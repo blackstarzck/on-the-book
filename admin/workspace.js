@@ -6,28 +6,52 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { World, makeModel } from '../shared/world.js';
 import { esc, uid, toast, api, modal, icon } from '../shared/ui.js';
 import { overlapsTrigger, reactionSize, triggerCircles, mainModel } from '../shared/experience.js';
+import { bookCategory } from '../shared/home.js';
 import './workspace.css';
+import './shelf.css';
 
 export function shelfHTML(books) {
- return `<section class="book-library"><div class="library-heading"><div><h1>이야기의 세계를 만드세요.</h1><p>표지와 소개는 도서 정보에서, 챕터와 장면은 3D 월드에서 편집하세요.</p></div><button id="new-book" class="primary-button">＋ 새 도서 추가</button></div><div class="library-filter"><input id="book-search" aria-label="도서 검색" placeholder="도서 제목 검색"><select id="book-filter" aria-label="도서 상태"><option value="all">모든 도서</option><option value="draft">비공개 초안</option><option value="public">공개 대상</option></select></div><p class="shelf-hint">표지 왼쪽 위 손잡이를 끌거나 Alt+←→로 사용자 책장에 놓일 순서를 바꿔요. 검색·필터 중에는 바꿀 수 없어요.</p><div class="book-shelf">${books.map((b,i)=>`<article class="book-tile-row" data-book-row="${b.id}" data-title="${esc(b.title.toLowerCase())}" data-state="${b.published?'public':'draft'}" aria-label="${esc(b.title)}"><div class="book-tile"><div class="book-cover" style="--cover-hue:${135+i*27}">${b.cover?`<img src="${esc(b.cover)}" alt="">`:`<span>ON THE BOOK</span><strong>${esc(b.title)}</strong><i>✧</i><small>${esc(b.author||'새로운 이야기')}</small>`}</div><div class="book-tile-info"><strong>${esc(b.title)}</strong><span>${b.chapters.length}개 챕터 · ${b.published?'공개 대상':'비공개 초안'}</span></div></div><div class="book-tile-actions"><button type="button" class="outline-button" data-edit-book="${b.id}" aria-label="${esc(b.title)} 도서 정보">${icon('book-open')} 도서 정보</button><button type="button" class="outline-button" data-open-book="${b.id}" aria-label="${esc(b.title)} 3D 월드 편집">${icon('box')} 3D 월드 편집</button></div><button type="button" class="book-drag" draggable="true" data-book-drag="${b.id}" aria-label="${esc(b.title)} 순서 이동" title="끌어서 순서 변경 · Alt+←→"><svg viewBox="0 0 16 20" aria-hidden="true"><path d="M5 4h0m6 0h0M5 10h0m6 0h0M5 16h0m6 0h0"/></svg></button></article>`).join('')}</div><p id="shelf-empty" hidden>일치하는 도서가 없습니다. 새 도서를 추가해 시작하세요.</p></section>`;
+ const publicCount=books.filter(b=>b.published).length;
+ return `<section class="book-library" aria-labelledby="library-title">
+  <div class="library-heading"><div><span class="eyebrow">BOOK LIBRARY</span><h1 id="library-title">도서 보관함</h1><p>도서 정보와 공개 대상을 확인하고, 사용자 책장에 놓일 순서를 관리하세요.</p></div><button id="new-book" class="primary-button">${icon('plus')} 새 도서 추가</button></div>
+  <div class="library-summary" aria-label="도서 현황"><span>전체 <strong>${books.length}</strong>권</span><span class="summary-public">공개 대상 <strong>${publicCount}</strong>권</span><span>비공개 초안 <strong>${books.length-publicCount}</strong>권</span></div>
+  <div class="library-panel">
+   <div class="library-filter"><label class="library-search">${icon('search')}<input id="book-search" type="search" aria-label="도서 검색" placeholder="제목, 작가, 분류로 검색"></label><select id="book-filter" aria-label="도서 상태"><option value="all">모든 도서</option><option value="draft">비공개 초안</option><option value="public">공개 대상</option></select><button id="reset-book-filter" class="text-button" hidden>조건 초기화</button><span id="shelf-count" role="status"></span></div>
+   <div class="shelf-guide">${icon('arrow-down-up')}<p id="shelf-hint">위·아래 버튼이나 손잡이 드래그로 순서를 바꾸세요. 공개 대상 도서만 이 순서대로 노출됩니다.</p></div>
+   <div class="shelf-columns" aria-hidden="true"><span>노출 순서</span><span>도서 정보</span><span>공개 설정</span><span>관리</span></div>
+   <div class="book-shelf">${books.map((b,i)=>`<article class="book-tile-row" data-book-row="${b.id}" data-search="${esc([b.title,b.englishTitle,b.author,bookCategory(b)].join(' ').toLowerCase())}" data-state="${b.published?'public':'draft'}" aria-label="${esc(b.title)}">
+    <div class="book-order" role="group" aria-label="${esc(b.title)} 노출 순서">
+     <button type="button" class="book-drag" draggable="true" data-book-drag="${b.id}" aria-label="${esc(b.title)} 순서 이동" title="끌어서 순서 변경 · Alt+↑↓">${icon('grip-vertical')}</button><span class="book-order-number" aria-label="${i+1}번째">${String(i+1).padStart(2,'0')}</span>
+     <div class="book-order-buttons"><button type="button" data-book-up="${b.id}" aria-label="${esc(b.title)} 위로 이동" title="위로 이동" ${i===0?'disabled':''}>${icon('chevron-up')}</button><button type="button" data-book-down="${b.id}" aria-label="${esc(b.title)} 아래로 이동" title="아래로 이동" ${i===books.length-1?'disabled':''}>${icon('chevron-down')}</button></div>
+    </div>
+    <div class="book-tile"><div class="book-cover">${b.cover?`<img src="${esc(b.cover)}" alt="" loading="lazy" draggable="false">`:icon('book-open')}</div><div class="book-tile-info"><strong>${esc(b.title)}</strong><span>${esc(b.author||'작가 미등록')}</span><small>${esc(bookCategory(b))}<span aria-hidden="true">·</span>${b.chapters.length}개 챕터</small></div></div>
+    <div class="book-publication"><span class="book-status ${b.published?'is-public':''}"><span aria-hidden="true"></span>${b.published?'공개 대상':'비공개 초안'}</span></div>
+    <div class="book-tile-actions"><button type="button" class="outline-button book-edit" data-edit-book="${b.id}" aria-label="${esc(b.title)} 도서 정보 수정">${icon('pencil')} 정보 수정</button><button type="button" class="outline-button" data-open-book="${b.id}" aria-label="${esc(b.title)} 3D 월드 편집">${icon('box')} 3D 월드 편집</button><button type="button" class="book-delete" data-delete-book="${b.id}" aria-label="${esc(b.title)} 삭제">${icon('trash-2')} 삭제</button></div>
+   </article>`).join('')}</div>
+   <div id="shelf-empty" class="shelf-empty" hidden>${icon(books.length?'search':'book-open')}<h2>${books.length?'검색 결과가 없어요':'아직 등록된 도서가 없어요'}</h2><p>${books.length?'검색어나 공개 상태를 바꾸어 다시 찾아보세요.':'새 도서를 추가해 첫 이야기를 만들어 보세요.'}</p><button id="shelf-empty-action" class="outline-button">${books.length?'검색 조건 초기화':'새 도서 추가'}</button></div>
+  </div><p class="shelf-save-note">${icon('info')} 변경 후 ‘임시 저장’으로 보관하고, ‘사용자 화면에 공개’를 눌러 실제 화면에 반영하세요.</p>
+ </section>`;
 }
 
 // The shelf order is the order readers see ("기본순", and the first two books when no hero slide is set).
-// Each card keeps its edit actions separate from its drag handle.
+// Keep ordering available by button and keyboard as well as desktop drag and drop.
 export function bindShelfOrder(app, onReorder) {
  const shelf=app.querySelector('.book-shelf');
  const ids=()=>[...shelf.querySelectorAll('[data-book-row]')].map(row=>row.dataset.bookRow);
  let dragged=null;
  const clear=()=>{dragged=null;shelf.querySelectorAll('.dragging,.drop-before,.drop-after').forEach(row=>row.classList.remove('dragging','drop-before','drop-after'));};
- const before=(row,e)=>e.clientX<row.getBoundingClientRect().left+row.offsetWidth/2;
+ const before=(row,e)=>e.clientY<row.getBoundingClientRect().top+row.offsetHeight/2;
+ const move=(id,step,control)=>{if(shelf.classList.contains('is-filtered'))return;const order=ids(),index=order.indexOf(id),next=index+step;if(index<0||next<0||next>=order.length)return;[order[index],order[next]]=[order[next],order[index]];onReorder(order,id,control);};
+ shelf.querySelectorAll('[data-book-up]').forEach(button=>button.onclick=()=>move(button.dataset.bookUp,-1,'up'));
+ shelf.querySelectorAll('[data-book-down]').forEach(button=>button.onclick=()=>move(button.dataset.bookDown,1,'down'));
  shelf.querySelectorAll('[data-book-drag]').forEach(handle=>{
-   handle.ondragstart=e=>{dragged=handle.dataset.bookDrag;e.dataTransfer.setData('application/x-otb-book',dragged);e.dataTransfer.effectAllowed='move';handle.closest('.book-tile-row').classList.add('dragging');};
+   handle.ondragstart=e=>{if(shelf.classList.contains('is-filtered')){e.preventDefault();return;}dragged=handle.dataset.bookDrag;e.dataTransfer.setData('application/x-otb-book',dragged);e.dataTransfer.effectAllowed='move';handle.closest('.book-tile-row').classList.add('dragging');};
    handle.ondragend=clear;
-   handle.onkeydown=e=>{if(!e.altKey||!['ArrowLeft','ArrowRight'].includes(e.key)||shelf.classList.contains('is-filtered'))return;e.preventDefault();const order=ids(),index=order.indexOf(handle.dataset.bookDrag),next=index+(e.key==='ArrowLeft'?-1:1);if(next<0||next>=order.length)return;[order[index],order[next]]=[order[next],order[index]];onReorder(order,handle.dataset.bookDrag);};
+   handle.onkeydown=e=>{if(!e.altKey||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();move(handle.dataset.bookDrag,['ArrowUp','ArrowLeft'].includes(e.key)?-1:1,'drag');};
  });
  shelf.ondragover=e=>{if(!dragged)return;e.preventDefault();e.dataTransfer.dropEffect='move';const row=e.target.closest('[data-book-row]');shelf.querySelectorAll('.drop-before,.drop-after').forEach(r=>r.classList.remove('drop-before','drop-after'));if(row&&row.dataset.bookRow!==dragged)row.classList.add(before(row,e)?'drop-before':'drop-after');};
- // Drops in the gaps between tiles are ignored rather than guessed.
- shelf.ondrop=e=>{if(!dragged)return;e.preventDefault();const row=e.target.closest('[data-book-row]'),moved=dragged,current=ids();if(!row||row.dataset.bookRow===moved){clear();return;}const order=current.filter(id=>id!==moved);order.splice(order.indexOf(row.dataset.bookRow)+(before(row,e)?0:1),0,moved);clear();if(order.some((id,i)=>id!==current[i]))onReorder(order,moved);};
+ // A drop must identify a row before it can change the order.
+ shelf.ondrop=e=>{if(!dragged)return;e.preventDefault();const row=e.target.closest('[data-book-row]'),moved=dragged,current=ids();if(shelf.classList.contains('is-filtered')||!row||row.dataset.bookRow===moved){clear();return;}const order=current.filter(id=>id!==moved);order.splice(order.indexOf(row.dataset.bookRow)+(before(row,e)?0:1),0,moved);clear();if(order.some((id,i)=>id!==current[i]))onReorder(order,moved,'drag');};
 }
 // Which editor panels are folded, kept per browser (not in the address): { assets: true, tiles: false, … }.
 const panelKey='otb-studio-panels';
