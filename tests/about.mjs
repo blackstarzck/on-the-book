@@ -1,35 +1,16 @@
 import { chromium, expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createClient } from "@supabase/supabase-js";
 import { startServer } from "./helpers.js";
 
 // Browser checks for the /about page ported from the sample-02 brand page.
 // ABOUT_BASE_URL runs them against a server that is already running, such as `npm run dev`.
 const base = process.env.ABOUT_BASE_URL?.replace(/\/$/, "");
 
-// The journey model lives in the shared Supabase project. The test server gets a read-only copy in its
-// throwaway data folder, so no model file lands in the project and the test never writes to the database.
-async function copyJourney(dir) {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY)
-    throw Error("The about checks copy the journey from Supabase: run `npm run test:about` with .env, or set ABOUT_BASE_URL.");
-  const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-  const { data: row, error } = await db.from("site_assets").select("data").eq("key", "about-journey").single();
-  if (error) throw error;
-  await mkdir(path.join(dir, "site"), { recursive: true });
-  await mkdir(path.join(dir, "uploads"), { recursive: true });
-  await writeFile(path.join(dir, "site", "about-journey.json"), JSON.stringify(row.data));
-  for (const url of [row.data.model, ...Object.values(row.data.photos)]) {
-    const name = path.basename(url);
-    const { data, error: downloadError } = await db.storage.from("uploads").download(name);
-    if (downloadError) throw downloadError;
-    await writeFile(path.join(dir, "uploads", name), Buffer.from(await data.arrayBuffer()));
-  }
-}
-const server = base ? { url: base, stop: async () => {} } : await startServer({ prepare: copyJourney });
+const server = base ? { url: base, stop: async () => {} } : await startServer();
 const browser = await chromium.launch({
   headless: true,
   channel: "msedge",
@@ -48,12 +29,35 @@ async function open(options = {}, init) {
   if (init) await context.addInitScript(init);
   const page = await context.newPage();
   const problems = [];
+  page.on("request", (request) => {
+    if (/about-journey|clay-journey|clay-scene|journey-(camera|labels|presentation)/.test(request.url()))
+      problems.push(`Removed journey requested: ${request.url()}`);
+  });
   page.on("pageerror", (error) => problems.push(error.message));
   page.on("response", (response) => {
     if (response.url().startsWith(server.url) && response.status() >= 400)
       problems.push(`${response.status()} ${response.url()}`);
   });
   return { context, page, problems };
+}
+
+async function checkWorld(page) {
+  await page.evaluate(() => document.querySelector("#world").scrollIntoView({ behavior: "instant" }));
+  await expect(page.locator("#world-heading")).toBeVisible();
+  await expect(page.locator("#world canvas, #world img, .journey-hint, .world-progress")).toHaveCount(0);
+  for (const note of await page.locator(".world-note").all()) await expect(note).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const world = document.querySelector("#world").getBoundingClientRect();
+    const stage = document.querySelector(".world-stage");
+    return {
+      position: getComputedStyle(stage).position,
+      unusedHeight: world.height - stage.getBoundingClientRect().height,
+      nextGap: document.querySelector("#experience").getBoundingClientRect().top - world.bottom,
+    };
+  });
+  expect(layout.position).toBe("static");
+  expect(layout.unusedHeight).toBe(0);
+  expect(layout.nextGap).toBe(0);
 }
 
 try {
@@ -73,17 +77,9 @@ try {
     expect(Number(await page.locator(".hero").getAttribute("data-rotation"))).toBeGreaterThan(0.2);
     pass("Hero book renders and turns when dragged");
 
-    const world = await page.evaluate(() => {
-      const section = document.querySelector(".world");
-      const stage = document.querySelector(".world-stage");
-      return { top: section.getBoundingClientRect().top + scrollY, range: section.offsetHeight - stage.offsetHeight * 2 };
-    });
-    for (const [fraction, step] of [[0.05, "0"], [0.4, "1"], [0.75, "2"]]) {
-      await page.evaluate((top) => scrollTo({ top, behavior: "instant" }), world.top + world.range * fraction);
-      await expect(page.locator(".world")).toHaveAttribute("data-journey", "ready", slow);
-      await expect(page.locator(".world")).toHaveAttribute("data-step", step);
-    }
-    pass("Clay journey loads and walks past its three photos");
+    await checkWorld(page);
+    await page.screenshot({ path: "test-results/about-world-desktop.png" });
+    pass("World copy remains without the 3D journey, poster or pinned scroll space");
 
     await page.evaluate(() => document.querySelector("#experience").scrollIntoView({ behavior: "instant" }));
     await page.locator('[data-way="1"]').click();
@@ -125,14 +121,17 @@ try {
     await expect(page.locator("html")).toHaveClass(/motion-off/);
     await expect(page.locator("html")).toHaveClass(/natural-flow/);
     await expect(page.locator(".motion-label")).toHaveText("모션 꺼짐");
+    await checkWorld(page);
     pass("Motion control switches to the natural document flow");
 
-    const start = page.locator("[data-service-link]");
-    await expect(start).toHaveAttribute("href", "/");
-    await start.click();
-    await page.waitForURL(server.url + "/client/");
-    await expect(page.locator(".library-page")).toBeVisible();
-    pass("Start link opens the reader home");
+    await page.locator(".site-footer").scrollIntoViewIfNeeded();
+    await expect(page.locator(".footer-invitation, .footer-start-link, #footer-heading")).toHaveCount(0);
+    await expect(page.locator(".footer-books")).toBeVisible();
+    await expect(page.locator(".footer-nav")).toBeVisible();
+    await page.locator(".site-footer").screenshot({ path: "test-results/about-footer-desktop.png" });
+    await page.locator(".footer-top").click();
+    await expect(page.locator("#hero-title")).toBeInViewport();
+    pass("Footer invitation is removed and the remaining navigation works");
     expect(problems).toEqual([]);
     await context.close();
   }
@@ -141,6 +140,7 @@ try {
     await page.goto(aboutUrl);
     await expect(page.locator("html")).toHaveClass(/natural-flow/);
     await expect(page.locator(".motion-label")).toHaveText("모션 꺼짐");
+    await checkWorld(page);
     expect(problems).toEqual([]);
     await context.close();
     pass("Reduced motion starts in the natural document flow");
@@ -155,21 +155,22 @@ try {
     await page.goto(aboutUrl);
     await expect(page.locator(".hero")).toHaveAttribute("data-book-world", "fallback", slow);
     await expect(page.locator(".hero-object-hit")).toBeHidden();
-    await page.evaluate(() => document.querySelector("#world").scrollIntoView({ behavior: "instant" }));
-    await expect(page.locator(".world")).toHaveAttribute("data-journey", "fallback", slow);
-    await expect(page.locator(".world")).toHaveClass(/is-still/);
-    await expect
-      .poll(() => page.locator(".journey-poster").evaluate((img) => img.complete && img.naturalWidth > 0 && getComputedStyle(img).opacity), slow)
-      .toBe("1");
+    await checkWorld(page);
     expect(problems).toEqual([]);
     await context.close();
-    pass("Without WebGL the hero hides dragging and the journey shows its still image");
+    pass("Without WebGL the hero hides dragging and the removed journey stays absent");
   }
   for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 560 }]) {
     const { context, page, problems } = await open({ viewport, isMobile: true, hasTouch: true });
     await page.goto(aboutUrl);
     await expect(page.locator(".hero")).toHaveAttribute("data-book-world", /ready|fallback/, slow);
     if (viewport.width === 390) await page.screenshot({ path: "docs/screenshots/about-mobile.png" });
+    await checkWorld(page);
+    await page.screenshot({ path: `test-results/about-world-${viewport.width}.png` });
+    await page.locator(".site-footer").scrollIntoViewIfNeeded();
+    await expect(page.locator(".footer-invitation, .footer-start-link, #footer-heading")).toHaveCount(0);
+    await expect(page.locator(".footer-nav")).toBeVisible();
+    await page.locator(".site-footer").screenshot({ path: `test-results/about-footer-${viewport.width}.png` });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
     expect(problems).toEqual([]);
     await context.close();

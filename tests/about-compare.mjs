@@ -16,14 +16,10 @@ const browser = await chromium.launch({
 });
 const sizes = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } };
 
-// Runs in the page: one stop per section, and one per photo while the clay journey is pinned.
+// Runs in the page: one stop per section.
 function scrollStops() {
   const top = (selector) => document.querySelector(selector).getBoundingClientRect().top + scrollY;
-  const world = document.querySelector(".world");
-  const range = world.offsetHeight - document.querySelector(".world-stage").offsetHeight * 2;
-  const stops = { "1-hero": 0 };
-  if (document.documentElement.classList.contains("natural-flow")) stops["2-world"] = top(".world");
-  else [0.14, 0.42, 0.7].forEach((fraction, i) => (stops[`2-world-${i + 1}`] = top(".world") + range * fraction));
+  const stops = { "1-hero": 0, "2-world": top(".world") };
   return { ...stops, "3-experience": top("#experience"), "4-scenes": top("#scenes"), "5-film": top("#film"), "6-footer": top("#start") };
 }
 
@@ -43,11 +39,9 @@ try {
         await page.evaluate(() => document.fonts.ready);
         await page.waitForFunction(() => ["ready", "fallback"].includes(document.querySelector(".hero")?.dataset.bookWorld), null, { timeout: 20000 });
         for (const stop of Object.keys(await page.evaluate(scrollStops))) {
-          // Recompute each stop because the journey can change the page height once it loads.
+          // Recompute each stop after responsive content has settled.
           const y = (await page.evaluate(scrollStops))[stop];
           await page.evaluate((top) => scrollTo({ top, behavior: "instant" }), y);
-          if (stop.startsWith("2-world"))
-            await page.waitForFunction(() => ["ready", "fallback"].includes(document.querySelector(".world").dataset.journey), null, { timeout: 30000 });
           await page.waitForTimeout(1000);
           await page.screenshot({ path: `${out}/${size}-motion-${motion}-${stop}-${label}.png` });
         }

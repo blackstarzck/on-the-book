@@ -15,8 +15,6 @@ const heroCopy = $('.hero-copy');
 const heroWordmark = $('.hero-wordmark');
 const heroSecond = $('.hero-scroll-copy');
 const filmTeaser = $('.film-teaser');
-const world = $('.world');
-const worldStage = $('.world-stage');
 const filmSurface = $('.film-surface');
 const filmMedia = $('.film-inline-video');
 const filmPlay = $('.film-play');
@@ -28,15 +26,11 @@ const footer = $('.site-footer');
 const footerRows = $$('[data-footer-row]', footer);
 const footerDrawings = $$('.footer-drawing', footer);
 let scene;
-let journeyScene;
-let journeyLabels;
-let journeyLoading;
 let motionOff = mediaMotion.matches;
 let naturalFlow = motionOff || shortViewport.matches;
 let geometry = {};
 let scrollFrame = 0;
 let heroVisible = true;
-let journeyVisible = false;
 let activeWay = -1;
 let viewRotation = 0;
 let viewZoom = 1;
@@ -62,8 +56,6 @@ function measure() {
   filmSurface.style.height = filmInlineHeight;
   geometry = {
     hero: top(hero), heroRange: Math.max(1, hero.offsetHeight - heroStage.offsetHeight),
-    world: top(world), worldRange: Math.max(1, world.offsetHeight - worldStage.offsetHeight * 2),
-    curtain: top($('#experience')),
     film: top(filmSurface), filmHeight: filmBaseHeight,
     filmInset: parseFloat(getComputedStyle($('.film')).paddingLeft),
     experience: top(experienceScroll),
@@ -92,12 +84,6 @@ function updateScroll() {
   scene?.setProgress(p);
   hero.dataset.progress = p.toFixed(3);
 
-  const journeyP = naturalFlow ? 1 : clamp((scrollY - geometry.world) / geometry.worldRange);
-  const step = Math.min(2, Math.floor(journeyP / .84 * 3));
-  $('.world-progress > span').style.transform = 'scaleX(' + journeyP + ')';
-  journeyScene?.setProgress(journeyP);
-  world.dataset.progress = journeyP.toFixed(3);
-  world.dataset.step = step;
   updateExperience();
   const filmP = clamp((scrollY + innerHeight - geometry.film) / (innerHeight + geometry.filmHeight));
   const filmTop = geometry.film - scrollY;
@@ -116,9 +102,8 @@ function updateScroll() {
   const filmCanPlay = filmTop < innerHeight && filmTop + geometry.filmHeight > 0 && !motionOff && !document.hidden && !filmDialog.open;
   setInlineFilmPlayback(filmCanPlay && filmExpand > (filmAutoplayActive ? .9 : .97));
   const header = $('.site-header');
-  header.classList.toggle('is-journey', scrollY + 47 >= geometry.world && scrollY + 47 < geometry.curtain);
   header.classList.toggle('is-scrolled', scrollY > 30);
-  header.classList.toggle('is-dark', geometry.dark?.some(section => scrollY + 47 >= section.top && scrollY + 47 < (section.top === geometry.world ? geometry.curtain : section.bottom)));
+  header.classList.toggle('is-dark', geometry.dark?.some(section => scrollY + 47 >= section.top && scrollY + 47 < section.bottom));
   header.classList.toggle('is-footer', scrollY + 47 >= geometry.footer);
   footerRows.forEach((row, index) => {
     const bounds = geometry.footerRows[index];
@@ -144,27 +129,6 @@ function setInlineFilmPlayback(active) {
 function refreshSceneEnabled() {
   const visible = !document.hidden && !filmDialog.open && !galleryDialog.open;
   scene?.setEnabled(heroVisible && visible);
-  journeyScene?.setEnabled(journeyVisible && visible);
-}
-function loadJourney() {
-  if (journeyLoading) return;
-  world.dataset.journey = 'loading';
-  journeyLoading = Promise.all([import('./clay-scene.js'), import('./journey-labels.js')]).then(([{createClayJourney}, {createJourneyLabels}]) => {
-    journeyLabels = createJourneyLabels($('.journey-visual'));
-    return createClayJourney($('#clay-journey'), {onLayout: layout => journeyLabels.setLayout(layout)});
-  }).then(created => {
-    journeyScene = created;
-    journeyScene.setReducedMotion(naturalFlow);
-    journeyLabels.setReducedMotion(naturalFlow);
-    journeyScene.setProgress(Number(world.dataset.progress) || 0);
-    refreshSceneEnabled();
-    world.dataset.journey = 'ready';
-    measure();
-  }).catch(error => {
-    world.dataset.journey = 'fallback';
-    world.classList.add('is-still');
-    console.warn('The clay journey is shown as a still image.', error);
-  });
 }
 function applyMotion(preservePosition = false) {
   const previousTop = scrollY;
@@ -172,7 +136,7 @@ function applyMotion(preservePosition = false) {
   const preserveWay = preservePosition && activeWay >= 0 && storyBounds.top <= 145 && storyBounds.bottom > 145;
   const previousWay = activeWay;
   const anchor = [...$$('main > section, .site-footer')].reverse().find(section => section.getBoundingClientRect().top <= 120) || hero;
-  const relativeTop = anchor === world && !naturalFlow ? 0 : anchor.getBoundingClientRect().top;
+  const relativeTop = anchor.getBoundingClientRect().top;
   naturalFlow = motionOff || shortViewport.matches;
   root.classList.toggle('motion-off', motionOff);
   root.classList.toggle('natural-flow', naturalFlow);
@@ -180,8 +144,6 @@ function applyMotion(preservePosition = false) {
   motionButton.setAttribute('aria-pressed', String(motionOff));
   $('.motion-label').textContent = motionOff ? '모션 꺼짐' : '모션 켜짐';
   scene?.setReducedMotion(motionOff);
-  journeyScene?.setReducedMotion(naturalFlow);
-  journeyLabels?.setReducedMotion(naturalFlow);
   if (preservePosition) {
     const newTop = anchor.getBoundingClientRect().top + previousTop;
     scrollTo({top: Math.max(0, newTop - relativeTop), behavior: 'instant'});
@@ -200,11 +162,6 @@ new IntersectionObserver(entries => {
   heroVisible = entries[0].isIntersecting;
   refreshSceneEnabled();
 }, {rootMargin: '120px'}).observe(hero);
-new IntersectionObserver(entries => {
-  journeyVisible = entries[0].isIntersecting;
-  if (journeyVisible) loadJourney();
-  refreshSceneEnabled();
-}, {rootMargin: '300px'}).observe(world);
 const revealObserver = new IntersectionObserver(entries => entries.forEach(entry => {
   if (entry.isIntersecting) { entry.target.classList.add('is-visible'); revealObserver.unobserve(entry.target); }
 }), {threshold: .12});
