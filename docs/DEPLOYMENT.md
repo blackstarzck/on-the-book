@@ -62,6 +62,8 @@ PNG 5MB, GLB 25MB 제한을 유지합니다. Vercel에서는 브라우저가 Sup
 
 PR과 `main` 이외 브랜치의 푸시는 GitHub 연동으로 미리보기에 배포됩니다. `main` 푸시가 운영 배포를 자동으로 만들지 않도록 각 `vercel.json`에서 `main` 자동 배포를 꺼 두었으므로, 운영은 필요할 때 Vercel CLI로 직접 배포합니다. 첫 운영 배포는 2026-09-23에 `main`의 `9a8f5c1`로 했습니다.
 
+배포 보류 요청에 따라 `codex/admin-library-ux` 브랜치도 두 프로젝트의 자동 배포 대상에서 제외했습니다. 이 브랜치의 미리보기 배포를 다시 사용하려면 각 `vercel.json`의 해당 브랜치 항목을 제거합니다. 브랜치별 제외는 [Vercel Git 설정](https://vercel.com/docs/project-configuration/git-configuration#git.deploymentenabled)을 따릅니다.
+
 운영 배포 순서입니다. 사용자 화면을 먼저 배포하고 관리자 화면을 배포합니다. 각 화면은 운영 주소를 붙이지 않은 배포를 먼저 만들어 그 배포 주소에서 확인한 뒤, 운영 주소로 옮깁니다. 확인에서 문제가 보이면 옮기지 않으므로 운영은 그대로입니다.
 
 1. 원격 `main`을 받아서 빈 폴더 두 개에 git 정보 없이 내보냅니다. 로컬 `main`은 뒤처져 있을 수 있고, 다른 작업 폴더에 체크아웃되어 있으면 갱신할 수도 없으므로 받은 `origin/main`을 내보냅니다. 저장소 폴더에서 Git Bash 같은 bash 셸로 실행합니다(Windows PowerShell 5.1의 파이프는 tar 데이터를 깨뜨립니다).

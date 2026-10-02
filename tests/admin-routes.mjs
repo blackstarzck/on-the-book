@@ -81,7 +81,7 @@ try {
   await expect(page).toHaveURL(at("/admin/"));
   pass("The shelf search and state filter and the model search live in the query");
 
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await expect(page.locator("#studio-world canvas")).toBeVisible();
   await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1" }));
   const editorEntries = await entries();
@@ -125,7 +125,7 @@ try {
   await expect(page).toHaveURL(at("/admin/"));
   pass("Unknown books, chapters and objects fall back with a notice and stray parameters drop out");
 
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await page.locator("#chapter-model-list [data-select-model]").first().click();
   await page.locator('#object-form [name="title"]').fill("저장하지 않은 이름");
   await page.locator('#object-form [name="title"]').press("Tab");
@@ -142,7 +142,7 @@ try {
   await expect(page).toHaveURL(at("/admin/"));
   pass("Back out of an editor with unsaved changes asks first and keeps the editor's address while asking");
 
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await page.evaluate(() => { window.__canvas = document.querySelector("#studio-world canvas"); });
   await page.locator("#edit-book").click();
   await expect(page.locator("#book-form")).toBeVisible();
@@ -161,7 +161,7 @@ try {
   await expect(page.locator(".book-shelf")).toBeVisible();
   pass("A dialog gets its own entry: back closes it without rebuilding the editor, and a reloaded one steps back on close");
 
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await page.locator('[data-chapter="alice-2"]').click();
   await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-2" }));
   await page.locator("#edit-book").click();
@@ -173,7 +173,7 @@ try {
   await expect(page.locator(".book-shelf")).toBeVisible();
   pass("Applying a dialog leaves the page's new place in the address");
 
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await page.locator('[data-chapter-edit="alice-2"]').click();
   await expect(page).toHaveURL(at("/admin/books/alice", { chapter: "alice-1", modal: "chapter", id: "alice-2" }));
   await page.reload();
@@ -233,7 +233,7 @@ try {
   await expect(page.locator(".book-shelf")).toBeVisible();
   await expect(page).toHaveURL(at("/admin/"));
   await expect(page.locator("#studio-world")).toHaveCount(0);
-  await page.getByRole("button", { name: "주소 검사 책 3D 월드 편집", exact: true }).click();
+  await page.getByRole('button',{name:"주소 검사 책 관리 메뉴",exact:true}).click();await page.getByRole('menuitem',{name:"주소 검사 책 3D 월드 편집",exact:true}).click();
   await expect(page.locator("#studio-world canvas")).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/books\/[0-9a-f-]{36}\?chapter=[0-9a-f-]{36}$/);
   await page.goBack();
@@ -271,7 +271,7 @@ try {
   pass("The home preview reopens without saving, its frame keeps no history, and closing it never stalls later moves");
 
   await page.locator('[data-tab="books"]').click();
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   const readerEntries = await entries();
   await page.locator("#preview-client").click();
   await expect(page.locator(".inplace-reader")).toBeVisible();
@@ -311,7 +311,7 @@ try {
   await page.locator("#undo").click();
   await expect(page.locator("[data-chapter-row]").first()).toHaveAttribute("data-chapter-row", "alice-1");
   await page.locator("#back-library").click();
-  await page.locator('[data-open-book="oz"]').click();
+  await page.locator('[data-book-menu="oz"]').click();await page.locator('[data-open-book="oz"]').click();
   await expect(page.locator("#studio-world canvas")).toBeVisible();
   expect(await tilesOpen()).toBe(false);
   await page.locator(".world-tiles summary").click();

@@ -1,4 +1,4 @@
-import { shelfHTML, bindShelfOrder, mountWorkspace, thumbnails } from "./workspace.js";
+import { shelfHTML, bindShelfMenus, bindShelfOrder, mountWorkspace, thumbnails } from "./workspace.js";
 import { hasObject, parseRoute, resolveRoute, routeHref } from "./route.js";
 
 import { reactionSize } from "../shared/experience.js";
@@ -34,6 +34,7 @@ let library,
   busy = false,
   query = "";
 let disposeModelThumbnails=null;
+let disposeShelfMenus=null;
 let workspace=null, inEditor=false, baseline=null, savedLibrary=null, leaveDialog=null, undoStack=[], redoStack=[];
 // Shelf filters and the editor's model search live here so redraws keep them; the address mirrors them (admin/route.js).
 let shelfQuery="", shelfStatus="", assetQuery="", readerChapterId=null, shelfReturn={q:"",status:"",scroll:0}, applying=false, urlTimer=null, routeModal=null, backPending=null, scrollTimer=null;
@@ -310,6 +311,7 @@ function render() {
   if (!urlTimer) syncUrl();
 }
 function draw() {
+  disposeShelfMenus?.(); disposeShelfMenus=null;
   disposeModelThumbnails?.(); disposeModelThumbnails=null;
   if(workspace){workspace.dispose();workspace=null;world=null;readerChapterId=null;}
   if(tab==='books' && inEditor && book() && chapter()) {
@@ -373,6 +375,16 @@ function draw() {
     const reset=()=>{shelfQuery='';shelfStatus='';search.value='';status.value='all';filter();syncUrl();search.focus();};
     document.querySelector('#reset-book-filter').onclick=reset;
     document.querySelector('#shelf-empty-action').onclick=()=>library.books.length?reset():editBook(true);
+    disposeShelfMenus=bindShelfMenus(app);
+    document.querySelectorAll('[data-publish-book]').forEach(button=>button.onclick=()=>{
+      const target=library.books.find(b=>b.id===button.dataset.publishBook);
+      const visible=[...document.querySelectorAll('[data-book-row]:not([hidden])')].map(row=>row.dataset.bookRow),index=visible.indexOf(target.id);
+      target.published=!target.published;mark();render();
+      const remaining=document.querySelectorAll('[data-book-row]:not([hidden])');
+      const row=document.querySelector(`[data-book-row="${CSS.escape(target.id)}"]:not([hidden])`)||remaining[Math.min(index,remaining.length-1)];
+      (row?.querySelector('[data-publish-book]')||document.querySelector('#book-search')).focus({preventScroll:true});
+      toast(`${target.title}을(를) ${target.published?'공개 대상':'비공개 초안'}으로 변경했어요. 사용자 화면에는 공개 후 반영됩니다.`);
+    });
     bindShelfOrder(app,(ids,moved,control)=>{
       if(shelfQuery.trim()||shelfStatus||ids.length!==library.books.length||new Set(ids).size!==ids.length||ids.some(id=>!library.books.some(b=>b.id===id)))return;
       library.books=ids.map(id=>library.books.find(b=>b.id===id));mark();render();
@@ -548,7 +560,7 @@ function editBook(isNew = false, target = book()) {
     mark();
     d.close();
     render();
-    if (!inEditor) document.querySelector(`[data-edit-book="${CSS.escape(original.id)}"]`)?.focus({ preventScroll: !isNew });
+    if (!inEditor) document.querySelector(`[data-book-menu="${CSS.escape(original.id)}"]`)?.focus({ preventScroll: !isNew });
   };
   d.querySelector("#delete-book")?.addEventListener("click", () => {
     d.close();
@@ -567,8 +579,8 @@ function deleteBook(target) {
       mark();render();
       const next=library.books[Math.min(index,library.books.length-1)];
       if(!inEditor){
-        const visibleNext=next&&document.querySelector(`[data-book-row="${CSS.escape(next.id)}"]:not([hidden]) [data-edit-book]`);
-        const focus=visibleNext||document.querySelector('[data-book-row]:not([hidden]) [data-edit-book]')||document.querySelector(library.books.length?'#book-search':'#new-book');
+        const visibleNext=next&&document.querySelector(`[data-book-row="${CSS.escape(next.id)}"]:not([hidden]) [data-book-menu]`);
+        const focus=visibleNext||document.querySelector('[data-book-row]:not([hidden]) [data-book-menu]')||document.querySelector(library.books.length?'#book-search':'#new-book');
         focus?.focus({preventScroll:true});
       }
       toast(`‘${target.title}’ 도서를 삭제했어요. 임시 저장 또는 공개로 반영해 주세요.`);

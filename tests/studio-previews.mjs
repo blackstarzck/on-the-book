@@ -71,7 +71,7 @@ try {
   pass('The settings page says where this studio saves (a test server keeps a data folder)');
 
   await page.getByRole('button', { name: '도서 보관함', exact: true }).click();
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await page.locator('#edit-book').click();
   const form = page.locator('#book-form');
   await expect(page.locator('#book-cover-frames')).toBeHidden();

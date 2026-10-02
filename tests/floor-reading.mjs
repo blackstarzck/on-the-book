@@ -99,7 +99,7 @@ try {
   await page.locator('#floor-next').click();
   expect(await page.locator('#floor-accessible').evaluate(el => el.scrollTop)).toBe(0);
   console.log('PASS enlarged overflowing text scrolls independently with pagination visible');
-  const admin = await context.newPage(); await admin.goto(server.url + "/admin/"); await admin.locator('[data-open-book="alice"]').click();
+  const admin = await context.newPage(); await admin.goto(server.url + "/admin/"); await admin.locator('[data-book-menu="alice"]').click();await admin.locator('[data-open-book="alice"]').click();
   await admin.locator("[data-chapter-edit]").first().click();
   await admin.getByLabel("오른쪽에 보여 줄 글귀", {exact:true}).fill("앨리스는 토끼를 바라보았습니다. 작은 호기심에서 이야기가 시작되었습니다.");
 
@@ -112,7 +112,7 @@ try {
   await admin.locator("#save").click(); await expect(admin.locator("#save-state")).toHaveText("변경사항 저장됨");
   let live = await (await context.request.get(server.url + "/api/library")).json();
   expect(live.books[0].chapters[0].floorText || "").toBe("");
-  await admin.goto(server.url + "/admin/"); await admin.locator('[data-open-book="alice"]').click(); await admin.locator("[data-chapter-edit]").first().click();
+  await admin.goto(server.url + "/admin/"); await admin.locator('[data-book-menu="alice"]').click();await admin.locator('[data-open-book="alice"]').click(); await admin.locator("[data-chapter-edit]").first().click();
   await expect(admin.getByLabel("글귀 카메라 여백 배율")).toHaveValue("1.3");
   await admin.keyboard.press("Escape");
   await admin.locator("#publish").click(); await expect(admin.locator("#save-state")).toHaveText("공개 완료");

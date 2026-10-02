@@ -11,6 +11,7 @@ page.on('pageerror', error => errors.push(error.message));
 const pass = message => console.log(`PASS ${message}`);
 const shelf = () => page.locator('.book-shelf');
 const card = id => page.locator(`[data-book-row="${id}"]`);
+const menu = id => page.locator(`[data-book-menu="${id}"]`);
 const info = id => page.locator(`[data-edit-book="${id}"]`);
 const world = id => page.locator(`[data-open-book="${id}"]`);
 const apply = () => page.locator('#book-form button[type="submit"]').click();
@@ -22,15 +23,17 @@ await mkdir('test-results/book-management', { recursive: true });
 try {
   await page.goto(server.url + '/admin/');
   await expect(shelf()).toBeVisible();
-  await expect(info('alice')).toBeVisible();
-  await expect(world('alice')).toBeVisible();
+  await expect(menu('alice')).toBeVisible();
+  await expect(info('alice')).toBeHidden();
+  await expect(world('alice')).toBeHidden();
   await card('alice').locator('.book-cover').click();
   await expect(page.locator('#studio-world, #book-form')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/book-management/desktop.png', fullPage: true });
   await page.locator('#book-search').fill('오즈');
   await page.locator('#book-filter').selectOption('public');
   await expect(card('alice')).toBeHidden();
-  await info('oz').focus();
+  await menu('oz').focus();
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(page.getByLabel('책 제목', { exact: true })).toHaveValue('오즈의 마법사');
   await expect(page).toHaveURL(/status=public&modal=book&id=oz$/);
@@ -44,8 +47,9 @@ try {
   await expect(page.getByLabel('책 제목', { exact: true })).toHaveValue('오즈의 마법사');
   await page.getByRole('button', { name: '닫기', exact: true }).click();
   await expect(page).not.toHaveURL(/modal=/);
-  pass('Cards offer two explicit actions; metadata opens the right book without 3D, including keyboard, reload and history');
+  pass('Row menus offer three actions; metadata opens the right book without 3D, including keyboard, reload and history');
 
+  await menu('oz').click();
   await info('oz').click();
   await page.getByLabel('책 제목', { exact: true }).fill('오즈의 마법사 정보 수정');
   await page.getByLabel('분류', { exact: true }).fill('고전');
@@ -59,10 +63,11 @@ try {
   await apply();
   await expect(page.locator('#book-form, #studio-world')).toHaveCount(0);
   await expect(card('oz')).toContainText('오즈의 마법사 정보 수정');
-  await expect(info('oz')).toBeFocused();
+  await expect(menu('oz')).toBeFocused();
   await expect(page.locator('#book-search')).toHaveValue('오즈');
   await save(false);
   await page.reload();
+  await menu('oz').click();
   await info('oz').click();
   await expect(page.getByLabel('분류', { exact: true })).toHaveValue('고전');
   await expect(page.locator('#book-cover-preview')).toBeVisible();
@@ -76,6 +81,7 @@ try {
   expect(oz.cover).toMatch(/^\/uploads\/.+\.png$/);
   pass('Cover and genre edits apply, save and publish from the shelf; cancel leaves stored metadata unchanged');
 
+  await menu('oz').click();
   await world('oz').click();
   await expect(page.locator('#studio-world canvas')).toBeVisible();
   await expect(page.locator('[data-chapter-edit="oz-1"]')).toBeVisible();
@@ -106,12 +112,14 @@ try {
   await expect(page).toHaveURL(server.url + '/admin/');
   const created = page.getByRole('article', { name: '새 도서 관리 확인', exact: true });
   await expect(created).toBeVisible();
-  await expect(created.locator('[data-edit-book]')).toBeFocused();
+  await expect(created.locator('[data-book-menu]')).toBeFocused();
   await save(false);
+  await created.locator('[data-book-menu]').click();
   await created.locator('[data-open-book]').click();
   await expect(page.locator('#studio-world canvas')).toBeVisible();
   await page.locator('#back-library').click();
   // Delete a book other than the one most recently opened in 3D.
+  await menu('oz').click();
   await info('oz').click();
   await page.locator('#delete-book').click();
   await page.locator('#confirm-action').click();
@@ -129,12 +137,16 @@ try {
   await save(false);
   for (const width of [320, 375, 768]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(menu('alice')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await menu('alice').click();
+    await expect(page.getByRole('menuitem')).toHaveCount(3);
     await expect(info('alice')).toBeVisible();
     await expect(world('alice')).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const first = await info('alice').boundingBox(), second = await world('alice').boundingBox();
-    expect(first.y).toBe(second.y);
-    expect(first.x + first.width).toBeLessThanOrEqual(second.x);
+    const box = await page.getByRole('menu').boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    expect(box.y + box.height).toBeLessThanOrEqual(900);
     await info('alice').click();
     await expect(page.locator('#book-form')).toBeVisible();
     await page.getByRole('button', { name: '닫기', exact: true }).click();

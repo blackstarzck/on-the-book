@@ -12,7 +12,7 @@ const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6i8AAAAASUVORK5CYII=','base64');
 const setFields=async values=>{for(const [name,value] of values){const input=page.locator(`#object-form [name="${name}"]`);await input.fill(value);await input.press('Tab');}};
 try {
- await page.goto(server.url+'/admin/');await page.locator('[data-open-book="alice"]').click();await expect(page.locator('#studio-world canvas')).toBeVisible();
+ await page.goto(server.url+'/admin/');await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();await expect(page.locator('#studio-world canvas')).toBeVisible();
  await page.locator('[data-chapter-edit]').first().click();
  for(const name of ['floorPanelHeight','floorOpacity','floorBlur'])await expect(page.locator(`[name="${name}"]`)).toHaveCount(0);
  await page.getByLabel('오른쪽에 보여 줄 글귀',{exact:true}).fill('바닥 배치와 함께 관리하는 챕터 텍스트입니다.');

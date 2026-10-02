@@ -30,7 +30,7 @@ try {
   console.log('PASS a still GLB registers with its thumbnail');
 
   await page.getByRole('button', { name: '도서 보관함', exact: true }).click();
-  await page.locator('[data-open-book="alice"]').click();
+  await page.locator('[data-book-menu="alice"]').click();await page.locator('[data-open-book="alice"]').click();
   await expect(page.locator('#studio-world canvas')).toBeVisible();
   const tile = page.locator('.asset-tile').filter({ hasText: '정적 장면 모델' });
   await expect(tile).toHaveAttribute('draggable', 'true');
