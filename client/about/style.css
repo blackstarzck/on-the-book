@@ -92,17 +92,11 @@
 }
 @media(max-width:370px){.way-image{min-height:400px}}
 
-/* An oversized book faces three illustrated shelves, inspired by Floema's footer. */
+/* The typography artwork faces three illustrated shelves. */
 .site-footer{--footer-paper:#e8ec91;--footer-ink:#25332a;--footer-progress:1;--footer-delay:0;position:relative;isolation:isolate;overflow:clip;background:var(--footer-paper);color:var(--footer-ink);padding-top:64px;scroll-margin-top:80px}
 .footer-grid{display:grid;grid-template-columns:minmax(0,36fr) minmax(0,64fr);gap:5%;padding:0 3% 0 2.5%;max-width:2000px;margin:auto}
-.footer-signature{display:flex;flex-direction:column;align-items:flex-start;align-self:stretch;padding:0 0 28px;min-width:0}
-.footer-bookmark{width:100%;height:auto;max-height:565px;overflow:visible;flex:1;min-height:0}
-.footer-page-cut{fill:var(--footer-paper)}
-.footer-loose-page{transform-origin:232px 92px;transition:transform .7s cubic-bezier(.22,.68,.2,1)}
-.footer-signature:hover .footer-loose-page,.footer-signature:focus-visible .footer-loose-page{transform:rotate(-9deg) translateY(-3px)}
-.footer-wordmark{display:flex;align-items:flex-start;gap:12px;margin-top:25px;font-size:clamp(36px,4.8vw,86px);font-weight:600;letter-spacing:-.04em;line-height:1.05;white-space:nowrap}
-.footer-wordmark>span{font-size:max(13px,.38em);line-height:1.8;letter-spacing:0}
-.footer-tagline{margin:19px 0 0 4px;font-size:13px;letter-spacing:.12em}
+.footer-signature{position:relative;display:block;align-self:stretch;min-width:0}
+.footer-typography{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center}
 .footer-content{min-width:0}
 [data-footer-row]{position:relative}
 .footer-rule{position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;opacity:.5;transform:scaleX(var(--footer-progress));transform-origin:left}
@@ -136,16 +130,12 @@
 .motion-off .site-footer{--footer-progress:1!important}
 .motion-off .site-footer [data-footer-row]{--footer-progress:1!important}
 .motion-off .site-footer [data-footer-copy]{opacity:1;transform:none}
-.motion-off .footer-loose-page{transform:none!important}
-@media(min-width:1800px){.footer-shelf{height:235px}.footer-about{min-height:255px;padding-right:135px}.footer-explore{min-height:230px}.footer-principles p{font-size:13px}.footer-door{width:100px;height:230px}.footer-nav a,.footer-nav button{font-size:21px}.footer-bookmark{max-height:650px}}
-@media(max-width:1100px){.footer-grid{grid-template-columns:minmax(0,32fr) minmax(0,68fr);gap:4%}.footer-signature{justify-content:space-between}.footer-bookmark{flex:none;margin-top:20px}.footer-wordmark{font-size:4.6vw}.footer-tagline{font-size:13px}.footer-about{padding:30px 75px 30px 0;min-height:210px}.footer-principles{gap:14px}.footer-principles h3{font-size:14px}.footer-principles p{font-size:13px}.footer-door{width:65px;height:175px;right:0}.footer-explore{grid-template-columns:75px 1fr;gap:22px}.footer-reader{width:75px;height:auto}.footer-nav a,.footer-nav button{font-size:15px}.footer-colophon{padding-left:0}}
+@media(min-width:1800px){.footer-shelf{height:235px}.footer-about{min-height:255px;padding-right:135px}.footer-explore{min-height:230px}.footer-principles p{font-size:13px}.footer-door{width:100px;height:230px}.footer-nav a,.footer-nav button{font-size:21px}}
+@media(max-width:1100px){.footer-grid{grid-template-columns:minmax(0,32fr) minmax(0,68fr);gap:4%}.footer-about{padding:30px 75px 30px 0;min-height:210px}.footer-principles{gap:14px}.footer-principles h3{font-size:14px}.footer-principles p{font-size:13px}.footer-door{width:65px;height:175px;right:0}.footer-explore{grid-template-columns:75px 1fr;gap:22px}.footer-reader{width:75px;height:auto}.footer-nav a,.footer-nav button{font-size:15px}.footer-colophon{padding-left:0}}
 @media(max-width:900px){
   .site-footer{padding-top:38px;scroll-margin-top:76px}
   .footer-grid{grid-template-columns:1fr;gap:32px;padding:0 6%}
-  .footer-signature{display:grid;grid-template-columns:112px 1fr;column-gap:24px;align-items:center;padding:0}
-  .footer-bookmark{width:112px;height:130px;margin:0;grid-row:1/3}
-  .footer-wordmark{align-self:end;font-size:clamp(31px,7.5vw,48px);margin:0;gap:8px}
-  .footer-tagline{font-size:13px;line-height:1.6;letter-spacing:.06em;align-self:start;margin:10px 0 0}
+  .footer-signature{height:clamp(245px,39vw,330px)}
   .footer-shelf{height:175px;gap:18px}
   .footer-books{width:40%;max-width:190px;margin:0}
   .footer-about{min-height:215px;padding:32px 0 75px}
@@ -167,5 +157,5 @@
   .footer-bottom>span:last-child{gap:8px}
   .footer-bottom i{font-size:13px}
 }
-@media(max-width:370px){.footer-signature{grid-template-columns:90px 1fr;gap:18px}.footer-bookmark{width:90px;height:110px}.footer-wordmark{font-size:29px}.footer-tagline{font-size:13px}.footer-principles{gap:10px}.footer-principles h3{font-size:13px}.footer-principles p{font-size:13px}.footer-explore{gap:20px}.footer-nav a,.footer-nav button{font-size:14px}}
-@media(prefers-reduced-motion:reduce){.site-footer [data-footer-row]{--footer-progress:1!important}.site-footer [data-footer-copy]{opacity:1;transform:none}.site-footer *{transition:none!important}.footer-loose-page{transform:none!important}}
+@media(max-width:370px){.footer-principles{gap:10px}.footer-principles h3{font-size:13px}.footer-principles p{font-size:13px}.footer-explore{gap:20px}.footer-nav a,.footer-nav button{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.site-footer [data-footer-row]{--footer-progress:1!important}.site-footer [data-footer-copy]{opacity:1;transform:none}.site-footer *{transition:none!important}}
