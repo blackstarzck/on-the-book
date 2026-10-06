@@ -60,9 +60,9 @@ PNG 5MB, GLB 25MB 제한을 유지합니다. Vercel에서는 브라우저가 Sup
 
 ## 미리보기와 운영 배포
 
-PR과 `main` 이외 브랜치의 푸시는 GitHub 연동으로 미리보기에 배포됩니다. `main` 푸시가 운영 배포를 자동으로 만들지 않도록 각 `vercel.json`에서 `main` 자동 배포를 꺼 두었으므로, 운영은 필요할 때 Vercel CLI로 직접 배포합니다. 첫 운영 배포는 2026-09-23에 `main`의 `9a8f5c1`로 했습니다.
+GitHub 푸시와 PR은 어떤 배포도 자동으로 만들지 않습니다. 2026-10-06에 자동 처리 기능을 모두 없애기로 해서, 각 `vercel.json`의 `git.deploymentEnabled`를 `false`로 두어 모든 브랜치의 자동 배포를 껐습니다([Vercel Git 설정](https://vercel.com/docs/project-configuration/git-configuration#git.deploymentenabled)). 그 전에도 `main`은 자동 배포를 꺼 두었으므로 운영은 처음부터 Vercel CLI로 직접 배포해 왔습니다. 첫 운영 배포는 2026-09-23에 `main`의 `9a8f5c1`로 했습니다.
 
-배포 보류 요청에 따라 `codex/admin-library-ux` 브랜치도 두 프로젝트의 자동 배포 대상에서 제외했습니다. 이 브랜치의 미리보기 배포를 다시 사용하려면 각 `vercel.json`의 해당 브랜치 항목을 제거합니다. 브랜치별 제외는 [Vercel Git 설정](https://vercel.com/docs/project-configuration/git-configuration#git.deploymentenabled)을 따릅니다.
+미리보기가 필요하면 아래 1·3단계처럼 직접 만듭니다. 1단계에서 `origin/main` 대신 미리 볼 브랜치를 내보내고, 3단계에서 `--prod` 없이 `vercel deploy --archive=tgz`로 배포하면 미리보기 환경변수로 빌드된 미리보기 배포가 생깁니다.
 
 운영 배포 순서입니다. 사용자 화면을 먼저 배포하고 관리자 화면을 배포합니다. 각 화면은 운영 주소를 붙이지 않은 배포를 먼저 만들어 그 배포 주소에서 확인한 뒤, 운영 주소로 옮깁니다. 확인에서 문제가 보이면 옮기지 않으므로 운영은 그대로입니다.
 
