@@ -1,4 +1,7 @@
 import "./style.css";
+import { startImagePreviews } from '../../shared/image-previews.js';
+import '../../shared/image-previews.css';
+startImagePreviews();
 import trailerUrl from "./assets/trailer.mp4";
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
@@ -399,6 +402,7 @@ function showGallery(index) {
   galleryIndex = (index + galleryItems.length) % galleryItems.length;
   const item = galleryItems[galleryIndex];
   $('.gallery-large').src = item.src;
+  $('.gallery-large').dataset.imagePreview = $('img', cards[galleryIndex]).dataset.imagePreview || '';
   $('.gallery-large').alt = item.alt;
   $('#gallery-heading').textContent = item.title;
   $('.gallery-caption').textContent = item.caption;

@@ -8,6 +8,8 @@ import { newTriggerConflict } from '../shared/experience.js';
 import { modelInfo } from './model-info.js';
 import { cloud, staging, uploadDir, readDraft, readLive, saveDraft, assetInfo, prepareUpload, takeStaged, storeUpload, signedDownload, saveSession, validSession, removeSession, readSite, siteAssetNames } from './storage.js';
 import { publicLibrary, publicAssetNames, imageUrls } from './publication.js';
+import { imagePreview } from './image-preview.js';
+import { imagePreviewsFor } from './storage.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const app = express();
 app.disable("x-powered-by");
@@ -87,20 +89,22 @@ app.post("/api/logout", sameOrigin, async (req, res) => {
 app.get("/api/library", async (req, res) => {
   const live = await readLive();
   res.set("Cache-Control", "no-store");
-  res.json(publicLibrary(live));
+  const library = publicLibrary(live);
+  res.json({ ...library, imagePreviews: await imagePreviewsFor(library, publicAssetNames(live)) });
 });
 // 3D material used outside books, such as the about page journey.
 app.get("/api/site/:key", async (req, res) => {
   const data = /^[a-z0-9-]{1,40}$/.test(req.params.key) ? await readSite(req.params.key) : null;
   if (!data) return res.status(404).json({ error: "요청을 찾을 수 없습니다." });
   res.set("Cache-Control", "no-store");
-  res.json(data);
+  res.json({ ...data, imagePreviews: await imagePreviewsFor(data) });
 });
 app.get("/api/studio", auth, async (req, res) => {
   const current = await readDraft();
   res.set("Cache-Control", "no-store");
   res.json({
     library: current.library,
+    imagePreviews: await imagePreviewsFor(current.library),
     version: current.version,
     publishedAt: current.publishedAt,
     protected: !!password,
@@ -226,7 +230,10 @@ app.post('/api/floor/upload', sameOrigin, auth, (req,res,next)=>floorUpload.sing
   if(!ended||!hasData||!width||!height||width>4096||height>4096)
     return res.status(400).json({error:'가로·세로 4096 이하의 완전한 PNG 이미지가 필요합니다.'});
   const filename=randomUUID()+'.png';
-  try{await storeUpload(filename,b,{width,height});res.status(201).json({url:'/uploads/'+filename,width,height});}
+  let preview;
+  try { preview = await imagePreview(b); }
+  catch { console.warn('Image preview generation failed; original upload is preserved.'); }
+  try{await storeUpload(filename,b,{width,height,preview});res.status(201).json({url:'/uploads/'+filename,width,height,preview});}
   catch{res.status(500).json({error:'이미지를 저장하지 못했습니다.'});}
 });
 app.post(

@@ -1,0 +1,29 @@
+/* Only real image frames lose their previous fixed wash. Missing-image states stay separate. */
+.image-preview-host:is(.catalog-cover,.scene-image,.scene-cover,.book-cover,.asset-preview,.model-thumbnail,.crop-box) {
+  background: transparent !important;
+}
+img.image-preview-original { background: transparent !important; }
+.image-preview-layer {
+  position: absolute;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  overflow: hidden;
+  place-items: center;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: inherit;
+  color: #536458;
+  transition: opacity 180ms ease;
+}
+img.image-preview-pending { opacity: 0 !important; }
+img.image-preview-reveal { transition: opacity 180ms ease !important; }
+.image-preview-finished { opacity: 0; }
+.image-preview-error { padding: 8px; box-sizing: border-box; }
+.image-preview-empty-note { font-size: 13px; color: #64746b; text-align: center; }
+.scene-cover > .image-preview-empty-note, .scene-image > .image-preview-empty-note { position: absolute; inset: 0; display: grid; place-items: center; }
+.scene-cover > .image-preview-empty-note { color: #fff; }
+.catalog-cover:not(:has(img)) { display: grid; place-items: center; background: transparent; }
+@media (prefers-reduced-motion: reduce) {
+  .image-preview-layer, img.image-preview-reveal { transition: none !important; }
+}

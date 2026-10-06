@@ -56,12 +56,12 @@ const sceneBookOf = (books, id) => books.find(b => b.id === id) || books[0];
 // 도서 메인 썸네일, made square for this tile; without one the tile keeps its plain wash rather than cutting the
 // portrait cover to fit.
 function sceneCover(book, preview) {
-  return `<a class="scene-cover${book.thumbnail ? " has-image" : ""}" href="${esc(detailUrl({ book: book.id, preview }))}" data-scene-cover="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">${book.thumbnail ? `<img src="${esc(book.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}<strong>${esc(book.title)}</strong></a>`;
+  return `<a class="scene-cover${book.thumbnail ? " has-image" : ""}" href="${esc(detailUrl({ book: book.id, preview }))}" data-scene-cover="${esc(book.id)}" aria-label="${esc(book.title)} — 작품 상세">${book.thumbnail ? `<img src="${esc(book.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : '<span class="image-preview-empty-note">이미지 준비 중</span>'}<strong>${esc(book.title)}</strong></a>`;
 }
 
 // The chosen book's chapter cards for the rail; each opens its scene on the book detail.
 function sceneCards(book, preview) {
-  return book.chapters.map((chapter, index) => `<a class="scene-card" href="${esc(detailUrl({ book: book.id, scene: chapter.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${two(index + 1)} ${esc(chapter.title)} — 작품 상세"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : ""}</span><span class="scene-index">Chapter. ${two(index + 1)}</span><strong>${esc(chapter.title)}</strong></a>`).join("");
+  return book.chapters.map((chapter, index) => `<a class="scene-card" href="${esc(detailUrl({ book: book.id, scene: chapter.id, preview }))}" data-scene-book="${esc(book.id)}" data-scene-chapter="${esc(chapter.id)}" aria-label="${esc(book.title)} · ${two(index + 1)} ${esc(chapter.title)} — 작품 상세"><span class="scene-image image-placeholder${chapter.thumbnail ? " has-image" : ""}" aria-hidden="true">${chapter.thumbnail ? `<img src="${esc(chapter.thumbnail)}" alt="" loading="lazy" decoding="async" draggable="false">` : '<span class="image-preview-empty-note">이미지 준비 중</span>'}</span><span class="scene-index">Chapter. ${two(index + 1)}</span><strong>${esc(chapter.title)}</strong></a>`).join("");
 }
 
 // A tab per book picks what fills the shelf: the cover tile and, in the scrolling rail beside it, the chapter cards.

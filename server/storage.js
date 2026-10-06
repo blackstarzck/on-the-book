@@ -7,6 +7,7 @@ import { seed } from './seed.js';
 import { upgrade } from './upgrade.js';
 import { toRows, fromRows } from './rows.js';
 import { modelInfo } from './model-info.js';
+import { imageNames } from './image-preview.js';
 
 export const cloud = process.env.VERCEL === '1';
 // Raise this when the library shape changes, so an older studio cannot save over fields it does not know.
@@ -36,7 +37,14 @@ const backend = dataDir ? await folderBackend(dataDir) : supabaseBackend(createC
 export const {
   staging, uploadDir, readDraft, readLive, saveDraft, assetInfo, prepareUpload, takeStaged, storeUpload,
   signedDownload, saveSession, validSession, removeSession, readSite, siteAssetNames,
+  readImagePreviews, saveImagePreview, readUpload,
 } = backend;
+
+export async function imagePreviewsFor(value, allowed) {
+  const names = [...imageNames(value)].filter(name => !allowed || allowed.has(name));
+  try { return await readImagePreviews(names); }
+  catch { return {}; } // Older databases or unavailable preview metadata must not hide the shelf.
+}
 
 // Upload addresses inside a site asset record, such as the about page journey model and its photos.
 const uploadNames = (value, found = new Set()) => {
@@ -114,6 +122,31 @@ function supabaseBackend(db) {
         width: details.width ?? null, height: details.height ?? null, rigged: details.rigged ?? null, clips: details.clips ?? null,
       });
       check(rowError, 'assets');
+      if (details.preview) {
+        try {
+          const { error: previewError } = await db.from('assets').update({ image_preview: details.preview }).eq('bucket', 'uploads').eq('path', filename);
+          check(previewError, 'image preview');
+        }
+        catch { console.warn('Image preview metadata could not be saved.'); }
+      }
+    },
+    async readImagePreviews(names) {
+      const result = {};
+      for (let i = 0; i < names.length; i += 200) {
+        const { data, error } = await db.from('assets').select('path, image_preview').eq('bucket', 'uploads').in('path', names.slice(i, i + 200));
+        check(error, 'image previews');
+        for (const row of data) if (row.image_preview) result['/uploads/' + row.path] = row.image_preview;
+      }
+      return result;
+    },
+    async saveImagePreview(filename, preview) {
+      const { error } = await db.from('assets').update({ image_preview: preview }).eq('bucket', 'uploads').eq('path', filename);
+      check(error, 'image preview');
+    },
+    async readUpload(filename) {
+      const { data, error } = await uploads.download(filename);
+      if (error) throw missing();
+      return Buffer.from(await data.arrayBuffer());
     },
     // One signed address is handed out again while it has plenty of life left, so readers share the
     // storage CDN's cached copy instead of each new token fetching the file from the origin again.
@@ -181,6 +214,8 @@ async function folderBackend(dir) {
     await writeFile(dbFile, JSON.stringify(db, null, 2));
   }
   const sessions = new Map();
+  const previewDir = path.join(dir, 'image-previews');
+  await mkdir(previewDir, { recursive: true });
   return {
     staging: false,
     uploadDir,
@@ -214,7 +249,23 @@ async function folderBackend(dir) {
       }
       return found;
     },
-    async storeUpload(filename, buffer) { await writeFile(path.join(uploadDir, filename), buffer); },
+    async storeUpload(filename, buffer, details = {}) {
+      await writeFile(path.join(uploadDir, filename), buffer);
+      if (details.preview) {
+        try { await writeFile(path.join(previewDir, filename + '.json'), JSON.stringify(details.preview)); }
+        catch { console.warn('Image preview metadata could not be saved.'); }
+      }
+    },
+    async readImagePreviews(names) {
+      const result = {};
+      for (const name of names) {
+        try { result['/uploads/' + name] = JSON.parse(await readFile(path.join(previewDir, name + '.json'), 'utf8')); }
+        catch (e) { if (e.code !== 'ENOENT') throw e; }
+      }
+      return result;
+    },
+    async saveImagePreview(filename, preview) { await writeFile(path.join(previewDir, filename + '.json'), JSON.stringify(preview)); },
+    async readUpload(filename) { return readFile(path.join(uploadDir, filename)); },
     async saveSession(token, expiry) { sessions.set(token, expiry); },
     async validSession(token) { return validToken(token) && (sessions.get(token) || 0) > Date.now(); },
     async removeSession(token) { if (validToken(token)) sessions.delete(token); },

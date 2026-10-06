@@ -175,7 +175,7 @@ test("the book schema keeps the intros, fills them in for older data and caps th
 
 test("scenePanel shows the scene and ends with the neighbour buttons under the CTA", () => {
   const html = scenePanel({ book: alice, chapter: alice.chapters[1] });
-  assert.match(html, /^<span class="scene-image image-placeholder" data-theme="night" role="img" aria-label="장면 이미지 준비 중"><span class="scene-number">02<\/span><\/span><h2 id="panel-scene-title">작아지는 문, 커지는 세계<\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 /);
+  assert.match(html, /^<span class="scene-image image-placeholder" data-theme="night" role="img" aria-label="장면 이미지 준비 중"><span class="image-preview-empty-note">이미지 준비 중<\/span><span class="scene-number">02<\/span><\/span><h2 id="panel-scene-title">작아지는 문, 커지는 세계<\/h2><p class="detail-meta">작은 열쇠가 열어 준 커다란 호기심<\/p><button class="primary-button detail-enter" data-enter="alice" data-enter-chapter="alice-2">이 장면부터 걷기 /);
   // Previous and next come straight after the CTA and close the panel; the visible words stay the start of each
   // accessible name.
   assert.match(html, /이 장면부터 걷기 <i data-lucide="arrow-up-right" aria-hidden="true"><\/i><\/button><nav class="neighbor-nav" aria-label="이어지는 장면"><a class="neighbor-link" href="\?book=alice&amp;scene=alice-1" data-scene="alice-1" aria-label="이전 장면: 01 흰 토끼를 따라서"><i data-lucide="arrow-left" aria-hidden="true"><\/i> 이전 장면<\/a><a class="neighbor-link" href="\?book=alice&amp;scene=alice-3" data-scene="alice-3" aria-label="다음 장면: 03 버섯 숲의 수수께끼">다음 장면 <i data-lucide="arrow-right" aria-hidden="true"><\/i><\/a><\/nav>$/);

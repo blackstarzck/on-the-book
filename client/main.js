@@ -3,6 +3,7 @@ import { Journey } from "./journey.js";
 import { showLoading, clearLoading, transitionPage } from "./transitions.js";
 import { api, esc, icon, icons, logo, modal, toast } from "../shared/ui.js";
 import "../shared/style.css";
+import '../shared/image-previews.css';
 import { announcementBanner, landing, setupCatalog } from "./landing.js";
 import { heroSlides } from "../shared/home.js";
 import { bookCover, edition } from "./book-meta.js";

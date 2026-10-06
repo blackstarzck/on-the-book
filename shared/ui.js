@@ -1,3 +1,4 @@
+import { registerImagePreviews } from './image-previews.js';
 import {
   createIcons,
   BookOpen,
@@ -128,6 +129,8 @@ export async function api(url, options = {}) {
     e.status = response.status;
     throw e;
   }
+  if (result.imagePreviews) registerImagePreviews(result.imagePreviews);
+  if (result.url && result.preview) registerImagePreviews({ [result.url]: result.preview });
   return result;
 }
 let toastTimer;

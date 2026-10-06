@@ -18,6 +18,7 @@ import {
   uid,
 } from "../shared/ui.js";
 import "../shared/style.css";
+import '../shared/image-previews.css';
 import "./style.css";
 let library,
   version,
