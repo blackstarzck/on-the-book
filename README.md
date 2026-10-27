@@ -6,18 +6,20 @@ Vercel에서는 사용자 화면과 관리자 화면을 별도 프로젝트로 �
 
 ## 데모 영상
 
-실제 서비스 화면과 한국어 내레이션으로 사용자와 관리자의 핵심 사용 흐름을 확인할 수 있습니다.
+실제 서비스 화면과 한국어 내레이션으로 사용자와 관리자의 핵심 사용 흐름을 확인할 수 있습니다. 재생 전 표지에서 영상의 주요 내용을 미리 볼 수 있습니다.
 
 ### 사용자 화면 · 2분 15초
 
 책을 찾고 원하는 장면으로 들어가, 3D 공간을 걸으며 본문을 읽고 이어 읽는 과정을 소개합니다.
 
+<!-- 표지 원본: docs/demo/client-thumbnail.png. README용 MP4의 첫 프레임에 포함합니다. -->
 https://github.com/user-attachments/assets/42bbab6d-53c9-411d-a912-cbefe22c3d81
 
 ### 관리자 화면 · 2분 50초
 
 챕터와 본문을 준비하고 3D 모델을 배치한 뒤, 독자 체험과 임시 저장·공개로 결과를 확인하는 과정을 소개합니다.
 
+<!-- 표지 원본: docs/demo/admin-thumbnail.png. README용 MP4의 첫 프레임에 포함합니다. -->
 https://github.com/user-attachments/assets/b240493c-cf1b-45d0-ba47-64d40ed6b1ae
 
 ## 바로 확인하기
